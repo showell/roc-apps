@@ -27,10 +27,11 @@ figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: non
 <li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
 <li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
 <li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">11</span>Cook-Levin as SAT</a></li>
-<li><a href="the-oracles.html"><span class="number">12</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">13</span>The Roc port</a></li>
-<li><a href="what-comes-next.html"><span class="number">14</span>What comes next</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">12</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">13</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">14</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">15</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -40,7 +41,7 @@ figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: non
 <h1 id="nibble-the-puzzle-page">Nibble, the puzzle page</h1>
 <p><a href="https://roc.lynrummy.com/nibble/">Nibble</a> is a puzzle page with one puzzle for each of the 16 languages: pick instructions until the program accepts exactly the puzzle&#39;s inputs and rejects the rest. The search of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> says every puzzle has an answer, and how many programs are answers.</p>
 <h2 id="what-runs-in-the-page">What runs in the page <a class="section-link" href="#what-runs-in-the-page" aria-label="Link to this section">§</a></h2>
-<p>The page runs this repository&#39;s C. <code>web/nibble.c</code> is <code>src/vm.c</code> compiled to freestanding wasm by <code>zig cc</code>, and the puzzle table is printed by <code>web/puzzles.c</code>, which counts every program&#39;s language and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are the C&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the wasm to the C on all 4,096 programs and all four inputs, then plays every puzzle in headless Chromium by clicks.</p>
+<p>The page runs the Roc port&#39;s machine. <code>roc/NibbleWasm.roc</code> exports three functions built on <code>roc/Machine.roc</code>, compiled to a 9.5 KB wasm module by the pinned Roc with a small Zig host (<code>web/platform/</code>), and the puzzle table is printed by the C&#39;s <code>web/puzzles.c</code>, which counts every program&#39;s language and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are Roc&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the Roc wasm to the C on all 4,096 programs and all four inputs, so every build of the page is also a cross-check of the two ports, then plays every puzzle in headless Chromium by clicks.</p>
 <h2 id="playing-a-puzzle">Playing a puzzle <a class="section-link" href="#playing-a-puzzle" aria-label="Link to this section">§</a></h2>
 <p>Every pick runs the program at once on all four inputs, so the trace always shows the program as it stands. A trace shows each input&#39;s <code>AX</code> after every step, then how each run ended, what the puzzle wants, and a row marking each input correct or wrong. A wrong program&#39;s verdict names every way it is wrong, as in &quot;Your program falsely accepts 0. It falsely rejects 1 and 3.&quot; When the program is right, the page says so above the program, folds the instruction buttons away so the whole trace shows, and says how many of the 4,096 programs solve the puzzle. Beside the buttons, the program&#39;s machine code shows its twelve bits, two a line, and its number. Each opcode button&#39;s tip says what it does to each <code>AX</code>: <code>decr</code> is &quot;0-&gt;R, 1-&gt;0, 2-&gt;1, 3-&gt;2&quot;. A reload starts fresh at puzzle 1.</p>
 <h2 id="the-lessons">The lessons <a class="section-link" href="#the-lessons" aria-label="Link to this section">§</a></h2>

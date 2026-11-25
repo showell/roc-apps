@@ -1,0 +1,355 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The machine as a circuit · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.polynomial { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.polynomial figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.polynomial { margin-inline: -0.5rem; } figure.polynomial figcaption, figure.polynomial pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
+<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
+<li class="here"><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a><ol class="sections"><li><a href="the-machine-as-a-circuit.html#the-whole-circuit">The whole circuit</a></li><li><a href="the-machine-as-a-circuit.html#one-core">One core</a></li><li><a href="the-machine-as-a-circuit.html#a-program-through-it">A program through it</a></li><li><a href="the-machine-as-a-circuit.html#why-the-circuit-matters">Why the circuit matters</a></li></ol></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">12</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">13</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">14</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">15</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 11</p>
+<h1 id="the-machine-as-a-circuit">The machine as a circuit</h1>
+<p>The polynomials say that a run of the machine is arithmetic. The same fact can be drawn as hardware: a circuit that takes a language and a program and lights one wire, &quot;decides&quot;, exactly when the program decides the language. It is combinational: the whole run is laid out in space, and every wire settles at once.</p>
+<h2 id="the-whole-circuit">The whole circuit <a class="section-link" href="#the-whole-circuit" aria-label="Link to this section">§</a></h2>
+<p>The circuit has two registers on its left. The <em>want</em> register holds four bits, one per input, saying which inputs the language accepts: {1, 2, 3} is <code>0111</code>, input 0&#39;s bit first. The <em>program</em> register holds the twelve bits of a program, two per line. The program goes to four cores side by side, one per input, and each core answers whether its input is accepted. Four comparators check each answer against its want bit, and a final AND joins them.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The circuit, end to end" width="356pt" height="349pt"
+ viewBox="0.00 0.00 356.00 349.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 345)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-345 352,-345 352,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M186.5,-341C186.5,-341 41.5,-341 41.5,-341 35.5,-341 29.5,-335 29.5,-329 29.5,-329 29.5,-317 29.5,-317 29.5,-311 35.5,-305 41.5,-305 41.5,-305 186.5,-305 186.5,-305 192.5,-305 198.5,-311 198.5,-317 198.5,-317 198.5,-329 198.5,-329 198.5,-335 192.5,-341 186.5,-341"/>
+<text text-anchor="middle" x="114" y="-319.9" font-family="Times,serif" font-size="12.00">program register, 12 bits</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M12,-231.5C12,-231.5 216,-231.5 216,-231.5 222,-231.5 228,-237.5 228,-243.5 228,-243.5 228,-255.5 228,-255.5 228,-261.5 222,-267.5 216,-267.5 216,-267.5 12,-267.5 12,-267.5 6,-267.5 0,-261.5 0,-255.5 0,-255.5 0,-243.5 0,-243.5 0,-237.5 6,-231.5 12,-231.5"/>
+<text text-anchor="middle" x="28.5" y="-252.9" font-family="Times,serif" font-size="12.00">core 0</text>
+<text text-anchor="middle" x="28.5" y="-239.9" font-family="Times,serif" font-size="12.00">AX=0</text>
+<polyline fill="none" stroke="black" points="57,-231.5 57,-267.5 "/>
+<text text-anchor="middle" x="85.5" y="-252.9" font-family="Times,serif" font-size="12.00">core 1</text>
+<text text-anchor="middle" x="85.5" y="-239.9" font-family="Times,serif" font-size="12.00">AX=1</text>
+<polyline fill="none" stroke="black" points="114,-231.5 114,-267.5 "/>
+<text text-anchor="middle" x="142.5" y="-252.9" font-family="Times,serif" font-size="12.00">core 2</text>
+<text text-anchor="middle" x="142.5" y="-239.9" font-family="Times,serif" font-size="12.00">AX=2</text>
+<polyline fill="none" stroke="black" points="171,-231.5 171,-267.5 "/>
+<text text-anchor="middle" x="199.5" y="-252.9" font-family="Times,serif" font-size="12.00">core 3</text>
+<text text-anchor="middle" x="199.5" y="-239.9" font-family="Times,serif" font-size="12.00">AX=3</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M114,-304.69C114,-296.61 114,-286.8 114,-277.76"/>
+<polygon fill="black" stroke="black" points="117.5,-277.65 114,-267.65 110.5,-277.65 117.5,-277.65"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M334,-267.5C334,-267.5 258,-267.5 258,-267.5 252,-267.5 246,-261.5 246,-255.5 246,-255.5 246,-243.5 246,-243.5 246,-237.5 252,-231.5 258,-231.5 258,-231.5 334,-231.5 334,-231.5 340,-231.5 346,-237.5 346,-243.5 346,-243.5 346,-255.5 346,-255.5 346,-261.5 340,-267.5 334,-267.5"/>
+<text text-anchor="middle" x="296" y="-252.9" font-family="Times,serif" font-size="12.00">want register</text>
+<text text-anchor="middle" x="296" y="-239.9" font-family="Times,serif" font-size="12.00">0111</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M132,-146.5C132,-146.5 336,-146.5 336,-146.5 342,-146.5 348,-152.5 348,-158.5 348,-158.5 348,-170.5 348,-170.5 348,-176.5 342,-182.5 336,-182.5 336,-182.5 132,-182.5 132,-182.5 126,-182.5 120,-176.5 120,-170.5 120,-170.5 120,-158.5 120,-158.5 120,-152.5 126,-146.5 132,-146.5"/>
+<text text-anchor="middle" x="148.5" y="-161.4" font-family="Times,serif" font-size="12.00">same?</text>
+<polyline fill="none" stroke="black" points="177,-146.5 177,-182.5 "/>
+<text text-anchor="middle" x="205.5" y="-161.4" font-family="Times,serif" font-size="12.00">same?</text>
+<polyline fill="none" stroke="black" points="234,-146.5 234,-182.5 "/>
+<text text-anchor="middle" x="262.5" y="-161.4" font-family="Times,serif" font-size="12.00">same?</text>
+<polyline fill="none" stroke="black" points="291,-146.5 291,-182.5 "/>
+<text text-anchor="middle" x="319.5" y="-161.4" font-family="Times,serif" font-size="12.00">same?</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M283.15,-231.3C274.42,-219.62 262.73,-203.96 252.94,-190.85"/>
+<polygon fill="black" stroke="black" points="255.62,-188.59 246.83,-182.68 250.01,-192.78 255.62,-188.59"/>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M138.86,-231.3C156.8,-218.89 181.22,-202.01 200.82,-188.45"/>
+<polygon fill="black" stroke="black" points="202.93,-191.24 209.17,-182.68 198.95,-185.49 202.93,-191.24"/>
+<text text-anchor="middle" x="207.5" y="-204.2" font-family="Times,serif" font-size="11.00">accepted</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M249,-109C249,-109 219,-109 219,-109 213,-109 207,-103 207,-97 207,-97 207,-85 207,-85 207,-79 213,-73 219,-73 219,-73 249,-73 249,-73 255,-73 261,-79 261,-85 261,-85 261,-97 261,-97 261,-103 255,-109 249,-109"/>
+<text text-anchor="middle" x="234" y="-87.9" font-family="Times,serif" font-size="12.00">AND</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M234,-146.19C234,-138.11 234,-128.3 234,-119.26"/>
+<polygon fill="black" stroke="black" points="237.5,-119.15 234,-109.15 230.5,-119.15 237.5,-119.15"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M254,-36C254,-36 214,-36 214,-36 208,-36 202,-30 202,-24 202,-24 202,-12 202,-12 202,-6 208,0 214,0 214,0 254,0 254,0 260,0 266,-6 266,-12 266,-12 266,-24 266,-24 266,-30 260,-36 254,-36"/>
+<text text-anchor="middle" x="234" y="-14.9" font-family="Times,serif" font-size="12.00">decides</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M234,-72.81C234,-64.79 234,-55.05 234,-46.07"/>
+<polygon fill="black" stroke="black" points="237.5,-46.03 234,-36.03 230.5,-46.03 237.5,-46.03"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The circuit, end to end" width="517pt" height="194pt"
+ viewBox="0.00 0.00 517.00 194.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 190)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-190 513,-190 513,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M103,-139.5C103,-139.5 12,-139.5 12,-139.5 6,-139.5 0,-133.5 0,-127.5 0,-127.5 0,-115.5 0,-115.5 0,-109.5 6,-103.5 12,-103.5 12,-103.5 103,-103.5 103,-103.5 109,-103.5 115,-109.5 115,-115.5 115,-115.5 115,-127.5 115,-127.5 115,-133.5 109,-139.5 103,-139.5"/>
+<text text-anchor="middle" x="57.5" y="-124.9" font-family="Times,serif" font-size="12.00">program register,</text>
+<text text-anchor="middle" x="57.5" y="-111.9" font-family="Times,serif" font-size="12.00">12 bits</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M168,-57.5C168,-57.5 198,-57.5 198,-57.5 204,-57.5 210,-63.5 210,-69.5 210,-69.5 210,-173.5 210,-173.5 210,-179.5 204,-185.5 198,-185.5 198,-185.5 168,-185.5 168,-185.5 162,-185.5 156,-179.5 156,-173.5 156,-173.5 156,-69.5 156,-69.5 156,-63.5 162,-57.5 168,-57.5"/>
+<text text-anchor="middle" x="183" y="-172.9" font-family="Times,serif" font-size="12.00">core 0</text>
+<text text-anchor="middle" x="183" y="-159.9" font-family="Times,serif" font-size="12.00">AX=0</text>
+<polyline fill="none" stroke="black" points="156,-153.5 210,-153.5 "/>
+<text text-anchor="middle" x="183" y="-140.9" font-family="Times,serif" font-size="12.00">core 1</text>
+<text text-anchor="middle" x="183" y="-127.9" font-family="Times,serif" font-size="12.00">AX=1</text>
+<polyline fill="none" stroke="black" points="156,-121.5 210,-121.5 "/>
+<text text-anchor="middle" x="183" y="-108.9" font-family="Times,serif" font-size="12.00">core 2</text>
+<text text-anchor="middle" x="183" y="-95.9" font-family="Times,serif" font-size="12.00">AX=2</text>
+<polyline fill="none" stroke="black" points="156,-89.5 210,-89.5 "/>
+<text text-anchor="middle" x="183" y="-76.9" font-family="Times,serif" font-size="12.00">core 3</text>
+<text text-anchor="middle" x="183" y="-63.9" font-family="Times,serif" font-size="12.00">AX=3</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M115.19,-121.5C125.51,-121.5 136.02,-121.5 145.56,-121.5"/>
+<polygon fill="black" stroke="black" points="145.85,-125 155.85,-121.5 145.85,-118 145.85,-125"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M216,-47.5C216,-47.5 150,-47.5 150,-47.5 144,-47.5 138,-41.5 138,-35.5 138,-35.5 138,-23.5 138,-23.5 138,-17.5 144,-11.5 150,-11.5 150,-11.5 216,-11.5 216,-11.5 222,-11.5 228,-17.5 228,-23.5 228,-23.5 228,-35.5 228,-35.5 228,-41.5 222,-47.5 216,-47.5"/>
+<text text-anchor="middle" x="183" y="-32.9" font-family="Times,serif" font-size="12.00">want register</text>
+<text text-anchor="middle" x="183" y="-19.9" font-family="Times,serif" font-size="12.00">0111</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M313,-0.5C313,-0.5 343,-0.5 343,-0.5 349,-0.5 355,-6.5 355,-12.5 355,-12.5 355,-64.5 355,-64.5 355,-70.5 349,-76.5 343,-76.5 343,-76.5 313,-76.5 313,-76.5 307,-76.5 301,-70.5 301,-64.5 301,-64.5 301,-12.5 301,-12.5 301,-6.5 307,-0.5 313,-0.5"/>
+<text text-anchor="middle" x="328" y="-63.9" font-family="Times,serif" font-size="12.00">same?</text>
+<polyline fill="none" stroke="black" points="301,-57.5 355,-57.5 "/>
+<text text-anchor="middle" x="328" y="-44.9" font-family="Times,serif" font-size="12.00">same?</text>
+<polyline fill="none" stroke="black" points="301,-38.5 355,-38.5 "/>
+<text text-anchor="middle" x="328" y="-25.9" font-family="Times,serif" font-size="12.00">same?</text>
+<polyline fill="none" stroke="black" points="301,-19.5 355,-19.5 "/>
+<text text-anchor="middle" x="328" y="-6.9" font-family="Times,serif" font-size="12.00">same?</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M228.07,-32.27C248.15,-33.54 271.63,-35.02 290.68,-36.21"/>
+<polygon fill="black" stroke="black" points="290.55,-39.71 300.75,-36.85 290.99,-32.73 290.55,-39.71"/>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M210.23,-106.28C233.21,-92.94 266.79,-73.45 292.04,-58.79"/>
+<polygon fill="black" stroke="black" points="294.05,-61.67 300.94,-53.63 290.53,-55.62 294.05,-61.67"/>
+<text text-anchor="middle" x="264.5" y="-89.7" font-family="Times,serif" font-size="11.00">accepted</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M420,-56.5C420,-56.5 390,-56.5 390,-56.5 384,-56.5 378,-50.5 378,-44.5 378,-44.5 378,-32.5 378,-32.5 378,-26.5 384,-20.5 390,-20.5 390,-20.5 420,-20.5 420,-20.5 426,-20.5 432,-26.5 432,-32.5 432,-32.5 432,-44.5 432,-44.5 432,-50.5 426,-56.5 420,-56.5"/>
+<text text-anchor="middle" x="405" y="-35.4" font-family="Times,serif" font-size="12.00">AND</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M355.23,-38.5C359.25,-38.5 363.46,-38.5 367.65,-38.5"/>
+<polygon fill="black" stroke="black" points="367.91,-42 377.91,-38.5 367.91,-35 367.91,-42"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M497,-56.5C497,-56.5 467,-56.5 467,-56.5 461,-56.5 455,-50.5 455,-44.5 455,-44.5 455,-32.5 455,-32.5 455,-26.5 461,-20.5 467,-20.5 467,-20.5 497,-20.5 497,-20.5 503,-20.5 509,-26.5 509,-32.5 509,-32.5 509,-44.5 509,-44.5 509,-50.5 503,-56.5 497,-56.5"/>
+<text text-anchor="middle" x="482" y="-35.4" font-family="Times,serif" font-size="12.00">decides</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M432.23,-38.5C436.25,-38.5 440.46,-38.5 444.65,-38.5"/>
+<polygon fill="black" stroke="black" points="444.91,-42 454.91,-38.5 444.91,-35 444.91,-42"/>
+</g>
+</g>
+</svg><figcaption>The circuit, end to end</figcaption></figure><h2 id="one-core">One core <a class="section-link" href="#one-core" aria-label="Link to this section">§</a></h2>
+<p>A core is the machine itself, unrolled. Its <code>AX</code> register is wired to its input&#39;s number, and six step units sit in a chain, each fed by the one before it and by its own line&#39;s two bits from the program register. What leaves the sixth unit&#39;s <code>accepted</code> wire is the core&#39;s answer.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One core: six step units in a chain" width="651pt" height="55pt"
+ viewBox="0.00 0.00 651.00 55.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 51)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-51 647,-51 647,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M85,-47C85,-47 12,-47 12,-47 6,-47 0,-41 0,-35 0,-35 0,-12 0,-12 0,-6 6,0 12,0 12,0 85,0 85,0 91,0 97,-6 97,-12 97,-12 97,-35 97,-35 97,-41 91,-47 85,-47"/>
+<text text-anchor="middle" x="48.5" y="-33.4" font-family="Times,serif" font-size="12.00">AX = input</text>
+<text text-anchor="middle" x="48.5" y="-20.4" font-family="Times,serif" font-size="12.00">halted = 0</text>
+<text text-anchor="middle" x="48.5" y="-7.4" font-family="Times,serif" font-size="12.00">accepted = 0</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M176,-41.5C176,-41.5 145,-41.5 145,-41.5 139,-41.5 133,-35.5 133,-29.5 133,-29.5 133,-17.5 133,-17.5 133,-11.5 139,-5.5 145,-5.5 145,-5.5 176,-5.5 176,-5.5 182,-5.5 188,-11.5 188,-17.5 188,-17.5 188,-29.5 188,-29.5 188,-35.5 182,-41.5 176,-41.5"/>
+<text text-anchor="middle" x="160.5" y="-20.4" font-family="Times,serif" font-size="12.00">step 1</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M97.11,-23.5C105.68,-23.5 114.5,-23.5 122.71,-23.5"/>
+<polygon fill="black" stroke="black" points="122.71,-27 132.71,-23.5 122.71,-20 122.71,-27"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M267,-41.5C267,-41.5 236,-41.5 236,-41.5 230,-41.5 224,-35.5 224,-29.5 224,-29.5 224,-17.5 224,-17.5 224,-11.5 230,-5.5 236,-5.5 236,-5.5 267,-5.5 267,-5.5 273,-5.5 279,-11.5 279,-17.5 279,-17.5 279,-29.5 279,-29.5 279,-35.5 273,-41.5 267,-41.5"/>
+<text text-anchor="middle" x="251.5" y="-20.4" font-family="Times,serif" font-size="12.00">step 2</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M188.2,-23.5C196.21,-23.5 205.14,-23.5 213.68,-23.5"/>
+<polygon fill="black" stroke="black" points="213.82,-27 223.82,-23.5 213.82,-20 213.82,-27"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M358,-41.5C358,-41.5 327,-41.5 327,-41.5 321,-41.5 315,-35.5 315,-29.5 315,-29.5 315,-17.5 315,-17.5 315,-11.5 321,-5.5 327,-5.5 327,-5.5 358,-5.5 358,-5.5 364,-5.5 370,-11.5 370,-17.5 370,-17.5 370,-29.5 370,-29.5 370,-35.5 364,-41.5 358,-41.5"/>
+<text text-anchor="middle" x="342.5" y="-20.4" font-family="Times,serif" font-size="12.00">step 3</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M279.2,-23.5C287.21,-23.5 296.14,-23.5 304.68,-23.5"/>
+<polygon fill="black" stroke="black" points="304.82,-27 314.82,-23.5 304.82,-20 304.82,-27"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M449,-41.5C449,-41.5 418,-41.5 418,-41.5 412,-41.5 406,-35.5 406,-29.5 406,-29.5 406,-17.5 406,-17.5 406,-11.5 412,-5.5 418,-5.5 418,-5.5 449,-5.5 449,-5.5 455,-5.5 461,-11.5 461,-17.5 461,-17.5 461,-29.5 461,-29.5 461,-35.5 455,-41.5 449,-41.5"/>
+<text text-anchor="middle" x="433.5" y="-20.4" font-family="Times,serif" font-size="12.00">step 4</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M370.2,-23.5C378.21,-23.5 387.14,-23.5 395.68,-23.5"/>
+<polygon fill="black" stroke="black" points="395.82,-27 405.82,-23.5 395.82,-20 395.82,-27"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M540,-41.5C540,-41.5 509,-41.5 509,-41.5 503,-41.5 497,-35.5 497,-29.5 497,-29.5 497,-17.5 497,-17.5 497,-11.5 503,-5.5 509,-5.5 509,-5.5 540,-5.5 540,-5.5 546,-5.5 552,-11.5 552,-17.5 552,-17.5 552,-29.5 552,-29.5 552,-35.5 546,-41.5 540,-41.5"/>
+<text text-anchor="middle" x="524.5" y="-20.4" font-family="Times,serif" font-size="12.00">step 5</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M461.2,-23.5C469.21,-23.5 478.14,-23.5 486.68,-23.5"/>
+<polygon fill="black" stroke="black" points="486.82,-27 496.82,-23.5 486.82,-20 486.82,-27"/>
+</g>
+<g id="node7" class="node">
+<path fill="none" stroke="black" d="M631,-41.5C631,-41.5 600,-41.5 600,-41.5 594,-41.5 588,-35.5 588,-29.5 588,-29.5 588,-17.5 588,-17.5 588,-11.5 594,-5.5 600,-5.5 600,-5.5 631,-5.5 631,-5.5 637,-5.5 643,-11.5 643,-17.5 643,-17.5 643,-29.5 643,-29.5 643,-35.5 637,-41.5 631,-41.5"/>
+<text text-anchor="middle" x="615.5" y="-20.4" font-family="Times,serif" font-size="12.00">step 6</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M552.2,-23.5C560.21,-23.5 569.14,-23.5 577.68,-23.5"/>
+<polygon fill="black" stroke="black" points="577.82,-27 587.82,-23.5 577.82,-20 577.82,-27"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One core: six step units in a chain" width="95pt" height="401pt"
+ viewBox="0.00 0.00 95.00 401.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 397)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-397 91,-397 91,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M75,-393C75,-393 12,-393 12,-393 6,-393 0,-387 0,-381 0,-381 0,-360 0,-360 0,-354 6,-348 12,-348 12,-348 75,-348 75,-348 81,-348 87,-354 87,-360 87,-360 87,-381 87,-381 87,-387 81,-393 75,-393"/>
+<text text-anchor="middle" x="43.5" y="-380.4" font-family="Times,serif" font-size="12.00">AX = input</text>
+<text text-anchor="middle" x="43.5" y="-367.4" font-family="Times,serif" font-size="12.00">halted = 0</text>
+<text text-anchor="middle" x="43.5" y="-354.4" font-family="Times,serif" font-size="12.00">accepted = 0</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M58.5,-326C58.5,-326 28.5,-326 28.5,-326 22.5,-326 16.5,-320 16.5,-314 16.5,-314 16.5,-302 16.5,-302 16.5,-296 22.5,-290 28.5,-290 28.5,-290 58.5,-290 58.5,-290 64.5,-290 70.5,-296 70.5,-302 70.5,-302 70.5,-314 70.5,-314 70.5,-320 64.5,-326 58.5,-326"/>
+<text text-anchor="middle" x="43.5" y="-304.9" font-family="Times,serif" font-size="12.00">step 1</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M43.5,-348C43.5,-344.17 43.5,-340.15 43.5,-336.19"/>
+<polygon fill="black" stroke="black" points="47,-336.06 43.5,-326.06 40,-336.06 47,-336.06"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M58.5,-268C58.5,-268 28.5,-268 28.5,-268 22.5,-268 16.5,-262 16.5,-256 16.5,-256 16.5,-244 16.5,-244 16.5,-238 22.5,-232 28.5,-232 28.5,-232 58.5,-232 58.5,-232 64.5,-232 70.5,-238 70.5,-244 70.5,-244 70.5,-256 70.5,-256 70.5,-262 64.5,-268 58.5,-268"/>
+<text text-anchor="middle" x="43.5" y="-246.9" font-family="Times,serif" font-size="12.00">step 2</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M43.5,-289.89C43.5,-286.2 43.5,-282.21 43.5,-278.24"/>
+<polygon fill="black" stroke="black" points="47,-278 43.5,-268 40,-278 47,-278"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M58.5,-210C58.5,-210 28.5,-210 28.5,-210 22.5,-210 16.5,-204 16.5,-198 16.5,-198 16.5,-186 16.5,-186 16.5,-180 22.5,-174 28.5,-174 28.5,-174 58.5,-174 58.5,-174 64.5,-174 70.5,-180 70.5,-186 70.5,-186 70.5,-198 70.5,-198 70.5,-204 64.5,-210 58.5,-210"/>
+<text text-anchor="middle" x="43.5" y="-188.9" font-family="Times,serif" font-size="12.00">step 3</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M43.5,-231.89C43.5,-228.2 43.5,-224.21 43.5,-220.24"/>
+<polygon fill="black" stroke="black" points="47,-220 43.5,-210 40,-220 47,-220"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M58.5,-152C58.5,-152 28.5,-152 28.5,-152 22.5,-152 16.5,-146 16.5,-140 16.5,-140 16.5,-128 16.5,-128 16.5,-122 22.5,-116 28.5,-116 28.5,-116 58.5,-116 58.5,-116 64.5,-116 70.5,-122 70.5,-128 70.5,-128 70.5,-140 70.5,-140 70.5,-146 64.5,-152 58.5,-152"/>
+<text text-anchor="middle" x="43.5" y="-130.9" font-family="Times,serif" font-size="12.00">step 4</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M43.5,-173.89C43.5,-170.2 43.5,-166.21 43.5,-162.24"/>
+<polygon fill="black" stroke="black" points="47,-162 43.5,-152 40,-162 47,-162"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M58.5,-94C58.5,-94 28.5,-94 28.5,-94 22.5,-94 16.5,-88 16.5,-82 16.5,-82 16.5,-70 16.5,-70 16.5,-64 22.5,-58 28.5,-58 28.5,-58 58.5,-58 58.5,-58 64.5,-58 70.5,-64 70.5,-70 70.5,-70 70.5,-82 70.5,-82 70.5,-88 64.5,-94 58.5,-94"/>
+<text text-anchor="middle" x="43.5" y="-72.9" font-family="Times,serif" font-size="12.00">step 5</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M43.5,-115.89C43.5,-112.2 43.5,-108.21 43.5,-104.24"/>
+<polygon fill="black" stroke="black" points="47,-104 43.5,-94 40,-104 47,-104"/>
+</g>
+<g id="node7" class="node">
+<path fill="none" stroke="black" d="M58.5,-36C58.5,-36 28.5,-36 28.5,-36 22.5,-36 16.5,-30 16.5,-24 16.5,-24 16.5,-12 16.5,-12 16.5,-6 22.5,0 28.5,0 28.5,0 58.5,0 58.5,0 64.5,0 70.5,-6 70.5,-12 70.5,-12 70.5,-24 70.5,-24 70.5,-30 64.5,-36 58.5,-36"/>
+<text text-anchor="middle" x="43.5" y="-14.9" font-family="Times,serif" font-size="12.00">step 6</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M43.5,-57.89C43.5,-54.2 43.5,-50.21 43.5,-46.24"/>
+<polygon fill="black" stroke="black" points="47,-46 43.5,-36 40,-46 47,-46"/>
+</g>
+</g>
+</svg><figcaption>One core: six step units in a chain</figcaption></figure><p>Each step unit is the step of <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> built from gates: six wires in (<code>hb</code>, <code>lb</code>, <code>halted</code>, <code>accepted</code> and the line&#39;s <code>op_hb</code>, <code>op_lb</code>), four wires out, and between them the gates for complement, AND and OR that the step polynomials spell as 1 - x, xy and x + y - xy. Four cores of six units make 24 step units in all, every one the same.</p>
+<h2 id="a-program-through-it">A program through it <a class="section-link" href="#a-program-through-it" aria-label="Link to this section">§</a></h2>
+<p>Load the want register with <code>0111</code> and the program register with <code>decr, mod2, zero, decr, zero, nada</code>, the five-line answer to <code>is_not_tiny</code>, whose bits are <code>10 11 01 10 01 00</code>. The four cores settle like this:</p>
+<table>
+<thead>
+<tr>
+<th>core</th>
+<th>the run</th>
+<th>accepted</th>
+<th>want</th>
+<th>same?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>decr</code> finds <code>AX</code> at 0: reject</td>
+<td>0</td>
+<td>0</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>decr</code> to 0, <code>mod2</code> keeps 0, <code>zero</code>: accept</td>
+<td>1</td>
+<td>1</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>decr</code> to 1, <code>mod2</code> keeps 1, <code>zero</code> passes, <code>decr</code> to 0, <code>zero</code>: accept</td>
+<td>1</td>
+<td>1</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>decr</code> to 2, <code>mod2</code> folds 2 to 0, <code>zero</code>: accept</td>
+<td>1</td>
+<td>1</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>All four comparators say yes, so the AND lights &quot;decides&quot;. Change one program bit and some core&#39;s answer flips, its comparator reports a mismatch, and the light goes out.</p>
+<h2 id="why-the-circuit-matters">Why the circuit matters <a class="section-link" href="#why-the-circuit-matters" aria-label="Link to this section">§</a></h2>
+<p>Fix the want register and leave the program register&#39;s twelve bits free, and the circuit asks a question: is there a setting of these twelve inputs that lights the output? That is circuit satisfiability, and <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> writes this very circuit as clauses, gate by gate, for a SAT solver to answer.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-polynomials-in-full.html"><small>Previous</small>The polynomials, in full</a>
+<a rel="next" href="cook-levin-as-sat.html"><small>Next</small>Cook-Levin as SAT</a>
+</nav>
+</main>
+</body>
+</html>
