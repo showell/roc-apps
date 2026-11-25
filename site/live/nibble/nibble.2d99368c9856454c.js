@@ -202,9 +202,18 @@ function runAll(trace, verdict, next) {
     drawNav();
   } else {
     verdict.className = "verdict bad";
-    const should = wantOf(p, wrong) === "accept" ? "be accepted" : "be rejected";
-    verdict.textContent = `Input ${wrong} should ${should}, and your program ${outcome[wrong] === "accept" ? "accepted" : "rejected"} it.`;
+    verdict.textContent = wrongText(INPUTS.filter((n) => !ok[n] && outcome[n] === "accept"), INPUTS.filter((n) => !ok[n] && outcome[n] !== "accept"));
   }
+}
+
+// Every way the program is wrong: "Your program falsely accepts 0. It
+// falsely rejects 2 and 3."
+const listed = (ns) => (ns.length === 1 ? String(ns[0]) : `${ns.slice(0, -1).join(", ")} and ${ns[ns.length - 1]}`);
+function wrongText(accepted, rejected) {
+  const parts = [];
+  if (accepted.length) parts.push(`falsely accepts ${listed(accepted)}.`);
+  if (rejected.length) parts.push(`falsely rejects ${listed(rejected)}.`);
+  return `Your program ${parts[0]}${parts.length > 1 ? ` It ${parts[1]}` : ""}`;
 }
 
 document.getElementById("loading")?.remove();
