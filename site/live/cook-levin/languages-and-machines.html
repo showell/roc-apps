@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Languages and machines · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="how-it-got-here.html"><span class="number">2</span>How it got here</a></li>
+<li><a href="the-machine.html"><span class="number">3</span>The machine</a></li>
+<li class="here"><a href="languages-and-machines.html"><span class="number">4</span>Languages and machines</a><ol class="sections"><li><a href="languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="languages-and-machines.html#when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is</a></li><li><a href="languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">6</span>Nibble, the puzzle page</a></li>
+<li><a href="arithmetization.html"><span class="number">7</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">10</span>Cook-Levin as SAT</a></li>
+<li><a href="the-oracles.html"><span class="number">11</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">12</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">13</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 4</p>
+<h1 id="languages-and-machines">Languages and machines</h1>
+<p>In computer science a <em>language</em> is a set of strings. Pick an alphabet, say the digits 0 to 9, and any set of strings over it is a language: the decimal numerals of the primes, the palindromes, the strings that are valid Roc programs. A language is the cleanest way to state a decision question. &quot;Is 91 prime?&quot; becomes &quot;is the string <code>91</code> in the language of primes?&quot;</p>
+<h2 id="machines-that-decide">Machines that decide <a class="section-link" href="#machines-that-decide" aria-label="Link to this section">§</a></h2>
+<p>A machine <em>decides</em> a language when, given any string, it halts, accepting the strings in the language and rejecting the rest. A program that decides the primes is a primality test; a compiler&#39;s parser decides the language of well-formed programs, and rejects the rest with an error.</p>
+<h2 id="turings-machine">Turing&#39;s machine <a class="section-link" href="#turings-machine" aria-label="Link to this section">§</a></h2>
+<p>In 1936 Alan Turing described a machine with a finite set of states and an unbounded tape, in &quot;On Computable Numbers, with an Application to the Entscheidungsproblem&quot;. It reads and writes the tape one cell at a time, and every algorithm anyone has written since can be carried out by such a machine; that claim is the Church-Turing thesis. Turing also showed that some languages are undecidable: whatever machine one builds for them, some string defeats it. The best known is the halting problem, the language of programs that halt on their input. A machine can <em>recognize</em> it, accepting every member by running it, but for some strings outside the language it runs forever, still waiting to answer.</p>
+<h2 id="when-deciding-is-cheap-and-when-checking-is">When deciding is cheap, and when checking is <a class="section-link" href="#when-deciding-is-cheap-and-when-checking-is" aria-label="Link to this section">§</a></h2>
+<p>Decidable languages differ in cost. P is the class decided in time polynomial in the input&#39;s length. NP is the class whose members have short certificates that a machine can check in polynomial time: a formula is in SAT, the language of satisfiable Boolean formulas, when an assignment makes it true, and checking an assignment is quick. In 1971 Stephen Cook, in &quot;The Complexity of Theorem-Proving Procedures&quot;, and independently Leonid Levin, published in 1973, showed that SAT is as hard as anything in NP. Their proof takes the checking machine, which runs for a polynomial number of steps, and writes each step of its run as clauses: the whole run becomes one formula, satisfiable exactly when a certificate exists.</p>
+<h2 id="this-books-machine">This book&#39;s machine <a class="section-link" href="#this-books-machine" aria-label="Link to this section">§</a></h2>
+<p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four strings 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything. A language is a subset of {0, 1, 2, 3}, and there are 16. A program decides exactly one of them, the set of inputs it accepts. <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> asks which programs decide which languages, by running all of them. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> does what Cook and Levin did: it writes the machine&#39;s six steps as clauses, so a puzzle&#39;s answer becomes a satisfying assignment.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-machine.html"><small>Previous</small>The machine</a>
+<a rel="next" href="programs-as-languages.html"><small>Next</small>Programs as languages</a>
+</nav>
+</main>
+</body>
+</html>
