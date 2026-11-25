@@ -8,10 +8,10 @@
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 <style>
-figure.polynomial { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
-figure.polynomial figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
-figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
-@media (max-width: 700px) { figure.polynomial { margin-inline: -0.5rem; } figure.polynomial figcaption, figure.polynomial pre { padding-inline: 0.6rem; } }
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
 </style></head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
@@ -29,19 +29,19 @@ figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: non
 <li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a></li>
 <li><a href="cook-levin-as-sat.html"><span class="number">12</span>Cook-Levin as SAT</a></li>
-<li><a href="the-oracles.html"><span class="number">13</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">14</span>The Roc port</a></li>
-<li class="here"><a href="what-comes-next.html"><span class="number">15</span>What comes next</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">13</span>The solver&#39;s work, in full</a></li>
+<li><a href="the-oracles.html"><span class="number">14</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">15</span>The Roc port</a></li>
+<li class="here"><a href="what-comes-next.html"><span class="number">16</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 15</p>
+<p class="chapter-number">Chapter 16</p>
 <h1 id="what-comes-next">What comes next</h1>
 <p>A few steps stand open, each small:</p>
 <ul>
-<li><strong>The DRAT proofs</strong> are written to <code>out/sat/</code> and left unchecked; a checker such as drat-trim would close that loop.</li>
 <li><strong>The C&#39;s dense table.</strong> The C composition could sum like terms in the Roc port&#39;s dense table, and its time would then measure the language.</li>
 <li><strong>The compiled JavaScript.</strong> Its slowness is unprofiled. <code>README.md</code> guesses that an array&#39;s items are values of unknown kind to the compiler, so each read and write passes the runtime&#39;s tag checks.</li>
 <li><strong>Nondeterminism.</strong> The machine is deterministic. The SAT encoding already treats the program as the unknown, which is the theorem&#39;s &quot;a certificate exists&quot;; a machine with choice instructions would make the riff closer to the theorem.</li>

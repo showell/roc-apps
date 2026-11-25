@@ -8,10 +8,10 @@
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 <style>
-figure.polynomial { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
-figure.polynomial figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
-figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
-@media (max-width: 700px) { figure.polynomial { margin-inline: -0.5rem; } figure.polynomial figcaption, figure.polynomial pre { padding-inline: 0.6rem; } }
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
 </style></head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
@@ -27,11 +27,12 @@ figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: non
 <li><a href="why-composing-blew-up.html"><span class="number">8</span>Why composing blew up</a></li>
 <li><a href="six-steps-composed.html"><span class="number">9</span>Six steps composed</a></li>
 <li><a href="the-polynomials-in-full.html"><span class="number">10</span>The polynomials, in full</a></li>
-<li class="here"><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a><ol class="sections"><li><a href="the-machine-as-a-circuit.html#the-whole-circuit">The whole circuit</a></li><li><a href="the-machine-as-a-circuit.html#one-core">One core</a></li><li><a href="the-machine-as-a-circuit.html#a-program-through-it">A program through it</a></li><li><a href="the-machine-as-a-circuit.html#why-the-circuit-matters">Why the circuit matters</a></li></ol></li>
+<li class="here"><a href="the-machine-as-a-circuit.html"><span class="number">11</span>The machine as a circuit</a><ol class="sections"><li><a href="the-machine-as-a-circuit.html#the-whole-circuit">The whole circuit</a></li><li><a href="the-machine-as-a-circuit.html#one-core">One core</a></li><li><a href="the-machine-as-a-circuit.html#inside-a-step-unit">Inside a step unit</a></li><li><a href="the-machine-as-a-circuit.html#each-opcode-as-gates">Each opcode as gates</a></li><li><a href="the-machine-as-a-circuit.html#a-program-through-it">A program through it</a></li><li><a href="the-machine-as-a-circuit.html#why-the-circuit-matters">Why the circuit matters</a></li></ol></li>
 <li><a href="cook-levin-as-sat.html"><span class="number">12</span>Cook-Levin as SAT</a></li>
-<li><a href="the-oracles.html"><span class="number">13</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">14</span>The Roc port</a></li>
-<li><a href="what-comes-next.html"><span class="number">15</span>What comes next</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">13</span>The solver&#39;s work, in full</a></li>
+<li><a href="the-oracles.html"><span class="number">14</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">15</span>The Roc port</a></li>
+<li><a href="what-comes-next.html"><span class="number">16</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -298,7 +299,301 @@ figure.polynomial pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: non
 </g>
 </g>
 </svg><figcaption>One core: six step units in a chain</figcaption></figure><p>Each step unit is the step of <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> built from gates: six wires in (<code>hb</code>, <code>lb</code>, <code>halted</code>, <code>accepted</code> and the line&#39;s <code>op_hb</code>, <code>op_lb</code>), four wires out, and between them the gates for complement, AND and OR that the step polynomials spell as 1 - x, xy and x + y - xy. Four cores of six units make 24 step units in all, every one the same.</p>
-<h2 id="a-program-through-it">A program through it <a class="section-link" href="#a-program-through-it" aria-label="Link to this section">§</a></h2>
+<h2 id="inside-a-step-unit">Inside a step unit <a class="section-link" href="#inside-a-step-unit" aria-label="Link to this section">§</a></h2>
+<p>A step unit is built from two-input AND and OR gates and inverters, and its layout is a classic one: decode, compute every opcode at once, select. Its gates are exactly <code>sat_step</code> in <code>src/sat.c</code>, and <code>tests/test_sat.c</code> holds them to the machine&#39;s step on all 64 settings of the unit&#39;s six input wires.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One step unit" width="344pt" height="272pt"
+ viewBox="0.00 0.00 343.50 272.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 268)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-268 339.5,-268 339.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M111,-264C111,-264 12,-264 12,-264 6,-264 0,-258 0,-252 0,-252 0,-240 0,-240 0,-234 6,-228 12,-228 12,-228 111,-228 111,-228 117,-228 123,-234 123,-240 123,-240 123,-252 123,-252 123,-258 117,-264 111,-264"/>
+<text text-anchor="middle" x="61.5" y="-249.4" font-family="Times,serif" font-size="12.00">AX decoder</text>
+<text text-anchor="middle" x="61.5" y="-236.4" font-family="Times,serif" font-size="12.00">is_0 is_1 is_2 is_3</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M65.5,-155.5C65.5,-155.5 233.5,-155.5 233.5,-155.5 239.5,-155.5 245.5,-161.5 245.5,-167.5 245.5,-167.5 245.5,-179.5 245.5,-179.5 245.5,-185.5 239.5,-191.5 233.5,-191.5 233.5,-191.5 65.5,-191.5 65.5,-191.5 59.5,-191.5 53.5,-185.5 53.5,-179.5 53.5,-179.5 53.5,-167.5 53.5,-167.5 53.5,-161.5 59.5,-155.5 65.5,-155.5"/>
+<text text-anchor="middle" x="78" y="-170.4" font-family="Times,serif" font-size="12.00">nada</text>
+<polyline fill="none" stroke="black" points="102.5,-155.5 102.5,-191.5 "/>
+<text text-anchor="middle" x="125" y="-170.4" font-family="Times,serif" font-size="12.00">zero</text>
+<polyline fill="none" stroke="black" points="147.5,-155.5 147.5,-191.5 "/>
+<text text-anchor="middle" x="170.5" y="-170.4" font-family="Times,serif" font-size="12.00">decr</text>
+<polyline fill="none" stroke="black" points="193.5,-155.5 193.5,-191.5 "/>
+<text text-anchor="middle" x="219.5" y="-170.4" font-family="Times,serif" font-size="12.00">mod2</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M82.8,-227.93C93.96,-218.99 107.8,-207.91 119.98,-198.15"/>
+<polygon fill="black" stroke="black" points="122.47,-200.64 128.09,-191.65 118.1,-195.17 122.47,-200.64"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M323.5,-264C323.5,-264 153.5,-264 153.5,-264 147.5,-264 141.5,-258 141.5,-252 141.5,-252 141.5,-240 141.5,-240 141.5,-234 147.5,-228 153.5,-228 153.5,-228 323.5,-228 323.5,-228 329.5,-228 335.5,-234 335.5,-240 335.5,-240 335.5,-252 335.5,-252 335.5,-258 329.5,-264 323.5,-264"/>
+<text text-anchor="middle" x="238.5" y="-249.4" font-family="Times,serif" font-size="12.00">op decoder + halted</text>
+<text text-anchor="middle" x="238.5" y="-236.4" font-family="Times,serif" font-size="12.00">enable: nada zero decr mod2</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M216.96,-227.93C205.56,-218.91 191.4,-207.69 179,-197.87"/>
+<polygon fill="black" stroke="black" points="181.17,-195.12 171.15,-191.65 176.82,-200.61 181.17,-195.12"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M249.5,-119C249.5,-119 49.5,-119 49.5,-119 43.5,-119 37.5,-113 37.5,-107 37.5,-107 37.5,-84 37.5,-84 37.5,-78 43.5,-72 49.5,-72 49.5,-72 249.5,-72 249.5,-72 255.5,-72 261.5,-78 261.5,-84 261.5,-84 261.5,-107 261.5,-107 261.5,-113 255.5,-119 249.5,-119"/>
+<text text-anchor="middle" x="149.5" y="-105.4" font-family="Times,serif" font-size="12.00">OR together</text>
+<text text-anchor="middle" x="149.5" y="-92.4" font-family="Times,serif" font-size="12.00">becomes_1 becomes_2 becomes_3</text>
+<text text-anchor="middle" x="149.5" y="-79.4" font-family="Times,serif" font-size="12.00">accepts, halts</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M149.5,-155.25C149.5,-147.57 149.5,-138.26 149.5,-129.34"/>
+<polygon fill="black" stroke="black" points="153,-129.16 149.5,-119.16 146,-129.16 153,-129.16"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M217.5,-36C217.5,-36 81.5,-36 81.5,-36 75.5,-36 69.5,-30 69.5,-24 69.5,-24 69.5,-12 69.5,-12 69.5,-6 75.5,0 81.5,0 81.5,0 217.5,0 217.5,0 223.5,0 229.5,-6 229.5,-12 229.5,-12 229.5,-24 229.5,-24 229.5,-30 223.5,-36 217.5,-36"/>
+<text text-anchor="middle" x="149.5" y="-14.9" font-family="Times,serif" font-size="12.00">hb&#39; lb&#39; halted&#39; accepted&#39;</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M149.5,-71.85C149.5,-63.78 149.5,-54.62 149.5,-46.22"/>
+<polygon fill="black" stroke="black" points="153,-46.11 149.5,-36.11 146,-46.11 153,-46.11"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One step unit" width="676pt" height="89pt"
+ viewBox="0.00 0.00 676.00 89.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 85)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-85 672,-85 672,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M136.5,-81C136.5,-81 47.5,-81 47.5,-81 41.5,-81 35.5,-75 35.5,-69 35.5,-69 35.5,-57 35.5,-57 35.5,-51 41.5,-45 47.5,-45 47.5,-45 136.5,-45 136.5,-45 142.5,-45 148.5,-51 148.5,-57 148.5,-57 148.5,-69 148.5,-69 148.5,-75 142.5,-81 136.5,-81"/>
+<text text-anchor="middle" x="92" y="-66.4" font-family="Times,serif" font-size="12.00">AX decoder</text>
+<text text-anchor="middle" x="92" y="-53.4" font-family="Times,serif" font-size="12.00">is_0 is_1 is_2 is_3</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M218,-2C218,-2 248,-2 248,-2 254,-2 260,-8 260,-14 260,-14 260,-66 260,-66 260,-72 254,-78 248,-78 248,-78 218,-78 218,-78 212,-78 206,-72 206,-66 206,-66 206,-14 206,-14 206,-8 212,-2 218,-2"/>
+<text text-anchor="middle" x="233" y="-65.4" font-family="Times,serif" font-size="12.00">nada</text>
+<polyline fill="none" stroke="black" points="206,-59 260,-59 "/>
+<text text-anchor="middle" x="233" y="-46.4" font-family="Times,serif" font-size="12.00">zero</text>
+<polyline fill="none" stroke="black" points="206,-40 260,-40 "/>
+<text text-anchor="middle" x="233" y="-27.4" font-family="Times,serif" font-size="12.00">decr</text>
+<polyline fill="none" stroke="black" points="206,-21 260,-21 "/>
+<text text-anchor="middle" x="233" y="-8.4" font-family="Times,serif" font-size="12.00">mod2</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M148.74,-53.78C164.66,-51.14 181.59,-48.34 195.99,-45.96"/>
+<polygon fill="black" stroke="black" points="196.69,-49.39 205.99,-44.3 195.55,-42.48 196.69,-49.39"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M172,-36C172,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 172,0 172,0 178,0 184,-6 184,-12 184,-12 184,-24 184,-24 184,-30 178,-36 172,-36"/>
+<text text-anchor="middle" x="92" y="-21.4" font-family="Times,serif" font-size="12.00">op decoder + halted</text>
+<text text-anchor="middle" x="92" y="-8.4" font-family="Times,serif" font-size="12.00">enable: nada zero decr mod2</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M184.16,-32.43C188.17,-33.06 192.08,-33.68 195.81,-34.27"/>
+<polygon fill="black" stroke="black" points="195.42,-37.75 205.84,-35.86 196.52,-30.84 195.42,-37.75"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M484,-69C484,-69 294,-69 294,-69 288,-69 282,-63 282,-57 282,-57 282,-23 282,-23 282,-17 288,-11 294,-11 294,-11 484,-11 484,-11 490,-11 496,-17 496,-23 496,-23 496,-57 496,-57 496,-63 490,-69 484,-69"/>
+<text text-anchor="middle" x="389" y="-56.4" font-family="Times,serif" font-size="12.00">OR together</text>
+<text text-anchor="middle" x="389" y="-43.4" font-family="Times,serif" font-size="12.00">becomes_1 becomes_2 becomes_3</text>
+<text text-anchor="middle" x="389" y="-30.4" font-family="Times,serif" font-size="12.00">accepts,</text>
+<text text-anchor="middle" x="389" y="-17.4" font-family="Times,serif" font-size="12.00">halts</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M260.12,-40C263.79,-40 267.74,-40 271.89,-40"/>
+<polygon fill="black" stroke="black" points="271.93,-43.5 281.93,-40 271.93,-36.5 271.93,-43.5"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M656,-58C656,-58 530,-58 530,-58 524,-58 518,-52 518,-46 518,-46 518,-34 518,-34 518,-28 524,-22 530,-22 530,-22 656,-22 656,-22 662,-22 668,-28 668,-34 668,-34 668,-46 668,-46 668,-52 662,-58 656,-58"/>
+<text text-anchor="middle" x="593" y="-36.9" font-family="Times,serif" font-size="12.00">hb&#39; lb&#39; halted&#39; accepted&#39;</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M496.03,-40C499.92,-40 503.81,-40 507.66,-40"/>
+<polygon fill="black" stroke="black" points="507.77,-43.5 517.77,-40 507.77,-36.5 507.77,-43.5"/>
+</g>
+</g>
+</svg><figcaption>One step unit</figcaption></figure><ul>
+<li><strong>The AX decoder</strong> turns the two bits <code>hb</code>, <code>lb</code> into four one-hot wires, one per value: <code>is_0</code> is (complement of <code>hb</code>) AND (complement of <code>lb</code>), and so on, four AND gates.</li>
+<li><strong>The op decoder</strong> does the same to the line&#39;s two bits, giving one wire per opcode (<code>nada</code> 00, <code>zero</code> 01, <code>decr</code> 10, <code>mod2</code> 11). It then gates them with <code>halted</code>: a halted machine acts as <code>nada</code>, so <code>nada</code>&#39;s enable is its wire OR <code>halted</code>, and each other opcode&#39;s enable is its wire AND the complement of <code>halted</code>.</li>
+<li><strong>The four opcode modules</strong> each say, for their own opcode, which value <code>AX</code> becomes, and whether the step accepts or halts. Value 0 is what remains when <code>becomes_1</code>, <code>becomes_2</code> and <code>becomes_3</code> are all 0, so it takes care of itself.</li>
+<li><strong>The output stage</strong> ORs the four modules&#39; wires together, since only one module is enabled, then folds the one-hot value back into two bits: <code>hb&#39;</code> is <code>becomes_2</code> OR <code>becomes_3</code>, and <code>lb&#39;</code> is <code>becomes_1</code> OR <code>becomes_3</code>. The flags only ever turn on: <code>accepted&#39;</code> is <code>accepted</code> OR the step&#39;s accept, and <code>halted&#39;</code> likewise.</li>
+</ul>
+<h2 id="each-opcode-as-gates">Each opcode as gates <a class="section-link" href="#each-opcode-as-gates" aria-label="Link to this section">§</a></h2>
+<p>With <code>e</code> for the module&#39;s enable wire, every opcode is a handful of AND gates on the decoder&#39;s wires:</p>
+<table>
+<thead>
+<tr>
+<th>opcode</th>
+<th>becomes_1</th>
+<th>becomes_2</th>
+<th>becomes_3</th>
+<th>accepts</th>
+<th>halts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nada</code></td>
+<td><code>is_1</code> AND e</td>
+<td><code>is_2</code> AND e</td>
+<td><code>is_3</code> AND e</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>zero</code></td>
+<td><code>is_1</code> AND e</td>
+<td><code>is_2</code> AND e</td>
+<td><code>is_3</code> AND e</td>
+<td><code>is_0</code> AND e</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>decr</code></td>
+<td><code>is_2</code> AND e</td>
+<td><code>is_3</code> AND e</td>
+<td>0</td>
+<td>0</td>
+<td><code>is_0</code> AND e</td>
+</tr>
+<tr>
+<td><code>mod2</code></td>
+<td>(<code>is_1</code> OR <code>is_3</code>) AND e</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>Read across a row and the opcode&#39;s rule appears. <code>nada</code> passes the value through. <code>zero</code> passes it through too and adds one gate that fires on 0. <code>decr</code> shifts each wire down one place, 2 to 1 and 3 to 2, lets 1 fall to 0, and turns 0 into a halt. <code>mod2</code> sends both odd values to 1 and lets 2 fall to 0. The whole unit is 34 two-input gates as written, and the four cores&#39; constants (<code>AX</code> fixed per core, <code>halted</code> and <code>accepted</code> 0 at the start) fold many of them away: the full circuit of 24 units comes to the 404 gates that <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> counts.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="`decr`, the busiest module, drawn alone" width="322pt" height="98pt"
+ viewBox="0.00 0.00 322.00 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-94 318,-94 318,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M74,-90C74,-90 29,-90 29,-90 23,-90 17,-84 17,-78 17,-78 17,-66 17,-66 17,-60 23,-54 29,-54 29,-54 74,-54 74,-54 80,-54 86,-60 86,-66 86,-66 86,-78 86,-78 86,-84 80,-90 74,-90"/>
+<text text-anchor="middle" x="51.5" y="-68.9" font-family="Times,serif" font-size="12.00">enable e</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M151,-13.5C151,-13.5 181,-13.5 181,-13.5 187,-13.5 193,-19.5 193,-25.5 193,-25.5 193,-64.5 193,-64.5 193,-70.5 187,-76.5 181,-76.5 181,-76.5 151,-76.5 151,-76.5 145,-76.5 139,-70.5 139,-64.5 139,-64.5 139,-25.5 139,-25.5 139,-19.5 145,-13.5 151,-13.5"/>
+<text text-anchor="middle" x="166" y="-62.9" font-family="Times,serif" font-size="12.00">AND</text>
+<polyline fill="none" stroke="black" points="139,-55.5 193,-55.5 "/>
+<text text-anchor="middle" x="166" y="-41.9" font-family="Times,serif" font-size="12.00">AND</text>
+<polyline fill="none" stroke="black" points="139,-34.5 193,-34.5 "/>
+<text text-anchor="middle" x="166" y="-20.9" font-family="Times,serif" font-size="12.00">AND</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M86.25,-63.9C99.66,-60.68 115.11,-56.97 128.76,-53.7"/>
+<polygon fill="black" stroke="black" points="129.87,-57.03 138.78,-51.29 128.24,-50.22 129.87,-57.03"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M91,-36C91,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 91,0 91,0 97,0 103,-6 103,-12 103,-12 103,-24 103,-24 103,-30 97,-36 91,-36"/>
+<text text-anchor="middle" x="51.5" y="-14.9" font-family="Times,serif" font-size="12.00">is_0 &#160;is_2 &#160;is_3</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M103.16,-30.16C111.85,-32.24 120.72,-34.37 128.93,-36.34"/>
+<polygon fill="black" stroke="black" points="128.38,-39.81 138.92,-38.74 130.01,-33 128.38,-39.81"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M241,-13.5C241,-13.5 302,-13.5 302,-13.5 308,-13.5 314,-19.5 314,-25.5 314,-25.5 314,-64.5 314,-64.5 314,-70.5 308,-76.5 302,-76.5 302,-76.5 241,-76.5 241,-76.5 235,-76.5 229,-70.5 229,-64.5 229,-64.5 229,-25.5 229,-25.5 229,-19.5 235,-13.5 241,-13.5"/>
+<text text-anchor="middle" x="271.5" y="-62.9" font-family="Times,serif" font-size="12.00">halts</text>
+<polyline fill="none" stroke="black" points="229,-55.5 314,-55.5 "/>
+<text text-anchor="middle" x="271.5" y="-41.9" font-family="Times,serif" font-size="12.00">becomes_1</text>
+<polyline fill="none" stroke="black" points="229,-34.5 314,-34.5 "/>
+<text text-anchor="middle" x="271.5" y="-20.9" font-family="Times,serif" font-size="12.00">becomes_2</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M193.12,-45C200.87,-45 209.64,-45 218.42,-45"/>
+<polygon fill="black" stroke="black" points="218.68,-48.5 228.68,-45 218.68,-41.5 218.68,-48.5"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="`decr`, the busiest module, drawn alone" width="274pt" height="89pt"
+ viewBox="0.00 0.00 274.00 89.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 85)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-85 270,-85 270,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M64,-81C64,-81 29,-81 29,-81 23,-81 17,-75 17,-69 17,-69 17,-57 17,-57 17,-51 23,-45 29,-45 29,-45 64,-45 64,-45 70,-45 76,-51 76,-57 76,-57 76,-69 76,-69 76,-75 70,-81 64,-81"/>
+<text text-anchor="middle" x="46.5" y="-59.9" font-family="Times,serif" font-size="12.00">enable e</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M127,-11.5C127,-11.5 157,-11.5 157,-11.5 163,-11.5 169,-17.5 169,-23.5 169,-23.5 169,-56.5 169,-56.5 169,-62.5 163,-68.5 157,-68.5 157,-68.5 127,-68.5 127,-68.5 121,-68.5 115,-62.5 115,-56.5 115,-56.5 115,-23.5 115,-23.5 115,-17.5 121,-11.5 127,-11.5"/>
+<text text-anchor="middle" x="142" y="-55.9" font-family="Times,serif" font-size="12.00">AND</text>
+<polyline fill="none" stroke="black" points="115,-49.5 169,-49.5 "/>
+<text text-anchor="middle" x="142" y="-36.9" font-family="Times,serif" font-size="12.00">AND</text>
+<polyline fill="none" stroke="black" points="115,-30.5 169,-30.5 "/>
+<text text-anchor="middle" x="142" y="-17.9" font-family="Times,serif" font-size="12.00">AND</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M76.06,-55.97C85.23,-53.72 95.5,-51.19 105.12,-48.83"/>
+<polygon fill="black" stroke="black" points="105.97,-52.22 114.84,-46.43 104.3,-45.42 105.97,-52.22"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M81,-36C81,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 81,0 81,0 87,0 93,-6 93,-12 93,-12 93,-24 93,-24 93,-30 87,-36 81,-36"/>
+<text text-anchor="middle" x="46.5" y="-14.9" font-family="Times,serif" font-size="12.00">is_0 &#160;is_2 &#160;is_3</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M93.15,-28.74C97.09,-29.67 101.05,-30.6 104.89,-31.5"/>
+<polygon fill="black" stroke="black" points="104.23,-34.94 114.77,-33.83 105.84,-28.13 104.23,-34.94"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M203,-11.5C203,-11.5 254,-11.5 254,-11.5 260,-11.5 266,-17.5 266,-23.5 266,-23.5 266,-56.5 266,-56.5 266,-62.5 260,-68.5 254,-68.5 254,-68.5 203,-68.5 203,-68.5 197,-68.5 191,-62.5 191,-56.5 191,-56.5 191,-23.5 191,-23.5 191,-17.5 197,-11.5 203,-11.5"/>
+<text text-anchor="middle" x="228.5" y="-55.9" font-family="Times,serif" font-size="12.00">halts</text>
+<polyline fill="none" stroke="black" points="191,-49.5 266,-49.5 "/>
+<text text-anchor="middle" x="228.5" y="-36.9" font-family="Times,serif" font-size="12.00">becomes_1</text>
+<polyline fill="none" stroke="black" points="191,-30.5 266,-30.5 "/>
+<text text-anchor="middle" x="228.5" y="-17.9" font-family="Times,serif" font-size="12.00">becomes_2</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M169.27,-40C172.88,-40 176.66,-40 180.5,-40"/>
+<polygon fill="black" stroke="black" points="180.69,-43.5 190.69,-40 180.69,-36.5 180.69,-43.5"/>
+</g>
+</g>
+</svg><figcaption><code>decr</code>, the busiest module, drawn alone</figcaption></figure><p>The gates in the code, as the SAT encoding builds them:</p>
+<figure class="listing"><figcaption>src/sat.c, an excerpt</figcaption><pre><code class="language-c">    Lit is_3 = <span class="syn-name">AND</span>(hb, lb);
+    Lit is_2 = <span class="syn-name">AND</span>(hb, <span class="syn-name">NOT</span>(lb));
+    Lit is_1 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), lb);
+    Lit is_0 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), <span class="syn-name">NOT</span>(lb));
+
+    Lit is_pass = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(op_hb), <span class="syn-name">NOT</span>(op_lb));
+    Lit is_check = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(op_hb), op_lb);
+    Lit is_decr = <span class="syn-name">AND</span>(op_hb, <span class="syn-name">NOT</span>(op_lb));
+    Lit is_mod2 = <span class="syn-name">AND</span>(op_hb, op_lb);
+
+    Lit runs_pass = <span class="syn-name">OR</span>(is_pass, halted);
+    Lit runs_check = <span class="syn-name">AND</span>(is_check, <span class="syn-name">NOT</span>(halted));
+    Lit runs_decr = <span class="syn-name">AND</span>(is_decr, <span class="syn-name">NOT</span>(halted));
+    Lit runs_mod2 = <span class="syn-name">AND</span>(is_mod2, <span class="syn-name">NOT</span>(halted));
+
+    Lit pass1 = <span class="syn-name">AND</span>(is_1, runs_pass);
+    Lit pass2 = <span class="syn-name">AND</span>(is_2, runs_pass);
+    Lit pass3 = <span class="syn-name">AND</span>(is_3, runs_pass);
+    Lit pass_accepts = FALSE;
+    Lit pass_halts = FALSE;
+
+    Lit check1 = <span class="syn-name">AND</span>(is_1, runs_check);
+    Lit check2 = <span class="syn-name">AND</span>(is_2, runs_check);
+    Lit check3 = <span class="syn-name">AND</span>(is_3, runs_check);
+    Lit check_accepts = <span class="syn-name">AND</span>(is_0, runs_check);
+    Lit check_halts = FALSE;
+
+    Lit decr1 = <span class="syn-name">AND</span>(is_2, runs_decr);
+    Lit decr2 = <span class="syn-name">AND</span>(is_3, runs_decr);
+    Lit decr3 = FALSE;
+    Lit decr_accepts = FALSE;
+    Lit decr_halts = <span class="syn-name">AND</span>(is_0, runs_decr);
+
+    Lit mod1 = <span class="syn-name">AND</span>(<span class="syn-name">OR</span>(is_3, is_1), runs_mod2);
+    Lit mod2 = FALSE;
+    Lit mod3 = FALSE;
+    Lit mod_accepts = FALSE;
+    Lit mod_halts = FALSE;
+
+    Lit newly_accepted = <span class="syn-name">sat_or4</span>(c, pass_accepts, check_accepts, decr_accepts, mod_accepts);
+    Lit accepted_out = <span class="syn-name">OR</span>(accepted, newly_accepted);
+
+    Lit newly_halted = <span class="syn-name">sat_or4</span>(c, pass_halts, check_halts, decr_halts, mod_halts);
+    Lit halted_out = <span class="syn-name">OR</span>(halted, newly_halted);
+
+    Lit becomes_1 = <span class="syn-name">sat_or4</span>(c, pass1, check1, decr1, mod1);
+    Lit becomes_2 = <span class="syn-name">sat_or4</span>(c, pass2, check2, decr2, mod2);
+    Lit becomes_3 = <span class="syn-name">sat_or4</span>(c, pass3, check3, decr3, mod3);
+
+    Lit hb_set = <span class="syn-name">OR</span>(becomes_3, becomes_2);
+    Lit lb_set = <span class="syn-name">OR</span>(becomes_3, becomes_1);
+</code></pre></figure><h2 id="a-program-through-it">A program through it <a class="section-link" href="#a-program-through-it" aria-label="Link to this section">§</a></h2>
 <p>Load the want register with <code>0111</code> and the program register with <code>decr, mod2, zero, decr, zero, nada</code>, the five-line answer to <code>is_not_tiny</code>, whose bits are <code>10 11 01 10 01 00</code>. The four cores settle like this:</p>
 <table>
 <thead>
