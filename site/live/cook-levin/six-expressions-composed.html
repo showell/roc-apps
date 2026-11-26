@@ -24,12 +24,12 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
 <li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
 <li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
-<li><a href="the-machine-as-a-circuit.html"><span class="number">8</span>The machine as a circuit</a></li>
-<li><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a></li>
-<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
-<li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li class="here"><a href="six-expressions-composed.html"><span class="number">13</span>Six expressions, composed</a><ol class="sections"><li><a href="six-expressions-composed.html#composition">Composition</a></li><li><a href="six-expressions-composed.html#the-question-as-one-expression">The question as one expression</a></li><li><a href="six-expressions-composed.html#the-payoff">The payoff</a></li><li><a href="six-expressions-composed.html#two-ways-to-compose">Two ways to compose</a></li></ol></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">9</span>The machine as a circuit</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">10</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">11</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">12</span>P, NP and Cook-Levin</a></li>
+<li class="here"><a href="six-expressions-composed.html"><span class="number">13</span>Six expressions, composed</a><ol class="sections"><li><a href="six-expressions-composed.html#the-program-unknown">The program unknown</a></li><li><a href="six-expressions-composed.html#composition">Composition</a></li><li><a href="six-expressions-composed.html#the-question-as-one-expression">The question as one expression</a></li><li><a href="six-expressions-composed.html#the-payoff">The payoff</a></li><li><a href="six-expressions-composed.html#two-ways-to-compose">Two ways to compose</a></li></ol></li>
 <li><a href="arithmetization.html"><span class="number">14</span>Arithmetization</a></li>
 <li><a href="why-composing-blew-up.html"><span class="number">15</span>Why composing blew up</a></li>
 <li><a href="six-steps-composed.html"><span class="number">16</span>Six steps composed</a></li>
@@ -51,9 +51,46 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 13</p>
 <h1 id="six-expressions-composed">Six expressions, composed</h1>
-<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> wrote one step of the machine as twelve Boolean statements of six bits. Six steps composed are one function of fourteen bits: the input&#39;s two and the program&#39;s twelve. This chapter composes them into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
+<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> ran the machine as four Boolean functions of six bits, composed over six steps, with the input and the program fixed. Cook and Levin&#39;s move is to stop fixing the program. Keep the same four functions and the same six steps, give the program&#39;s twelve bits names in place of values, v1 to v12, and what comes out of the sixth step is a formula where it was a bit. This chapter does that, turns the formula into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
+<h2 id="the-program-unknown">The program unknown <a class="section-link" href="#the-program-unknown" aria-label="Link to this section">§</a></h2>
+<p>Line k&#39;s opcode bits are v(2k − 1) and v(2k), so instruction k is 2·v(2k − 1) + v(2k), numbered as in <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>. The input stays fixed, so <code>hb</code> and <code>lb</code> start as constants and both flags as 0. <code>python/steps.py</code> composes the six steps with the same Python functions, now given formulas: a constant folds away, and an equal subformula is built once. The final <code>accepted</code>, for each input, has this many gates:</p>
+<table>
+<thead>
+<tr>
+<th>AX</th>
+<th>gates in accepted</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>41</td>
+</tr>
+<tr>
+<td>1</td>
+<td>68</td>
+</tr>
+<tr>
+<td>2</td>
+<td>119</td>
+</tr>
+<tr>
+<td>3</td>
+<td>123</td>
+</tr>
+</tbody>
+</table>
+<p>For input 0 it is small enough to read:</p>
+<pre><code class="language-text">   (NOT v1 AND v2)
+OR (NOT v3 AND v4 AND NOT (v1 AND NOT v2))
+OR (NOT v5 AND v6 AND NOT ((v1 AND NOT v2) OR (v3 AND NOT v4)))
+OR (NOT v7 AND v8 AND NOT ((v1 AND NOT v2) OR (v3 AND NOT v4) OR (v5 AND NOT v6)))
+OR (NOT v9 AND v10 AND NOT ((v1 AND NOT v2) OR (v3 AND NOT v4) OR (v5 AND NOT v6) OR (v7 AND NOT v8)))
+OR (NOT v11 AND v12 AND NOT ((v1 AND NOT v2) OR (v3 AND NOT v4) OR (v5 AND NOT v6) OR (v7 AND NOT v8) OR (v9 AND NOT v10)))
+</code></pre>
+<p>Line k&#39;s bits <code>0 1</code> are <code>zero</code>, and <code>1 0</code> are <code>decr</code>. So the formula says: some line is <code>zero</code>, and every line before it is <code>nada</code>, <code>zero</code> or <code>mod2</code>. That is input 0&#39;s whole story, since <code>AX</code> starts at 0: <code>zero</code> accepts it, <code>decr</code> rejects it, and <code>nada</code> and <code>mod2</code> leave it as it is. <code>python/steps.py</code> holds all four formulas to the interpreter on all 4,096 programs.</p>
 <h2 id="composition">Composition <a class="section-link" href="#composition" aria-label="Link to this section">§</a></h2>
-<p>Chain six copies. The first reads the input&#39;s two bits as <code>hb</code> and <code>lb</code>, both flags at 0, and line 1&#39;s two bits. Each later copy reads the four primed bits the one before it wrote, and its own line&#39;s two bits. So the only bits that enter from outside the chain are the input&#39;s two and each line&#39;s two, six lines of them:</p>
+<p>Free the input&#39;s two bits as well. The first step reads them as <code>hb</code> and <code>lb</code>, both flags at 0, and line 1&#39;s two bits. Each later step reads the four bits the one before it wrote, and its own line&#39;s two bits. So the only bits that enter from outside the chain are the input&#39;s two and each line&#39;s two, six lines of them:</p>
 <table>
 <thead>
 <tr>
@@ -80,7 +117,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p>Everything else is internal: six steps of eight facts each, and of the 24 primed bits, the 20 that the next step reads. After the sixth step, <code>accepted&#39;</code> is an expression accepted(n, v) of those 14 bits. The program&#39;s bits are v1 to v12, numbered as in <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>, where instruction i is 2·v(2i − 1) + v(2i).</p>
+<p>Everything else is internal: each step&#39;s gates, and of the 24 state bits the steps write, the 20 that a next step reads. After the sixth step, <code>accepted</code> is an expression accepted(n, v) of those 14 bits.</p>
 <h2 id="the-question-as-one-expression">The question as one expression <a class="section-link" href="#the-question-as-one-expression" aria-label="Link to this section">§</a></h2>
 <p>A puzzle asks whether a program decides L. That is one more expression, of the twelve program bits alone:</p>
 <pre><code class="language-text">decides_L(v1, ..., v12) = AND over n in 0..3 of (accepted(n, v) == L(n))
@@ -220,7 +257,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-boolean-view.html"><small>Previous</small>The Boolean view</a>
+<a rel="prev" href="p-np-and-cook-levin.html"><small>Previous</small>P, NP and Cook-Levin</a>
 <a rel="next" href="arithmetization.html"><small>Next</small>Arithmetization</a>
 </nav>
 </main>

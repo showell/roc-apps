@@ -24,11 +24,11 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
 <li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
 <li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
-<li><a href="the-machine-as-a-circuit.html"><span class="number">8</span>The machine as a circuit</a></li>
-<li><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a></li>
-<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
-<li class="here"><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a><ol class="sections"><li><a href="the-boolean-view.html#each-problem-as-two-bits">Each problem as two bits</a></li><li><a href="the-boolean-view.html#the-step-as-expressions">The step as expressions</a></li></ol></li>
+<li class="here"><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a><ol class="sections"><li><a href="the-boolean-view.html#each-problem-as-two-bits">Each problem as two bits</a></li><li><a href="the-boolean-view.html#one-step-four-functions">One step, four functions</a></li><li><a href="the-boolean-view.html#six-steps-everything-fixed">Six steps, everything fixed</a></li></ol></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">9</span>The machine as a circuit</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">10</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">11</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">12</span>P, NP and Cook-Levin</a></li>
 <li><a href="six-expressions-composed.html"><span class="number">13</span>Six expressions, composed</a></li>
 <li><a href="arithmetization.html"><span class="number">14</span>Arithmetization</a></li>
 <li><a href="why-composing-blew-up.html"><span class="number">15</span>Why composing blew up</a></li>
@@ -49,9 +49,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 12</p>
+<p class="chapter-number">Chapter 8</p>
 <h1 id="the-boolean-view">The Boolean view</h1>
-<p><a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> found every problem by running programs. This chapter states the same problems, and then one step of the machine, as plain Boolean expressions: AND, OR and NOT on bits. The next chapter composes the steps.</p>
+<p>Everything so far ran the machine as a program. This chapter writes the same machine with Boolean logic alone, AND, OR and the complement on bits: the problems first, then one step, then six steps with the input and the program both fixed. Every bit in it is known, so composing the steps is just running the machine.</p>
 <h2 id="each-problem-as-two-bits">Each problem as two bits <a class="section-link" href="#each-problem-as-two-bits" aria-label="Link to this section">§</a></h2>
 <p>Read an input n as its two bits, n = 2·<code>hb</code> + <code>lb</code>, and each problem is a Boolean function of them: {3} is <code>hb AND lb</code>, {1, 2, 3} is <code>hb OR lb</code>, {1, 2} is <code>hb XOR lb</code>, and {0, 2, 3} is <code>hb OR NOT lb</code>.</p>
 <p><strong>Theorem 9.</strong> The 16 problems are exactly the 16 Boolean functions of two bits: each problem is one function of <code>hb</code> and <code>lb</code>, and each function is one problem.</p>
@@ -147,32 +147,47 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p>So the 16 problems, the 16 puzzles of Nibble, are the 16 two-input connectives. One step of the machine is a Boolean function too, of six bits.</p>
-<h2 id="the-step-as-expressions">The step as expressions <a class="section-link" href="#the-step-as-expressions" aria-label="Link to this section">§</a></h2>
-<p>A step reads six bits: the four of the state, <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>, and the line&#39;s two, <code>op_hb</code> and <code>op_lb</code>. It is twelve statements (<code>src/decides.c</code>):</p>
-<ul>
-<li><strong>eight intermediate facts</strong> about the machine, each used only inside this step;</li>
-<li><strong>four primed bits</strong>, <code>hb&#39;</code>, <code>lb&#39;</code>, <code>halted&#39;</code> and <code>accepted&#39;</code>, the next state. These four are all that survive into the next step, where they are its unprimed four.</li>
-</ul>
-<pre><code class="language-text">ax_is_0 = NOT hb AND NOT lb
-ax_is_2 = hb AND NOT lb
-ax_is_3 = hb AND lb
-is_zero = NOT op_hb AND op_lb
-is_decr = op_hb AND NOT op_lb
-is_mod2 = op_hb AND op_lb
-runs = NOT halted
-keeps = halted OR NOT op_hb
-hb&#39; = (hb AND keeps) OR (ax_is_3 AND is_decr AND runs)
-lb&#39; = (lb AND (keeps OR (is_mod2 AND runs))) OR (ax_is_2 AND is_decr AND runs)
-halted&#39; = halted OR (ax_is_0 AND is_decr)
-accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
+<p>So the 16 problems, the 16 puzzles of Nibble, are the 16 two-input connectives.</p>
+<h2 id="one-step-four-functions">One step, four functions <a class="section-link" href="#one-step-four-functions" aria-label="Link to this section">§</a></h2>
+<p>A step reads six bits: the line&#39;s opcode, <code>op_hb</code> and <code>op_lb</code>, and the machine&#39;s state, the two bits of <code>AX</code>, <code>hb</code> and <code>lb</code>, and the flags <code>halted</code> and <code>accepted</code>. It writes the four state bits again, and each new bit is a Boolean function of its own of those six. Here they are in Python (<code>python/steps.py</code>), where <code>~</code>, <code>&amp;</code> and <code>|</code> are the complement, AND and OR:</p>
+<figure class="listing"><figcaption>python/steps.py, an excerpt</figcaption><pre><code class="language-python">def next_hb(op_hb, op_lb, hb, lb, halted, accepted):
+    # AX keeps its high bit (halted, nada or zero), or decr takes 3 to 2.
+    return (hb &amp; (halted | ~op_hb)) | (hb &amp; lb &amp; op_hb &amp; ~op_lb &amp; ~halted)
+
+
+def next_lb(op_hb, op_lb, hb, lb, halted, accepted):
+    # AX keeps its low bit (halted, nada, zero or mod2), or decr takes 2 to 1.
+    return (lb &amp; (halted | ~op_hb | (op_hb &amp; op_lb &amp; ~halted))) | (
+        hb &amp; ~lb &amp; op_hb &amp; ~op_lb &amp; ~halted
+    )
+
+
+def next_halted(op_hb, op_lb, hb, lb, halted, accepted):
+    # Halted already, or decr at 0.
+    return halted | (~hb &amp; ~lb &amp; op_hb &amp; ~op_lb)
+
+
+def next_accepted(op_hb, op_lb, hb, lb, halted, accepted):
+    # Accepted already, or zero at 0 on a running machine.
+    return accepted | (~hb &amp; ~lb &amp; ~op_hb &amp; op_lb &amp; ~halted)
+</code></pre></figure><p>Read each one as a sentence. <code>AX</code> keeps its high bit when the machine has halted or the line is <code>nada</code> or <code>zero</code>, and <code>decr</code> takes 3 to 2. It keeps its low bit in those cases and under <code>mod2</code>, which clears the high bit, and <code>decr</code> takes 2 to 1. <code>halted</code> turns on at a <code>decr</code> at 0, and <code>accepted</code> at a <code>zero</code> at 0 on a running machine. Once on, a flag stays on.</p>
+<h2 id="six-steps-everything-fixed">Six steps, everything fixed <a class="section-link" href="#six-steps-everything-fixed" aria-label="Link to this section">§</a></h2>
+<p>Now fix the input and the program. With <code>AX</code> = 2 and the program <code>decr, mod2, zero, decr, zero, nada</code>, each of the six bits a step reads is a known 0 or 1, and so is each bit it writes. Composing the six steps is running the machine, one row a step:</p>
+<pre><code class="language-text">                hb lb halted accepted
+start            1  0     0        0
+step 1  decr 10   0  1     0        0
+step 2  mod2 11   0  1     0        0
+step 3  zero 01   0  1     0        0
+step 4  decr 10   0  0     0        0
+step 5  zero 01   0  0     0        1
+step 6  nada 00   0  0     0        1
 </code></pre>
-<p><code>keeps</code> says that <code>AX</code> stays as it is: the machine has halted, or the line is <code>nada</code> or <code>zero</code>. So <code>hb&#39;</code> is the old <code>hb</code> kept, or a <code>decr</code> from 3 to 2. <code>lb&#39;</code> is the old <code>lb</code> kept, or kept by <code>mod2</code>, which keeps <code>lb</code> and clears <code>hb</code>, or a <code>decr</code> from 2 to 1. <code>halted&#39;</code> adds a <code>decr</code> at 0, and <code>accepted&#39;</code> a <code>zero</code> at 0 on a running machine. <code>tests/test_boolean.c</code> holds the four to <code>src/stepper.c</code>&#39;s step on all 64 settings of the six bits, and <code>src/boolean_main.c</code> checks them again before it prints them for this book. They are the gates of <code>sat_step</code> in <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, merged by hand.</p>
+<p>The last row&#39;s <code>accepted</code> is 1: the program accepts 2. <code>python/steps.py</code> runs each of the 4,096 programs on all four inputs this way and holds every answer to an ordinary interpreter written beside it. <a class="chapter-link" href="six-expressions-composed.html">“Six expressions, composed”</a>, in the second part, keeps the same four functions and the same six steps, and leaves the program&#39;s bits unknown.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="p-np-and-cook-levin.html"><small>Previous</small>P, NP and Cook-Levin</a>
-<a rel="next" href="six-expressions-composed.html"><small>Next</small>Six expressions, composed</a>
+<a rel="prev" href="nibble-the-puzzle-page.html"><small>Previous</small>Nibble, the puzzle page</a>
+<a rel="next" href="the-machine-as-a-circuit.html"><small>Next</small>The machine as a circuit</a>
 </nav>
 </main>
 </body>
