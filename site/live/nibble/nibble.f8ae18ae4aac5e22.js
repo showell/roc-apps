@@ -24,8 +24,11 @@ const [wasm, table] = await Promise.all([
 const machine = wasm.instance.exports;
 const { ops: OPS, puzzles: PUZZLES } = table;
 
-// A program is its ops' codes; its code is base 4, op i digit i, as `assemble`.
+// A program is its ops' codes. Its code, for the machine, is base 4 with op i
+// digit i, as `assemble`. Its number, for the reader, is base 4 with line 1
+// the highest digit, so its digits and its twelve bits read in line order.
 const codeOf = (program) => program.reduce((sum, op, i) => sum + op * 4 ** i, 0);
+const numberOf = (program) => program.reduce((sum, op) => sum * 4 + op, 0);
 const unpack = (word) => ({ ax: word & 3, halted: (word >> 2) & 1, status: (word >> 3) & 3 });
 const setText = (set) => `{${set.join(", ")}}`;
 // What the puzzle wants of input n, and what program `code` gave it.
@@ -59,7 +62,7 @@ let reopened = false;
 // Whether the machine code's explanation is open; it stays as the player left it.
 let codeHelpOpen = false;
 const CODE_EXPLAIN = "The machine code: each line's opcode in two bits, line 1 first (nada 00, zero 01, decr 10, mod2 11). "
-  + "Six lines make twelve bits, so there are 4,096 programs; read as a number, line 1 is the lowest digit in base 4.";
+  + "Six lines make twelve bits, so there are 4,096 programs, numbered 0 to 4095: read the twelve bits as one binary number, line 1 first.";
 
 // A button's tip: what its op does to each AX, from the machine itself (the
 // op alone on line 1): decr is "0->R, 1->0, 2->1, 3->2 (R rejects)"; the key
@@ -75,7 +78,7 @@ function opTip(op) {
 
 // The program's twelve bits, line 1 first, and its number among the 4,096.
 const BITS = ["00", "01", "10", "11"];
-const machineCode = (prog) => `${prog.map((op) => BITS[op]).join(" ")}  (#${codeOf(prog)})`;
+const machineCode = (prog) => `${prog.map((op) => BITS[op]).join(" ")}  (#${numberOf(prog)})`;
 
 // A puzzle's `fixed` lines (a bitmask, line k's bit 1 << k, from 0) are
 // locked to its start's ops; its lines past `lines` (its shortest program's
