@@ -12,6 +12,9 @@ figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px;
 figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
 figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
 @media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style><style>
+figure.diagram:has(g.fullsize) { max-height: 80vh; overflow: auto; }
+svg.diagram:has(g.fullsize) { max-width: none; }
 </style></head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
@@ -28,31 +31,33 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
 <li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
 <li><a href="checking-a-claim.html"><span class="number">11</span>Checking a claim</a></li>
-<li><a href="the-machine-as-a-circuit.html"><span class="number">12</span>The machine as a circuit</a></li>
-<li><a href="some-history-of-the-approach.html"><span class="number">13</span>Some history of the approach</a></li>
-<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">14</span>How it got here</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">15</span>P, NP and Cook-Levin</a></li>
-<li><a href="six-expressions-composed.html"><span class="number">16</span>Six expressions, composed</a></li>
-<li><a href="arithmetization.html"><span class="number">17</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">18</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">19</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">20</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">21</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">22</span>The tableau, filled in</a></li>
-<li class="here"><a href="cook-levin-as-sat.html"><span class="number">23</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#one-gate-three-clauses">One gate, three clauses</a></li><li><a href="cook-levin-as-sat.html#one-step-unit">One step unit</a></li><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
-<li><a href="solved-by-hand.html"><span class="number">24</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">25</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">26</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">27</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">28</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">29</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">30</span>What comes next</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">12</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">13</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">14</span>The circuit, in full</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">15</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">16</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">17</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">18</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">19</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">20</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">21</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">22</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">23</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">24</span>The tableau, filled in</a></li>
+<li class="here"><a href="cook-levin-as-sat.html"><span class="number">25</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#one-gate-three-clauses">One gate, three clauses</a></li><li><a href="cook-levin-as-sat.html#one-stepper">One stepper</a></li><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
+<li><a href="solved-by-hand.html"><span class="number">26</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">27</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">28</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">29</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">30</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">31</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">32</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 23</p>
+<p class="chapter-number">Chapter 25</p>
 <h1 id="cook-levin-as-sat">Cook-Levin as SAT</h1>
 <p><code>src/sat.c</code> writes each problem as one Boolean formula in DIMACS CNF, the input format of SAT solvers (<code>8de51b7</code>), whose satisfying assignments are exactly the programs that decide the problem: the Cook-Levin construction itself. Expanded as polynomials, the circuit&#39;s <code>accepted</code> alone reached 10,324 terms (<a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a>). This chapter takes the other way of <a class="chapter-link" href="six-expressions-composed.html">“Six expressions, composed”</a> and names every wire instead: each gate&#39;s output gets a variable, tied to the gate&#39;s inputs by three clauses, so the formula grows linearly with the steps.</p>
 <h2 id="one-gate-three-clauses">One gate, three clauses <a class="section-link" href="#one-gate-three-clauses" aria-label="Link to this section">§</a></h2>
@@ -168,7 +173,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
     Lit c1[<span class="syn-number">2</span>] = {-out, a};
     Lit c2[<span class="syn-number">2</span>] = {-out, b};
     Lit c3[<span class="syn-number">3</span>] = {out, -a, -b};
-</code></pre></figure><h2 id="one-step-unit">One step unit <a class="section-link" href="#one-step-unit" aria-label="Link to this section">§</a></h2>
+</code></pre></figure><h2 id="one-stepper">One stepper <a class="section-link" href="#one-stepper" aria-label="Link to this section">§</a></h2>
 <p>The formula&#39;s first 12 variables are the program&#39;s bits: line k&#39;s <code>hb</code> is v(2k − 1) and its <code>lb</code> v(2k), so <code>nada</code> is 0 0, <code>zero</code> 0 1, <code>decr</code> 1 0 and <code>mod2</code> 1 1. The logic is the stepper&#39;s, gate for gate, NOT, AND and OR as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>. A gate on a constant is folded, and a gate already built from the same two inputs is reused. Core 0 starts with <code>AX</code> = 0 and both flags 0, so its state after line 1 reads two gates:</p>
 <table>
 <thead>
@@ -243,7 +248,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </code></pre>
 <p>Core 1&#39;s <code>AX</code> falls to 0 exactly when line 1 is <code>decr</code>.</p>
 <h2 id="the-unrolling">The unrolling <a class="section-link" href="#the-unrolling" aria-label="Link to this section">§</a></h2>
-<p>Each of the six lines, on each of the four cores, is such a unit, wired to the state the unit above it left, and the last four clauses ask that each core&#39;s final <code>accepted</code> be what the problem wants. Every problem&#39;s formula has 416 variables and 1,216 clauses (<code>out/tcc/sat facts</code>, run for this book). <code>len=N</code> forces the lines past N to <code>nada</code>, two unit clauses a line, and <code>fix=K:OP</code> fixes line K.</p>
+<p>Each of the six lines, on each of the four cores, is such a stepper, wired to the state the stepper above it left, and the last four clauses ask that each core&#39;s final <code>accepted</code> be what the problem wants. Every problem&#39;s formula has 416 variables and 1,216 clauses (<code>out/tcc/sat facts</code>, run for this book). <code>len=N</code> forces the lines past N to <code>nada</code>, two unit clauses a line, and <code>fix=K:OP</code> fixes line K.</p>
 <h2 id="the-proof-by-propagation">The proof by propagation <a class="section-link" href="#the-proof-by-propagation" aria-label="Link to this section">§</a></h2>
 <p><strong>Theorem 12.</strong> For each of the 16 problems, the satisfying assignments of its formula, read as programs by their first 12 variables, are exactly the programs that decide it. With the lines past N forced to <code>nada</code>, the formula is satisfiable exactly when N is at least the problem&#39;s shortest length (Theorem 4).</p>
 <p><em>Proof.</em> <code>tests/test_sat.c</code> proves the encoding by itself. For every problem it sets the program bits to each of the 4,096 programs and unit-propagates them through the formula. Each gate&#39;s inputs come before it, so propagation alone decides every Tseitin variable. The assignments that survive are exactly the programs the machine says decide the problem, 4,096 over the 16 problems (<code>every_puzzles_models_are_exactly_its_solving_programs</code>), and with a length bound, exactly those that short (<code>a_length_bound_admits_the_solving_programs_that_short</code>).</p>
