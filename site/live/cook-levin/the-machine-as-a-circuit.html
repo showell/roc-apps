@@ -56,9 +56,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 13</p>
 <h1 id="the-machine-as-a-circuit">The machine as a circuit</h1>
-<p><a class="chapter-link" href="parts-for-a-small-computer.html">“Parts for a small computer”</a> built ten parts from gates. This chapter gives each part a name and draws it from here on as a box, its gates inside, and wires the boxes into a <em>stepper</em>: one step of the machine. The circuit is combinational: the whole run is laid out in space, and every wire settles at once. <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, in the second part, turns the same circuit around.</p>
+<p><a class="chapter-link" href="parts-for-a-small-computer.html">“Parts for a small computer”</a> drew every part with its gates. From here on each part is a box, known by its name and its wires, and this chapter wires the boxes into a <em>stepper</em>: one step of the machine. The circuit is combinational: the whole run is laid out in space, and every wire settles at once. <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, in the second part, turns the same circuit around.</p>
 <h2 id="the-parts-as-boxes">The parts as boxes <a class="section-link" href="#the-parts-as-boxes" aria-label="Link to this section">§</a></h2>
-<p>Each box is known by its wires. The table counts them from the netlist, with the gates inside each box:</p>
+<p>A stepper has ten boxes: the four instructions, the hold, one mux4 for each of <code>hb&#39;</code>, <code>lb&#39;</code>, <code>accepts</code> and <code>halts</code>, and the latches. The table counts each box&#39;s wires from the netlist, with the gates inside:</p>
 <table>
 <thead>
 <tr>
@@ -70,58 +70,58 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </thead>
 <tbody>
 <tr>
-<td>decoder</td>
-<td>2</td>
-<td>4</td>
-<td>6</td>
-</tr>
-<tr>
-<td>op decoder</td>
-<td>2</td>
-<td>4</td>
-<td>6</td>
-</tr>
-<tr>
-<td>hold</td>
-<td>5</td>
-<td>4</td>
-<td>5</td>
-</tr>
-<tr>
 <td>nada</td>
-<td>4</td>
-<td>6</td>
+<td>2</td>
+<td>2</td>
 <td>0</td>
 </tr>
 <tr>
 <td>zero</td>
-<td>4</td>
-<td>6</td>
-<td>0</td>
+<td>2</td>
+<td>3</td>
+<td>2</td>
 </tr>
 <tr>
 <td>decr</td>
+<td>2</td>
+<td>3</td>
 <td>4</td>
-<td>6</td>
-<td>0</td>
 </tr>
 <tr>
 <td>mod2</td>
-<td>4</td>
-<td>6</td>
 <td>2</td>
+<td>2</td>
+<td>0</td>
 </tr>
 <tr>
-<td>selector</td>
-<td>19</td>
-<td>6</td>
-<td>24</td>
-</tr>
-<tr>
-<td>encoder</td>
+<td>hold</td>
 <td>3</td>
 <td>2</td>
-<td>2</td>
+<td>3</td>
+</tr>
+<tr>
+<td>hb mux</td>
+<td>6</td>
+<td>1</td>
+<td>12</td>
+</tr>
+<tr>
+<td>lb mux</td>
+<td>6</td>
+<td>1</td>
+<td>12</td>
+</tr>
+<tr>
+<td>accepts mux</td>
+<td>6</td>
+<td>1</td>
+<td>12</td>
+</tr>
+<tr>
+<td>halts mux</td>
+<td>6</td>
+<td>1</td>
+<td>12</td>
 </tr>
 <tr>
 <td>latches</td>
@@ -131,368 +131,415 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p>The op decoder is the decoder again, on the program line&#39;s two bits. The selector reads 20 wires: four enables from the hold, and every wire the four machines drive.</p>
 <h2 id="a-stepper-from-its-boxes">A stepper, from its boxes <a class="section-link" href="#a-stepper-from-its-boxes" aria-label="Link to this section">§</a></h2>
-<p>A stepper has six wires in, <code>hb</code> and <code>lb</code> for <code>AX</code>, the flags <code>halted</code> and <code>accepted</code>, and <code>op_hb</code> and <code>op_lb</code> for its program line, and four wires out, the same state for the next step. Inside, it decodes, computes every opcode at once, and selects: the decoder feeds all four machines side by side, the op decoder and the hold pick one, the selector passes that machine&#39;s wires, and the encoder turns the chosen value back into bits. The latches sit beside them. A number on a line is how many wires it carries.</p>
-<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="A stepper, ten boxes" width="413pt" height="442pt"
- viewBox="0.00 0.00 412.50 442.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 438)">
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-438 408.5,-438 408.5,4 -4,4"/>
+<p>A stepper has six wires in, <code>AX</code>&#39;s two bits, the flags <code>halted</code> and <code>accepted</code>, and the line&#39;s two bits, and four wires out, the same state for the next step. All four instructions work on <code>AX</code> at once. The hold turns the line into the select bits, and each mux4 passes the chosen instruction&#39;s wire; the accepts mux takes <code>zero</code>&#39;s flag and a 0 for each other instruction, and the halts mux takes <code>decr</code>&#39;s flag and a 0 for the others, so only the chosen instruction&#39;s flag counts. The latches keep the flags. A number on a line is how many wires it carries.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="A stepper, ten boxes" width="481pt" height="358pt"
+ viewBox="0.00 0.00 480.72 358.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 354)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-354 476.72,-354 476.72,4 -4,4"/>
 <g id="node1" class="node">
-<text text-anchor="middle" x="219.5" y="-412.9" font-family="Times,serif" font-size="12.00">hb</text>
-</g>
-<g id="node7" class="node">
-<path fill="none" stroke="black" d="M303,-361C303,-361 260,-361 260,-361 254,-361 248,-355 248,-349 248,-349 248,-337 248,-337 248,-331 254,-325 260,-325 260,-325 303,-325 303,-325 309,-325 315,-331 315,-337 315,-337 315,-349 315,-349 315,-355 309,-361 303,-361"/>
-<text text-anchor="middle" x="281.5" y="-339.9" font-family="Times,serif" font-size="12.00">decoder</text>
-</g>
-<g id="edge1" class="edge">
-<path fill="none" stroke="black" d="M234.51,-397.81C242.12,-389.09 251.51,-378.34 259.89,-368.75"/>
-<polygon fill="black" stroke="black" points="262.69,-370.86 266.63,-361.03 257.42,-366.26 262.69,-370.86"/>
-</g>
-<g id="node2" class="node">
-<text text-anchor="middle" x="291.5" y="-412.9" font-family="Times,serif" font-size="12.00">lb</text>
-</g>
-<g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M289.08,-397.81C287.95,-389.79 286.58,-380.05 285.31,-371.07"/>
-<polygon fill="black" stroke="black" points="288.76,-370.44 283.9,-361.03 281.83,-371.42 288.76,-370.44"/>
-</g>
-<g id="node3" class="node">
-<text text-anchor="middle" x="128.5" y="-412.9" font-family="Times,serif" font-size="12.00">op_hb</text>
-</g>
-<g id="node8" class="node">
-<path fill="none" stroke="black" d="M154.5,-361C154.5,-361 92.5,-361 92.5,-361 86.5,-361 80.5,-355 80.5,-349 80.5,-349 80.5,-337 80.5,-337 80.5,-331 86.5,-325 92.5,-325 92.5,-325 154.5,-325 154.5,-325 160.5,-325 166.5,-331 166.5,-337 166.5,-337 166.5,-349 166.5,-349 166.5,-355 160.5,-361 154.5,-361"/>
-<text text-anchor="middle" x="123.5" y="-339.9" font-family="Times,serif" font-size="12.00">op decoder</text>
-</g>
-<g id="edge3" class="edge">
-<path fill="none" stroke="black" d="M127.29,-397.81C126.72,-389.79 126.04,-380.05 125.41,-371.07"/>
-<polygon fill="black" stroke="black" points="128.89,-370.76 124.7,-361.03 121.91,-371.25 128.89,-370.76"/>
-</g>
-<g id="node4" class="node">
-<text text-anchor="middle" x="55.5" y="-412.9" font-family="Times,serif" font-size="12.00">op_lb</text>
-</g>
-<g id="edge4" class="edge">
-<path fill="none" stroke="black" d="M71.96,-397.81C80.4,-389 90.82,-378.13 100.08,-368.46"/>
-<polygon fill="black" stroke="black" points="102.8,-370.67 107.19,-361.03 97.75,-365.83 102.8,-370.67"/>
-</g>
-<g id="node5" class="node">
-<text text-anchor="middle" x="34.5" y="-339.9" font-family="Times,serif" font-size="12.00">halted</text>
-</g>
-<g id="node9" class="node">
-<path fill="none" stroke="black" d="M104.5,-277C104.5,-277 74.5,-277 74.5,-277 68.5,-277 62.5,-271 62.5,-265 62.5,-265 62.5,-253 62.5,-253 62.5,-247 68.5,-241 74.5,-241 74.5,-241 104.5,-241 104.5,-241 110.5,-241 116.5,-247 116.5,-253 116.5,-253 116.5,-265 116.5,-265 116.5,-271 110.5,-277 104.5,-277"/>
-<text text-anchor="middle" x="89.5" y="-255.9" font-family="Times,serif" font-size="12.00">hold</text>
-</g>
-<g id="edge6" class="edge">
-<path fill="none" stroke="black" d="M46.16,-324.61C53.8,-313.23 63.9,-298.16 72.44,-285.44"/>
-<polygon fill="black" stroke="black" points="75.38,-287.34 78.04,-277.08 69.56,-283.44 75.38,-287.34"/>
-</g>
-<g id="node16" class="node">
-<path fill="none" stroke="black" d="M121,-109C121,-109 84,-109 84,-109 78,-109 72,-103 72,-97 72,-97 72,-85 72,-85 72,-79 78,-73 84,-73 84,-73 121,-73 121,-73 127,-73 133,-79 133,-85 133,-85 133,-97 133,-97 133,-103 127,-109 121,-109"/>
-<text text-anchor="middle" x="102.5" y="-87.9" font-family="Times,serif" font-size="12.00">latches</text>
-</g>
-<g id="edge17" class="edge">
-<path fill="none" stroke="black" d="M33.78,-324.75C32.96,-291.22 34.04,-215.42 56.5,-157 62.05,-142.57 71.53,-128.34 80.45,-116.89"/>
-<polygon fill="black" stroke="black" points="83.2,-119.05 86.78,-109.08 77.76,-114.65 83.2,-119.05"/>
+<text text-anchor="middle" x="125" y="-328.9" font-family="Times,serif" font-size="12.00">AX</text>
 </g>
 <g id="node6" class="node">
-<text text-anchor="middle" x="102.5" y="-171.9" font-family="Times,serif" font-size="12.00">accepted</text>
-</g>
-<g id="edge19" class="edge">
-<path fill="none" stroke="black" d="M102.5,-156.61C102.5,-145.77 102.5,-131.6 102.5,-119.29"/>
-<polygon fill="black" stroke="black" points="106,-119.08 102.5,-109.08 99,-119.08 106,-119.08"/>
-</g>
-<g id="node10" class="node">
-<path fill="none" stroke="black" d="M248.5,-277C248.5,-277 218.5,-277 218.5,-277 212.5,-277 206.5,-271 206.5,-265 206.5,-265 206.5,-253 206.5,-253 206.5,-247 212.5,-241 218.5,-241 218.5,-241 248.5,-241 248.5,-241 254.5,-241 260.5,-247 260.5,-253 260.5,-253 260.5,-265 260.5,-265 260.5,-271 254.5,-277 248.5,-277"/>
-<text text-anchor="middle" x="233.5" y="-255.9" font-family="Times,serif" font-size="12.00">nada</text>
-</g>
-<g id="edge7" class="edge">
-<path fill="none" stroke="black" d="M271.32,-324.61C264.72,-313.34 256.01,-298.45 248.61,-285.81"/>
-<polygon fill="black" stroke="black" points="251.57,-283.95 243.5,-277.08 245.53,-287.48 251.57,-283.95"/>
-<text text-anchor="middle" x="264" y="-298.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node11" class="node">
-<path fill="none" stroke="black" d="M320.5,-277C320.5,-277 290.5,-277 290.5,-277 284.5,-277 278.5,-271 278.5,-265 278.5,-265 278.5,-253 278.5,-253 278.5,-247 284.5,-241 290.5,-241 290.5,-241 320.5,-241 320.5,-241 326.5,-241 332.5,-247 332.5,-253 332.5,-253 332.5,-265 332.5,-265 332.5,-271 326.5,-277 320.5,-277"/>
-<text text-anchor="middle" x="305.5" y="-255.9" font-family="Times,serif" font-size="12.00">zero</text>
-</g>
-<g id="edge8" class="edge">
-<path fill="none" stroke="black" d="M286.59,-324.61C289.79,-313.66 293.99,-299.31 297.62,-286.92"/>
-<polygon fill="black" stroke="black" points="301.05,-287.66 300.5,-277.08 294.33,-285.7 301.05,-287.66"/>
-<text text-anchor="middle" x="298" y="-298.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node12" class="node">
-<path fill="none" stroke="black" d="M392.5,-277C392.5,-277 362.5,-277 362.5,-277 356.5,-277 350.5,-271 350.5,-265 350.5,-265 350.5,-253 350.5,-253 350.5,-247 356.5,-241 362.5,-241 362.5,-241 392.5,-241 392.5,-241 398.5,-241 404.5,-247 404.5,-253 404.5,-253 404.5,-265 404.5,-265 404.5,-271 398.5,-277 392.5,-277"/>
-<text text-anchor="middle" x="377.5" y="-255.9" font-family="Times,serif" font-size="12.00">decr</text>
-</g>
-<g id="edge9" class="edge">
-<path fill="none" stroke="black" d="M301.86,-324.61C315.83,-312.68 334.53,-296.7 349.84,-283.62"/>
-<polygon fill="black" stroke="black" points="352.17,-286.24 357.5,-277.08 347.62,-280.92 352.17,-286.24"/>
-<text text-anchor="middle" x="338" y="-298.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node13" class="node">
-<path fill="none" stroke="black" d="M176.5,-277C176.5,-277 146.5,-277 146.5,-277 140.5,-277 134.5,-271 134.5,-265 134.5,-265 134.5,-253 134.5,-253 134.5,-247 140.5,-241 146.5,-241 146.5,-241 176.5,-241 176.5,-241 182.5,-241 188.5,-247 188.5,-253 188.5,-253 188.5,-265 188.5,-265 188.5,-271 182.5,-277 176.5,-277"/>
-<text text-anchor="middle" x="161.5" y="-255.9" font-family="Times,serif" font-size="12.00">mod2</text>
-</g>
-<g id="edge10" class="edge">
-<path fill="none" stroke="black" d="M256.34,-324.81C238.5,-312.62 214.37,-296.13 194.92,-282.84"/>
-<polygon fill="black" stroke="black" points="196.85,-279.92 186.62,-277.17 192.9,-285.7 196.85,-279.92"/>
-<text text-anchor="middle" x="233" y="-298.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge5" class="edge">
-<path fill="none" stroke="black" d="M116.29,-324.61C111.71,-313.56 105.68,-299.03 100.51,-286.55"/>
-<polygon fill="black" stroke="black" points="103.65,-284.98 96.58,-277.08 97.18,-287.66 103.65,-284.98"/>
-<text text-anchor="middle" x="113" y="-298.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node14" class="node">
-<path fill="none" stroke="black" d="M247,-193C247,-193 204,-193 204,-193 198,-193 192,-187 192,-181 192,-181 192,-169 192,-169 192,-163 198,-157 204,-157 204,-157 247,-157 247,-157 253,-157 259,-163 259,-169 259,-169 259,-181 259,-181 259,-187 253,-193 247,-193"/>
-<text text-anchor="middle" x="225.5" y="-171.9" font-family="Times,serif" font-size="12.00">selector</text>
-</g>
-<g id="edge11" class="edge">
-<path fill="none" stroke="black" d="M116.69,-241.6C137.22,-229.22 165.63,-212.1 188.27,-198.45"/>
-<polygon fill="black" stroke="black" points="190.19,-201.38 196.95,-193.22 186.57,-195.38 190.19,-201.38"/>
-<text text-anchor="middle" x="170" y="-214.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge12" class="edge">
-<path fill="none" stroke="black" d="M231.8,-240.61C230.75,-229.77 229.36,-215.6 228.16,-203.29"/>
-<polygon fill="black" stroke="black" points="231.62,-202.7 227.17,-193.08 224.65,-203.38 231.62,-202.7"/>
-<text text-anchor="middle" x="234" y="-214.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge13" class="edge">
-<path fill="none" stroke="black" d="M288.53,-240.61C277.11,-228.9 261.88,-213.29 249.25,-200.35"/>
-<polygon fill="black" stroke="black" points="251.66,-197.8 242.17,-193.08 246.65,-202.69 251.66,-197.8"/>
-<text text-anchor="middle" x="274" y="-214.2" font-family="Times,serif" font-size="11.00">5</text>
-</g>
-<g id="edge14" class="edge">
-<path fill="none" stroke="black" d="M350.33,-243.34C326.95,-230.73 292.89,-212.36 266.25,-197.99"/>
-<polygon fill="black" stroke="black" points="267.63,-194.75 257.17,-193.09 264.31,-200.91 267.63,-194.75"/>
-<text text-anchor="middle" x="314" y="-214.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge15" class="edge">
-<path fill="none" stroke="black" d="M175.07,-240.61C184.04,-229.12 195.94,-213.87 205.93,-201.07"/>
-<polygon fill="black" stroke="black" points="208.77,-203.12 212.17,-193.08 203.25,-198.81 208.77,-203.12"/>
-<text text-anchor="middle" x="201" y="-214.2" font-family="Times,serif" font-size="11.00">2</text>
-</g>
-<g id="node15" class="node">
-<path fill="none" stroke="black" d="M247,-109C247,-109 204,-109 204,-109 198,-109 192,-103 192,-97 192,-97 192,-85 192,-85 192,-79 198,-73 204,-73 204,-73 247,-73 247,-73 253,-73 259,-79 259,-85 259,-85 259,-97 259,-97 259,-103 253,-109 247,-109"/>
-<text text-anchor="middle" x="225.5" y="-87.9" font-family="Times,serif" font-size="12.00">encoder</text>
-</g>
-<g id="edge16" class="edge">
-<path fill="none" stroke="black" d="M225.5,-156.61C225.5,-145.77 225.5,-131.6 225.5,-119.29"/>
-<polygon fill="black" stroke="black" points="229,-119.08 225.5,-109.08 222,-119.08 229,-119.08"/>
-<text text-anchor="middle" x="229" y="-130.2" font-family="Times,serif" font-size="11.00">3</text>
-</g>
-<g id="edge18" class="edge">
-<path fill="none" stroke="black" d="M199.72,-156.81C181.43,-144.62 156.7,-128.13 136.75,-114.84"/>
-<polygon fill="black" stroke="black" points="138.51,-111.8 128.25,-109.17 134.63,-117.63 138.51,-111.8"/>
-<text text-anchor="middle" x="175" y="-130.2" font-family="Times,serif" font-size="11.00">2</text>
-</g>
-<g id="node17" class="node">
-<text text-anchor="middle" x="223.5" y="-14.9" font-family="Times,serif" font-size="12.00">hb&#39;</text>
-</g>
-<g id="edge20" class="edge">
-<path fill="none" stroke="black" d="M225.02,-72.81C224.79,-64.79 224.52,-55.05 224.26,-46.07"/>
-<polygon fill="black" stroke="black" points="227.76,-45.93 223.98,-36.03 220.76,-46.12 227.76,-45.93"/>
-</g>
-<g id="node18" class="node">
-<text text-anchor="middle" x="295.5" y="-14.9" font-family="Times,serif" font-size="12.00">lb&#39;</text>
-</g>
-<g id="edge21" class="edge">
-<path fill="none" stroke="black" d="M242.45,-72.81C251.22,-63.92 262.07,-52.91 271.67,-43.17"/>
-<polygon fill="black" stroke="black" points="274.18,-45.61 278.71,-36.03 269.2,-40.69 274.18,-45.61"/>
-</g>
-<g id="node19" class="node">
-<text text-anchor="middle" x="29.5" y="-14.9" font-family="Times,serif" font-size="12.00">halted&#39;</text>
-</g>
-<g id="edge22" class="edge">
-<path fill="none" stroke="black" d="M84.83,-72.81C75.68,-63.92 64.36,-52.91 54.35,-43.17"/>
-<polygon fill="black" stroke="black" points="56.62,-40.49 47.01,-36.03 51.74,-45.51 56.62,-40.49"/>
-</g>
-<g id="node20" class="node">
-<text text-anchor="middle" x="115.5" y="-14.9" font-family="Times,serif" font-size="12.00">accepted&#39;</text>
-</g>
-<g id="edge23" class="edge">
-<path fill="none" stroke="black" d="M105.65,-72.81C107.12,-64.79 108.9,-55.05 110.54,-46.07"/>
-<polygon fill="black" stroke="black" points="114.02,-46.5 112.38,-36.03 107.14,-45.23 114.02,-46.5"/>
-</g>
-</g>
-</svg><svg class="diagram diagram-phone" role="img" aria-label="A stepper, ten boxes" width="360pt" height="372pt"
- viewBox="0.00 0.00 360.00 372.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 368)">
-<polygon fill="white" stroke="transparent" points="-4,4 -4,-368 356,-368 356,4 -4,4"/>
-<g id="node1" class="node">
-<text text-anchor="middle" x="188" y="-342.9" font-family="Times,serif" font-size="12.00">hb</text>
-</g>
-<g id="node7" class="node">
-<path fill="none" stroke="black" d="M257.5,-305C257.5,-305 224.5,-305 224.5,-305 218.5,-305 212.5,-299 212.5,-293 212.5,-293 212.5,-281 212.5,-281 212.5,-275 218.5,-269 224.5,-269 224.5,-269 257.5,-269 257.5,-269 263.5,-269 269.5,-275 269.5,-281 269.5,-281 269.5,-293 269.5,-293 269.5,-299 263.5,-305 257.5,-305"/>
-<text text-anchor="middle" x="241" y="-283.9" font-family="Times,serif" font-size="12.00">decoder</text>
+<path fill="none" stroke="black" d="M107,-266C107,-266 77,-266 77,-266 71,-266 65,-260 65,-254 65,-254 65,-242 65,-242 65,-236 71,-230 77,-230 77,-230 107,-230 107,-230 113,-230 119,-236 119,-242 119,-242 119,-254 119,-254 119,-260 113,-266 107,-266"/>
+<text text-anchor="middle" x="92" y="-244.9" font-family="Times,serif" font-size="12.00">nada</text>
 </g>
 <g id="edge1" class="edge">
-<path fill="none" stroke="black" d="M203.9,-327.9C208.41,-323.05 213.41,-317.68 218.23,-312.48"/>
-<polygon fill="black" stroke="black" points="220.86,-314.8 225.11,-305.09 215.74,-310.03 220.86,-314.8"/>
+<path fill="none" stroke="black" d="M118,-313.61C113.55,-302.56 107.71,-288.03 102.68,-275.55"/>
+<polygon fill="black" stroke="black" points="105.86,-274.05 98.88,-266.08 99.36,-276.67 105.86,-274.05"/>
+<text text-anchor="middle" x="114.5" y="-287.2" font-family="Times,serif" font-size="11.00">2</text>
 </g>
-<g id="node2" class="node">
-<text text-anchor="middle" x="251" y="-342.9" font-family="Times,serif" font-size="12.00">lb</text>
+<g id="node7" class="node">
+<path fill="none" stroke="black" d="M237,-266C237,-266 207,-266 207,-266 201,-266 195,-260 195,-254 195,-254 195,-242 195,-242 195,-236 201,-230 207,-230 207,-230 237,-230 237,-230 243,-230 249,-236 249,-242 249,-242 249,-254 249,-254 249,-260 243,-266 237,-266"/>
+<text text-anchor="middle" x="222" y="-244.9" font-family="Times,serif" font-size="12.00">zero</text>
 </g>
 <g id="edge2" class="edge">
-<path fill="none" stroke="black" d="M248,-327.9C247.29,-323.84 246.51,-319.41 245.74,-315.03"/>
-<polygon fill="black" stroke="black" points="249.17,-314.33 244,-305.09 242.28,-315.54 249.17,-314.33"/>
-</g>
-<g id="node3" class="node">
-<text text-anchor="middle" x="110" y="-342.9" font-family="Times,serif" font-size="12.00">op_hb</text>
+<path fill="none" stroke="black" d="M145.57,-313.61C159.68,-301.68 178.58,-285.7 194.06,-272.62"/>
+<polygon fill="black" stroke="black" points="196.41,-275.21 201.79,-266.08 191.89,-269.87 196.41,-275.21"/>
+<text text-anchor="middle" x="182.5" y="-287.2" font-family="Times,serif" font-size="11.00">2</text>
 </g>
 <g id="node8" class="node">
-<path fill="none" stroke="black" d="M132,-305C132,-305 80,-305 80,-305 74,-305 68,-299 68,-293 68,-293 68,-281 68,-281 68,-275 74,-269 80,-269 80,-269 132,-269 132,-269 138,-269 144,-275 144,-281 144,-281 144,-293 144,-293 144,-299 138,-305 132,-305"/>
-<text text-anchor="middle" x="106" y="-283.9" font-family="Times,serif" font-size="12.00">op decoder</text>
+<path fill="none" stroke="black" d="M172,-266C172,-266 142,-266 142,-266 136,-266 130,-260 130,-254 130,-254 130,-242 130,-242 130,-236 136,-230 142,-230 142,-230 172,-230 172,-230 178,-230 184,-236 184,-242 184,-242 184,-254 184,-254 184,-260 178,-266 172,-266"/>
+<text text-anchor="middle" x="157" y="-244.9" font-family="Times,serif" font-size="12.00">decr</text>
 </g>
 <g id="edge3" class="edge">
-<path fill="none" stroke="black" d="M108.8,-327.9C108.52,-323.95 108.22,-319.66 107.92,-315.4"/>
-<polygon fill="black" stroke="black" points="111.39,-314.82 107.2,-305.09 104.41,-315.31 111.39,-314.82"/>
-</g>
-<g id="node4" class="node">
-<text text-anchor="middle" x="47" y="-342.9" font-family="Times,serif" font-size="12.00">op_lb</text>
-</g>
-<g id="edge4" class="edge">
-<path fill="none" stroke="black" d="M64.7,-327.9C69.84,-322.94 75.54,-317.43 81.03,-312.12"/>
-<polygon fill="black" stroke="black" points="83.55,-314.56 88.31,-305.09 78.69,-309.52 83.55,-314.56"/>
-</g>
-<g id="node5" class="node">
-<text text-anchor="middle" x="32" y="-283.9" font-family="Times,serif" font-size="12.00">halted</text>
+<path fill="none" stroke="black" d="M131.79,-313.61C136.1,-302.56 141.77,-288.03 146.64,-275.55"/>
+<polygon fill="black" stroke="black" points="149.96,-276.67 150.33,-266.08 143.44,-274.13 149.96,-276.67"/>
+<text text-anchor="middle" x="145.5" y="-287.2" font-family="Times,serif" font-size="11.00">2</text>
 </g>
 <g id="node9" class="node">
-<path fill="none" stroke="black" d="M88,-235C88,-235 58,-235 58,-235 52,-235 46,-229 46,-223 46,-223 46,-211 46,-211 46,-205 52,-199 58,-199 58,-199 88,-199 88,-199 94,-199 100,-205 100,-211 100,-211 100,-223 100,-223 100,-229 94,-235 88,-235"/>
-<text text-anchor="middle" x="73" y="-213.9" font-family="Times,serif" font-size="12.00">hold</text>
+<path fill="none" stroke="black" d="M42,-266C42,-266 12,-266 12,-266 6,-266 0,-260 0,-254 0,-254 0,-242 0,-242 0,-236 6,-230 12,-230 12,-230 42,-230 42,-230 48,-230 54,-236 54,-242 54,-242 54,-254 54,-254 54,-260 48,-266 42,-266"/>
+<text text-anchor="middle" x="27" y="-244.9" font-family="Times,serif" font-size="12.00">mod2</text>
 </g>
-<g id="edge6" class="edge">
-<path fill="none" stroke="black" d="M42.35,-268.84C46.88,-261.33 52.29,-252.35 57.3,-244.04"/>
-<polygon fill="black" stroke="black" points="60.35,-245.76 62.51,-235.39 54.35,-242.15 60.35,-245.76"/>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M104.22,-313.61C89.96,-301.68 70.87,-285.7 55.23,-272.62"/>
+<polygon fill="black" stroke="black" points="57.33,-269.82 47.42,-266.08 52.84,-275.19 57.33,-269.82"/>
+<text text-anchor="middle" x="85.5" y="-287.2" font-family="Times,serif" font-size="11.00">2</text>
 </g>
-<g id="node16" class="node">
-<path fill="none" stroke="black" d="M109,-95C109,-95 79,-95 79,-95 73,-95 67,-89 67,-83 67,-83 67,-71 67,-71 67,-65 73,-59 79,-59 79,-59 109,-59 109,-59 115,-59 121,-65 121,-71 121,-71 121,-83 121,-83 121,-89 115,-95 109,-95"/>
-<text text-anchor="middle" x="94" y="-73.9" font-family="Times,serif" font-size="12.00">latches</text>
-</g>
-<g id="edge17" class="edge">
-<path fill="none" stroke="black" d="M31.98,-268.66C32.56,-238.79 36.51,-176.29 58,-129 62.02,-120.16 67.63,-111.26 73.23,-103.43"/>
-<polygon fill="black" stroke="black" points="76.05,-105.5 79.23,-95.4 70.44,-101.31 76.05,-105.5"/>
-</g>
-<g id="node6" class="node">
-<text text-anchor="middle" x="94" y="-143.9" font-family="Times,serif" font-size="12.00">accepted</text>
-</g>
-<g id="edge19" class="edge">
-<path fill="none" stroke="black" d="M94,-128.84C94,-121.81 94,-113.49 94,-105.64"/>
-<polygon fill="black" stroke="black" points="97.5,-105.39 94,-95.39 90.5,-105.39 97.5,-105.39"/>
+<g id="node2" class="node">
+<text text-anchor="middle" x="287" y="-328.9" font-family="Times,serif" font-size="12.00">line</text>
 </g>
 <g id="node10" class="node">
-<path fill="none" stroke="black" d="M214,-235C214,-235 184,-235 184,-235 178,-235 172,-229 172,-223 172,-223 172,-211 172,-211 172,-205 178,-199 184,-199 184,-199 214,-199 214,-199 220,-199 226,-205 226,-211 226,-211 226,-223 226,-223 226,-229 220,-235 214,-235"/>
-<text text-anchor="middle" x="199" y="-213.9" font-family="Times,serif" font-size="12.00">nada</text>
-</g>
-<g id="edge7" class="edge">
-<path fill="none" stroke="black" d="M230.4,-268.84C225.76,-261.33 220.22,-252.35 215.08,-244.04"/>
-<polygon fill="black" stroke="black" points="217.97,-242.06 209.74,-235.39 212.02,-245.74 217.97,-242.06"/>
-<text text-anchor="middle" x="226.5" y="-249.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node11" class="node">
-<path fill="none" stroke="black" d="M277,-235C277,-235 247,-235 247,-235 241,-235 235,-229 235,-223 235,-223 235,-211 235,-211 235,-205 241,-199 247,-199 247,-199 277,-199 277,-199 283,-199 289,-205 289,-211 289,-211 289,-223 289,-223 289,-229 283,-235 277,-235"/>
-<text text-anchor="middle" x="262" y="-213.9" font-family="Times,serif" font-size="12.00">zero</text>
-</g>
-<g id="edge8" class="edge">
-<path fill="none" stroke="black" d="M246.3,-268.84C248.52,-261.65 251.16,-253.11 253.63,-245.1"/>
-<polygon fill="black" stroke="black" points="257.02,-245.98 256.63,-235.39 250.33,-243.91 257.02,-245.98"/>
-<text text-anchor="middle" x="255.5" y="-249.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node12" class="node">
-<path fill="none" stroke="black" d="M340,-235C340,-235 310,-235 310,-235 304,-235 298,-229 298,-223 298,-223 298,-211 298,-211 298,-205 304,-199 310,-199 310,-199 340,-199 340,-199 346,-199 352,-205 352,-211 352,-211 352,-223 352,-223 352,-229 346,-235 340,-235"/>
-<text text-anchor="middle" x="325" y="-213.9" font-family="Times,serif" font-size="12.00">decr</text>
-</g>
-<g id="edge9" class="edge">
-<path fill="none" stroke="black" d="M262.2,-268.84C272.44,-260.55 284.9,-250.46 296.01,-241.47"/>
-<polygon fill="black" stroke="black" points="298.24,-244.17 303.81,-235.15 293.84,-238.73 298.24,-244.17"/>
-<text text-anchor="middle" x="291.5" y="-249.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="node13" class="node">
-<path fill="none" stroke="black" d="M151,-235C151,-235 121,-235 121,-235 115,-235 109,-229 109,-223 109,-223 109,-211 109,-211 109,-205 115,-199 121,-199 121,-199 151,-199 151,-199 157,-199 163,-205 163,-211 163,-211 163,-223 163,-223 163,-229 157,-235 151,-235"/>
-<text text-anchor="middle" x="136" y="-213.9" font-family="Times,serif" font-size="12.00">mod2</text>
-</g>
-<g id="edge10" class="edge">
-<path fill="none" stroke="black" d="M214.5,-268.84C201.32,-260.3 185.22,-249.87 171.03,-240.69"/>
-<polygon fill="black" stroke="black" points="172.78,-237.65 162.49,-235.15 168.98,-243.53 172.78,-237.65"/>
-<text text-anchor="middle" x="198.5" y="-249.2" font-family="Times,serif" font-size="11.00">4</text>
+<path fill="none" stroke="black" d="M302,-266C302,-266 272,-266 272,-266 266,-266 260,-260 260,-254 260,-254 260,-242 260,-242 260,-236 266,-230 272,-230 272,-230 302,-230 302,-230 308,-230 314,-236 314,-242 314,-242 314,-254 314,-254 314,-260 308,-266 302,-266"/>
+<text text-anchor="middle" x="287" y="-244.9" font-family="Times,serif" font-size="12.00">hold</text>
 </g>
 <g id="edge5" class="edge">
-<path fill="none" stroke="black" d="M97.67,-268.84C94.1,-261.49 89.85,-252.73 85.9,-244.57"/>
-<polygon fill="black" stroke="black" points="88.95,-242.86 81.44,-235.39 82.66,-245.91 88.95,-242.86"/>
-<text text-anchor="middle" x="95.5" y="-249.2" font-family="Times,serif" font-size="11.00">4</text>
+<path fill="none" stroke="black" d="M287,-313.61C287,-302.77 287,-288.6 287,-276.29"/>
+<polygon fill="black" stroke="black" points="290.5,-276.08 287,-266.08 283.5,-276.08 290.5,-276.08"/>
+<text text-anchor="middle" x="290.5" y="-287.2" font-family="Times,serif" font-size="11.00">2</text>
 </g>
-<g id="node14" class="node">
-<path fill="none" stroke="black" d="M192.5,-165C192.5,-165 159.5,-165 159.5,-165 153.5,-165 147.5,-159 147.5,-153 147.5,-153 147.5,-141 147.5,-141 147.5,-135 153.5,-129 159.5,-129 159.5,-129 192.5,-129 192.5,-129 198.5,-129 204.5,-135 204.5,-141 204.5,-141 204.5,-153 204.5,-153 204.5,-159 198.5,-165 192.5,-165"/>
-<text text-anchor="middle" x="176" y="-143.9" font-family="Times,serif" font-size="12.00">selector</text>
+<g id="node3" class="node">
+<text text-anchor="middle" x="435" y="-328.9" font-family="Times,serif" font-size="12.00">halted</text>
 </g>
-<g id="edge11" class="edge">
-<path fill="none" stroke="black" d="M98.99,-198.84C111.92,-190.3 127.72,-179.87 141.64,-170.69"/>
-<polygon fill="black" stroke="black" points="143.6,-173.58 150.02,-165.15 139.74,-167.74 143.6,-173.58"/>
-<text text-anchor="middle" x="134.5" y="-179.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge12" class="edge">
-<path fill="none" stroke="black" d="M193.2,-198.84C190.76,-191.65 187.88,-183.11 185.17,-175.1"/>
-<polygon fill="black" stroke="black" points="188.4,-173.74 181.88,-165.39 181.77,-175.98 188.4,-173.74"/>
-<text text-anchor="middle" x="192.5" y="-179.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge13" class="edge">
-<path fill="none" stroke="black" d="M240.3,-198.84C229.81,-190.55 217.05,-180.46 205.68,-171.47"/>
-<polygon fill="black" stroke="black" points="207.71,-168.61 197.69,-165.15 203.37,-174.1 207.71,-168.61"/>
-<text text-anchor="middle" x="228.5" y="-179.2" font-family="Times,serif" font-size="11.00">5</text>
-</g>
-<g id="edge14" class="edge">
-<path fill="none" stroke="black" d="M297.69,-200.84C296.45,-200.21 295.21,-199.59 294,-199 267.86,-186.22 237.74,-173.23 214.47,-163.56"/>
-<polygon fill="black" stroke="black" points="215.53,-160.21 204.95,-159.63 212.86,-166.68 215.53,-160.21"/>
-<text text-anchor="middle" x="271.5" y="-179.2" font-family="Times,serif" font-size="11.00">4</text>
-</g>
-<g id="edge15" class="edge">
-<path fill="none" stroke="black" d="M146.09,-198.84C150.51,-191.33 155.79,-182.35 160.68,-174.04"/>
-<polygon fill="black" stroke="black" points="163.72,-175.78 165.77,-165.39 157.68,-172.24 163.72,-175.78"/>
-<text text-anchor="middle" x="162.5" y="-179.2" font-family="Times,serif" font-size="11.00">2</text>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M406.81,-315.38C383.06,-302.22 348.92,-283.31 323.16,-269.03"/>
+<polygon fill="black" stroke="black" points="324.53,-265.79 314.08,-264.01 321.13,-271.91 324.53,-265.79"/>
 </g>
 <g id="node15" class="node">
-<path fill="none" stroke="black" d="M192.5,-95C192.5,-95 159.5,-95 159.5,-95 153.5,-95 147.5,-89 147.5,-83 147.5,-83 147.5,-71 147.5,-71 147.5,-65 153.5,-59 159.5,-59 159.5,-59 192.5,-59 192.5,-59 198.5,-59 204.5,-65 204.5,-71 204.5,-71 204.5,-83 204.5,-83 204.5,-89 198.5,-95 192.5,-95"/>
-<text text-anchor="middle" x="176" y="-73.9" font-family="Times,serif" font-size="12.00">encoder</text>
-</g>
-<g id="edge16" class="edge">
-<path fill="none" stroke="black" d="M176,-128.84C176,-121.81 176,-113.49 176,-105.64"/>
-<polygon fill="black" stroke="black" points="179.5,-105.39 176,-95.39 172.5,-105.39 179.5,-105.39"/>
-<text text-anchor="middle" x="179.5" y="-109.2" font-family="Times,serif" font-size="11.00">3</text>
-</g>
-<g id="edge18" class="edge">
-<path fill="none" stroke="black" d="M155.31,-128.84C145.4,-120.63 133.38,-110.66 122.62,-101.73"/>
-<polygon fill="black" stroke="black" points="124.62,-98.84 114.69,-95.15 120.15,-104.23 124.62,-98.84"/>
-<text text-anchor="middle" x="143.5" y="-109.2" font-family="Times,serif" font-size="11.00">2</text>
-</g>
-<g id="node17" class="node">
-<text text-anchor="middle" x="170" y="-14.9" font-family="Times,serif" font-size="12.00">hb&#39;</text>
-</g>
-<g id="edge20" class="edge">
-<path fill="none" stroke="black" d="M174.2,-58.9C173.78,-54.95 173.33,-50.66 172.88,-46.4"/>
-<polygon fill="black" stroke="black" points="176.33,-45.67 171.8,-36.09 169.37,-46.4 176.33,-45.67"/>
-</g>
-<g id="node18" class="node">
-<text text-anchor="middle" x="233" y="-14.9" font-family="Times,serif" font-size="12.00">lb&#39;</text>
-</g>
-<g id="edge21" class="edge">
-<path fill="none" stroke="black" d="M193.1,-58.9C197.95,-54.05 203.32,-48.68 208.52,-43.48"/>
-<polygon fill="black" stroke="black" points="211.31,-45.64 215.91,-36.09 206.36,-40.69 211.31,-45.64"/>
-</g>
-<g id="node19" class="node">
-<text text-anchor="middle" x="27" y="-14.9" font-family="Times,serif" font-size="12.00">halted&#39;</text>
-</g>
-<g id="edge22" class="edge">
-<path fill="none" stroke="black" d="M73.9,-58.9C67.94,-53.83 61.29,-48.18 54.93,-42.76"/>
-<polygon fill="black" stroke="black" points="56.97,-39.9 47.09,-36.09 52.44,-45.24 56.97,-39.9"/>
-</g>
-<g id="node20" class="node">
-<text text-anchor="middle" x="96" y="-14.9" font-family="Times,serif" font-size="12.00">accepted&#39;</text>
+<path fill="none" stroke="black" d="M355.5,-109C355.5,-109 318.5,-109 318.5,-109 312.5,-109 306.5,-103 306.5,-97 306.5,-97 306.5,-85 306.5,-85 306.5,-79 312.5,-73 318.5,-73 318.5,-73 355.5,-73 355.5,-73 361.5,-73 367.5,-79 367.5,-85 367.5,-85 367.5,-97 367.5,-97 367.5,-103 361.5,-109 355.5,-109"/>
+<text text-anchor="middle" x="337" y="-87.9" font-family="Times,serif" font-size="12.00">latches</text>
 </g>
 <g id="edge23" class="edge">
-<path fill="none" stroke="black" d="M94.6,-58.9C94.74,-54.95 94.89,-50.66 95.04,-46.4"/>
-<polygon fill="black" stroke="black" points="98.55,-46.21 95.4,-36.09 91.55,-45.96 98.55,-46.21"/>
+<path fill="none" stroke="black" d="M443.86,-313.78C460.4,-278.99 491.33,-199.1 457,-146 439.54,-119 405.02,-105.37 377.47,-98.57"/>
+<polygon fill="black" stroke="black" points="378.2,-95.14 367.68,-96.36 376.66,-101.97 378.2,-95.14"/>
+</g>
+<g id="node4" class="node">
+<text text-anchor="middle" x="391" y="-244.9" font-family="Times,serif" font-size="12.00">0</text>
+</g>
+<g id="node13" class="node">
+<path fill="none" stroke="black" d="M439,-182C439,-182 369,-182 369,-182 363,-182 357,-176 357,-170 357,-170 357,-158 357,-158 357,-152 363,-146 369,-146 369,-146 439,-146 439,-146 445,-146 451,-152 451,-158 451,-158 451,-170 451,-170 451,-176 445,-182 439,-182"/>
+<text text-anchor="middle" x="404" y="-160.9" font-family="Times,serif" font-size="12.00">accepts mux</text>
+</g>
+<g id="edge18" class="edge">
+<path fill="none" stroke="black" d="M393.76,-229.61C395.47,-218.77 397.72,-204.6 399.67,-192.29"/>
+<polygon fill="black" stroke="black" points="403.18,-192.51 401.29,-182.08 396.27,-191.41 403.18,-192.51"/>
+<text text-anchor="middle" x="401.5" y="-203.2" font-family="Times,serif" font-size="11.00">3</text>
+</g>
+<g id="node14" class="node">
+<path fill="none" stroke="black" d="M249.5,-182C249.5,-182 196.5,-182 196.5,-182 190.5,-182 184.5,-176 184.5,-170 184.5,-170 184.5,-158 184.5,-158 184.5,-152 190.5,-146 196.5,-146 196.5,-146 249.5,-146 249.5,-146 255.5,-146 261.5,-152 261.5,-158 261.5,-158 261.5,-170 261.5,-170 261.5,-176 255.5,-182 249.5,-182"/>
+<text text-anchor="middle" x="223" y="-160.9" font-family="Times,serif" font-size="12.00">halts mux</text>
+</g>
+<g id="edge21" class="edge">
+<path fill="none" stroke="black" d="M384.15,-229.65C379.22,-219.44 371.58,-207.17 361,-200 328.41,-177.9 310.65,-191.33 271.57,-182.88"/>
+<polygon fill="black" stroke="black" points="272.29,-179.46 261.74,-180.4 270.58,-186.24 272.29,-179.46"/>
+<text text-anchor="middle" x="375.5" y="-203.2" font-family="Times,serif" font-size="11.00">3</text>
+</g>
+<g id="node5" class="node">
+<text text-anchor="middle" x="309" y="-160.9" font-family="Times,serif" font-size="12.00">accepted</text>
+</g>
+<g id="edge25" class="edge">
+<path fill="none" stroke="black" d="M315.78,-145.81C319.01,-137.62 322.95,-127.62 326.56,-118.48"/>
+<polygon fill="black" stroke="black" points="329.87,-119.62 330.28,-109.03 323.36,-117.05 329.87,-119.62"/>
+</g>
+<g id="node11" class="node">
+<path fill="none" stroke="black" d="M91.5,-182C91.5,-182 52.5,-182 52.5,-182 46.5,-182 40.5,-176 40.5,-170 40.5,-170 40.5,-158 40.5,-158 40.5,-152 46.5,-146 52.5,-146 52.5,-146 91.5,-146 91.5,-146 97.5,-146 103.5,-152 103.5,-158 103.5,-158 103.5,-170 103.5,-170 103.5,-176 97.5,-182 91.5,-182"/>
+<text text-anchor="middle" x="72" y="-160.9" font-family="Times,serif" font-size="12.00">hb mux</text>
+</g>
+<g id="edge8" class="edge">
+<path fill="none" stroke="black" d="M86.88,-229.97C85.24,-224.28 83.47,-217.89 82,-212 80.39,-205.52 78.8,-198.49 77.39,-191.9"/>
+<polygon fill="black" stroke="black" points="80.8,-191.11 75.33,-182.03 73.95,-192.54 80.8,-191.11"/>
+</g>
+<g id="node12" class="node">
+<path fill="none" stroke="black" d="M161.5,-182C161.5,-182 126.5,-182 126.5,-182 120.5,-182 114.5,-176 114.5,-170 114.5,-170 114.5,-158 114.5,-158 114.5,-152 120.5,-146 126.5,-146 126.5,-146 161.5,-146 161.5,-146 167.5,-146 173.5,-152 173.5,-158 173.5,-158 173.5,-170 173.5,-170 173.5,-176 167.5,-182 161.5,-182"/>
+<text text-anchor="middle" x="144" y="-160.9" font-family="Times,serif" font-size="12.00">lb mux</text>
+</g>
+<g id="edge13" class="edge">
+<path fill="none" stroke="black" d="M114.61,-229.85C120.29,-224.64 125.92,-218.54 130,-212 133.82,-205.89 136.64,-198.68 138.71,-191.76"/>
+<polygon fill="black" stroke="black" points="142.12,-192.57 141.23,-182.01 135.34,-190.82 142.12,-192.57"/>
+</g>
+<g id="edge9" class="edge">
+<path fill="none" stroke="black" d="M194.84,-232.15C171.73,-219.52 138.22,-201.2 112.03,-186.89"/>
+<polygon fill="black" stroke="black" points="113.56,-183.73 103.11,-182.01 110.2,-189.87 113.56,-183.73"/>
+</g>
+<g id="edge14" class="edge">
+<path fill="none" stroke="black" d="M204.4,-229.7C198.79,-224.11 192.58,-217.84 187,-212 180.15,-204.84 172.83,-196.93 166.2,-189.68"/>
+<polygon fill="black" stroke="black" points="168.66,-187.18 159.34,-182.14 163.48,-191.89 168.66,-187.18"/>
+</g>
+<g id="edge19" class="edge">
+<path fill="none" stroke="black" d="M249.3,-232.76C251.22,-231.81 253.14,-230.88 255,-230 287.41,-214.6 324.37,-198.47 353.38,-186.13"/>
+<polygon fill="black" stroke="black" points="355.05,-189.22 362.89,-182.09 352.32,-182.77 355.05,-189.22"/>
+</g>
+<g id="edge10" class="edge">
+<path fill="none" stroke="black" d="M129.78,-232.31C117.21,-225.18 103.98,-217.09 99,-212 93.08,-205.95 87.98,-198.34 83.86,-191.02"/>
+<polygon fill="black" stroke="black" points="86.91,-189.29 79.18,-182.04 80.7,-192.53 86.91,-189.29"/>
+</g>
+<g id="edge15" class="edge">
+<path fill="none" stroke="black" d="M154.24,-229.61C152.53,-218.77 150.28,-204.6 148.33,-192.29"/>
+<polygon fill="black" stroke="black" points="151.73,-191.41 146.71,-182.08 144.82,-192.51 151.73,-191.41"/>
+</g>
+<g id="edge22" class="edge">
+<path fill="none" stroke="black" d="M184.21,-233.62C193.21,-228.03 202.55,-220.77 209,-212 213.27,-206.19 216.25,-199.09 218.32,-192.18"/>
+<polygon fill="black" stroke="black" points="221.74,-192.91 220.75,-182.36 214.95,-191.23 221.74,-192.91"/>
+</g>
+<g id="edge11" class="edge">
+<path fill="none" stroke="black" d="M36.54,-229.61C42.67,-218.45 50.74,-203.74 57.63,-191.18"/>
+<polygon fill="black" stroke="black" points="60.88,-192.53 62.62,-182.08 54.75,-189.17 60.88,-192.53"/>
+</g>
+<g id="edge16" class="edge">
+<path fill="none" stroke="black" d="M51.53,-229.81C68.84,-217.67 92.24,-201.28 111.16,-188.01"/>
+<polygon fill="black" stroke="black" points="113.32,-190.77 119.51,-182.17 109.31,-185.04 113.32,-190.77"/>
+</g>
+<g id="edge7" class="edge">
+<path fill="none" stroke="black" d="M259.92,-232.21C258.27,-231.43 256.62,-230.69 255,-230 226.04,-217.65 153.41,-197.89 113.25,-183.43"/>
+<polygon fill="black" stroke="black" points="114.38,-180.12 103.79,-179.88 111.92,-186.67 114.38,-180.12"/>
+<text text-anchor="middle" x="205.5" y="-203.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="edge12" class="edge">
+<path fill="none" stroke="black" d="M259.76,-230.14C244.86,-221.04 226.03,-209.71 209,-200 200.49,-195.15 191.26,-190.07 182.51,-185.34"/>
+<polygon fill="black" stroke="black" points="184.08,-182.21 173.61,-180.56 180.76,-188.37 184.08,-182.21"/>
+<text text-anchor="middle" x="231.5" y="-203.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="edge17" class="edge">
+<path fill="none" stroke="black" d="M311.53,-229.81C328.84,-217.67 352.24,-201.28 371.16,-188.01"/>
+<polygon fill="black" stroke="black" points="373.32,-190.77 379.51,-182.17 369.31,-185.04 373.32,-190.77"/>
+<text text-anchor="middle" x="355.5" y="-203.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="edge20" class="edge">
+<path fill="none" stroke="black" d="M279.55,-229.6C275.15,-220.33 269.06,-209.02 262,-200 259.15,-196.36 255.89,-192.78 252.5,-189.38"/>
+<polygon fill="black" stroke="black" points="254.65,-186.6 244.97,-182.29 249.85,-191.7 254.65,-186.6"/>
+<text text-anchor="middle" x="272.5" y="-203.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node16" class="node">
+<text text-anchor="middle" x="72" y="-87.9" font-family="Times,serif" font-size="12.00">hb&#39;</text>
+</g>
+<g id="edge27" class="edge">
+<path fill="none" stroke="black" d="M72,-145.81C72,-137.79 72,-128.05 72,-119.07"/>
+<polygon fill="black" stroke="black" points="75.5,-119.03 72,-109.03 68.5,-119.03 75.5,-119.03"/>
+</g>
+<g id="node17" class="node">
+<text text-anchor="middle" x="144" y="-87.9" font-family="Times,serif" font-size="12.00">lb&#39;</text>
+</g>
+<g id="edge28" class="edge">
+<path fill="none" stroke="black" d="M144,-145.81C144,-137.79 144,-128.05 144,-119.07"/>
+<polygon fill="black" stroke="black" points="147.5,-119.03 144,-109.03 140.5,-119.03 147.5,-119.03"/>
+</g>
+<g id="edge26" class="edge">
+<path fill="none" stroke="black" d="M387.78,-145.81C379.47,-137 369.2,-126.13 360.08,-116.46"/>
+<polygon fill="black" stroke="black" points="362.48,-113.9 353.07,-109.03 357.39,-118.7 362.48,-113.9"/>
+</g>
+<g id="edge24" class="edge">
+<path fill="none" stroke="black" d="M250.31,-145.99C265.42,-136.58 284.41,-124.76 300.75,-114.57"/>
+<polygon fill="black" stroke="black" points="302.88,-117.37 309.52,-109.11 299.18,-111.43 302.88,-117.37"/>
+</g>
+<g id="node18" class="node">
+<text text-anchor="middle" x="297" y="-14.9" font-family="Times,serif" font-size="12.00">halted&#39;</text>
+</g>
+<g id="edge29" class="edge">
+<path fill="none" stroke="black" d="M327.32,-72.81C322.6,-64.44 316.83,-54.2 311.59,-44.9"/>
+<polygon fill="black" stroke="black" points="314.55,-43.02 306.59,-36.03 308.45,-46.46 314.55,-43.02"/>
+</g>
+<g id="node19" class="node">
+<text text-anchor="middle" x="376" y="-14.9" font-family="Times,serif" font-size="12.00">accepted&#39;</text>
+</g>
+<g id="edge30" class="edge">
+<path fill="none" stroke="black" d="M346.44,-72.81C351.04,-64.44 356.67,-54.2 361.77,-44.9"/>
+<polygon fill="black" stroke="black" points="364.9,-46.48 366.65,-36.03 358.76,-43.11 364.9,-46.48"/>
 </g>
 </g>
-</svg><figcaption>A stepper, ten boxes</figcaption></figure><p><code>tests/test_circuit.c</code> holds the stepper to <code>sat_step</code> on all 64 settings of its six inputs. Its gates, box by box:</p>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="A stepper, ten boxes" width="438pt" height="302pt"
+ viewBox="0.00 0.00 438.19 302.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 298)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-298 434.19,-298 434.19,4 -4,4"/>
+<g id="node1" class="node">
+<text text-anchor="middle" x="133" y="-272.9" font-family="Times,serif" font-size="12.00">AX</text>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M105,-224C105,-224 75,-224 75,-224 69,-224 63,-218 63,-212 63,-212 63,-200 63,-200 63,-194 69,-188 75,-188 75,-188 105,-188 105,-188 111,-188 117,-194 117,-200 117,-200 117,-212 117,-212 117,-218 111,-224 105,-224"/>
+<text text-anchor="middle" x="90" y="-202.9" font-family="Times,serif" font-size="12.00">nada</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M122.15,-257.84C117.4,-250.33 111.72,-241.35 106.47,-233.04"/>
+<polygon fill="black" stroke="black" points="109.3,-230.97 101,-224.39 103.38,-234.71 109.3,-230.97"/>
+<text text-anchor="middle" x="118.5" y="-238.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node7" class="node">
+<path fill="none" stroke="black" d="M231,-224C231,-224 201,-224 201,-224 195,-224 189,-218 189,-212 189,-212 189,-200 189,-200 189,-194 195,-188 201,-188 201,-188 231,-188 231,-188 237,-188 243,-194 243,-200 243,-200 243,-212 243,-212 243,-218 237,-224 231,-224"/>
+<text text-anchor="middle" x="216" y="-202.9" font-family="Times,serif" font-size="12.00">zero</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M153.94,-257.84C163.97,-249.63 176.14,-239.66 187.03,-230.73"/>
+<polygon fill="black" stroke="black" points="189.54,-233.2 195.06,-224.15 185.11,-227.78 189.54,-233.2"/>
+<text text-anchor="middle" x="182.5" y="-238.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node8" class="node">
+<path fill="none" stroke="black" d="M168,-224C168,-224 138,-224 138,-224 132,-224 126,-218 126,-212 126,-212 126,-200 126,-200 126,-194 132,-188 138,-188 138,-188 168,-188 168,-188 174,-188 180,-194 180,-200 180,-200 180,-212 180,-212 180,-218 174,-224 168,-224"/>
+<text text-anchor="middle" x="153" y="-202.9" font-family="Times,serif" font-size="12.00">decr</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M138.05,-257.84C140.16,-250.65 142.67,-242.11 145.03,-234.1"/>
+<polygon fill="black" stroke="black" points="148.42,-234.97 147.89,-224.39 141.71,-233 148.42,-234.97"/>
+<text text-anchor="middle" x="147.5" y="-238.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node9" class="node">
+<path fill="none" stroke="black" d="M42,-224C42,-224 12,-224 12,-224 6,-224 0,-218 0,-212 0,-212 0,-200 0,-200 0,-194 6,-188 12,-188 12,-188 42,-188 42,-188 48,-188 54,-194 54,-200 54,-200 54,-212 54,-212 54,-218 48,-224 42,-224"/>
+<text text-anchor="middle" x="27" y="-202.9" font-family="Times,serif" font-size="12.00">mod2</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M106.25,-257.84C92.94,-249.3 76.68,-238.87 62.36,-229.69"/>
+<polygon fill="black" stroke="black" points="64.05,-226.61 53.74,-224.15 60.27,-232.5 64.05,-226.61"/>
+<text text-anchor="middle" x="90.5" y="-238.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node2" class="node">
+<text text-anchor="middle" x="279" y="-272.9" font-family="Times,serif" font-size="12.00">line</text>
+</g>
+<g id="node10" class="node">
+<path fill="none" stroke="black" d="M294,-224C294,-224 264,-224 264,-224 258,-224 252,-218 252,-212 252,-212 252,-200 252,-200 252,-194 258,-188 264,-188 264,-188 294,-188 294,-188 300,-188 306,-194 306,-200 306,-200 306,-212 306,-212 306,-218 300,-224 294,-224"/>
+<text text-anchor="middle" x="279" y="-202.9" font-family="Times,serif" font-size="12.00">hold</text>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M279,-257.84C279,-250.81 279,-242.49 279,-234.64"/>
+<polygon fill="black" stroke="black" points="282.5,-234.39 279,-224.39 275.5,-234.39 282.5,-234.39"/>
+<text text-anchor="middle" x="282.5" y="-238.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node3" class="node">
+<text text-anchor="middle" x="400" y="-272.9" font-family="Times,serif" font-size="12.00">halted</text>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M372.85,-259.74C355.72,-250.12 333.41,-237.58 314.84,-227.14"/>
+<polygon fill="black" stroke="black" points="316.5,-224.06 306.06,-222.21 313.07,-230.16 316.5,-224.06"/>
+</g>
+<g id="node15" class="node">
+<path fill="none" stroke="black" d="M324,-95C324,-95 294,-95 294,-95 288,-95 282,-89 282,-83 282,-83 282,-71 282,-71 282,-65 288,-59 294,-59 294,-59 324,-59 324,-59 330,-59 336,-65 336,-71 336,-71 336,-83 336,-83 336,-89 330,-95 324,-95"/>
+<text text-anchor="middle" x="309" y="-73.9" font-family="Times,serif" font-size="12.00">latches</text>
+</g>
+<g id="edge23" class="edge">
+<path fill="none" stroke="black" d="M408.38,-257.61C421.99,-226.55 444.59,-160.79 415,-118 399.7,-95.87 370.5,-85.97 346.61,-81.55"/>
+<polygon fill="black" stroke="black" points="346.84,-78.04 336.42,-79.92 345.74,-84.96 346.84,-78.04"/>
+</g>
+<g id="node4" class="node">
+<text text-anchor="middle" x="355" y="-202.9" font-family="Times,serif" font-size="12.00">0</text>
+</g>
+<g id="node13" class="node">
+<path fill="none" stroke="black" d="M398,-154C398,-154 338,-154 338,-154 332,-154 326,-148 326,-142 326,-142 326,-130 326,-130 326,-124 332,-118 338,-118 338,-118 398,-118 398,-118 404,-118 410,-124 410,-130 410,-130 410,-142 410,-142 410,-148 404,-154 398,-154"/>
+<text text-anchor="middle" x="368" y="-132.9" font-family="Times,serif" font-size="12.00">accepts mux</text>
+</g>
+<g id="edge18" class="edge">
+<path fill="none" stroke="black" d="M358.28,-187.84C359.64,-180.73 361.25,-172.3 362.77,-164.37"/>
+<polygon fill="black" stroke="black" points="366.24,-164.87 364.68,-154.39 359.36,-163.56 366.24,-164.87"/>
+<text text-anchor="middle" x="365.5" y="-168.2" font-family="Times,serif" font-size="11.00">3</text>
+</g>
+<g id="node14" class="node">
+<path fill="none" stroke="black" d="M232.5,-154C232.5,-154 189.5,-154 189.5,-154 183.5,-154 177.5,-148 177.5,-142 177.5,-142 177.5,-130 177.5,-130 177.5,-124 183.5,-118 189.5,-118 189.5,-118 232.5,-118 232.5,-118 238.5,-118 244.5,-124 244.5,-130 244.5,-130 244.5,-142 244.5,-142 244.5,-148 238.5,-154 232.5,-154"/>
+<text text-anchor="middle" x="211" y="-132.9" font-family="Times,serif" font-size="12.00">halts mux</text>
+</g>
+<g id="edge21" class="edge">
+<path fill="none" stroke="black" d="M347.03,-187.63C342.37,-179.44 335.67,-170.32 327,-165 299.95,-148.41 285.5,-160.81 254.86,-155.09"/>
+<polygon fill="black" stroke="black" points="255.34,-151.61 244.8,-152.69 253.71,-158.42 255.34,-151.61"/>
+<text text-anchor="middle" x="342.5" y="-168.2" font-family="Times,serif" font-size="11.00">3</text>
+</g>
+<g id="node5" class="node">
+<text text-anchor="middle" x="285" y="-132.9" font-family="Times,serif" font-size="12.00">accepted</text>
+</g>
+<g id="edge25" class="edge">
+<path fill="none" stroke="black" d="M292.2,-117.9C293.96,-113.73 295.88,-109.17 297.77,-104.67"/>
+<polygon fill="black" stroke="black" points="301.15,-105.66 301.8,-95.09 294.7,-102.95 301.15,-105.66"/>
+</g>
+<g id="node11" class="node">
+<path fill="none" stroke="black" d="M93,-154C93,-154 63,-154 63,-154 57,-154 51,-148 51,-142 51,-142 51,-130 51,-130 51,-124 57,-118 63,-118 63,-118 93,-118 93,-118 99,-118 105,-124 105,-130 105,-130 105,-142 105,-142 105,-148 99,-154 93,-154"/>
+<text text-anchor="middle" x="78" y="-132.9" font-family="Times,serif" font-size="12.00">hb mux</text>
+</g>
+<g id="edge8" class="edge">
+<path fill="none" stroke="black" d="M86.97,-187.84C85.72,-180.73 84.23,-172.3 82.83,-164.37"/>
+<polygon fill="black" stroke="black" points="86.25,-163.63 81.07,-154.39 79.36,-164.85 86.25,-163.63"/>
+</g>
+<g id="node12" class="node">
+<path fill="none" stroke="black" d="M156,-154C156,-154 126,-154 126,-154 120,-154 114,-148 114,-142 114,-142 114,-130 114,-130 114,-124 120,-118 126,-118 126,-118 156,-118 156,-118 162,-118 168,-124 168,-130 168,-130 168,-142 168,-142 168,-148 162,-154 156,-154"/>
+<text text-anchor="middle" x="141" y="-132.9" font-family="Times,serif" font-size="12.00">lb mux</text>
+</g>
+<g id="edge13" class="edge">
+<path fill="none" stroke="black" d="M117.28,-189.02C121.66,-185.51 125.8,-181.48 129,-177 131.78,-173.11 133.92,-168.57 135.57,-163.98"/>
+<polygon fill="black" stroke="black" points="139.02,-164.64 138.45,-154.06 132.3,-162.68 139.02,-164.64"/>
+</g>
+<g id="edge9" class="edge">
+<path fill="none" stroke="black" d="M188.68,-189.86C187.44,-189.22 186.21,-188.6 185,-188 154.84,-173.01 144.07,-170.78 114.63,-156.68"/>
+<polygon fill="black" stroke="black" points="115.84,-153.38 105.32,-152.14 112.77,-159.67 115.84,-153.38"/>
+</g>
+<g id="edge14" class="edge">
+<path fill="none" stroke="black" d="M193.85,-187.89C189.51,-184.37 185.06,-180.63 181,-177 175.59,-172.16 169.97,-166.78 164.71,-161.58"/>
+<polygon fill="black" stroke="black" points="166.87,-158.78 157.34,-154.16 161.91,-163.72 166.87,-158.78"/>
+</g>
+<g id="edge19" class="edge">
+<path fill="none" stroke="black" d="M243.15,-190.37C244.79,-189.55 246.41,-188.76 248,-188 270.25,-177.39 295.28,-166.58 316.7,-157.66"/>
+<polygon fill="black" stroke="black" points="318.05,-160.88 325.95,-153.83 315.38,-154.42 318.05,-160.88"/>
+</g>
+<g id="edge10" class="edge">
+<path fill="none" stroke="black" d="M125.75,-190.42C114.18,-184.17 103.08,-178.04 102,-177 97.84,-173 94.14,-168.13 90.96,-163.18"/>
+<polygon fill="black" stroke="black" points="93.88,-161.24 85.82,-154.36 87.83,-164.76 93.88,-161.24"/>
+</g>
+<g id="edge15" class="edge">
+<path fill="none" stroke="black" d="M149.97,-187.84C148.72,-180.73 147.23,-172.3 145.83,-164.37"/>
+<polygon fill="black" stroke="black" points="149.25,-163.63 144.07,-154.39 142.36,-164.85 149.25,-163.63"/>
+</g>
+<g id="edge22" class="edge">
+<path fill="none" stroke="black" d="M180.21,-190.29C190.16,-184.69 199.39,-179.14 201,-177 203.83,-173.23 205.87,-168.75 207.33,-164.17"/>
+<polygon fill="black" stroke="black" points="210.78,-164.78 209.7,-154.24 203.98,-163.16 210.78,-164.78"/>
+</g>
+<g id="edge11" class="edge">
+<path fill="none" stroke="black" d="M39.87,-187.84C45.62,-180.17 52.53,-170.97 58.87,-162.51"/>
+<polygon fill="black" stroke="black" points="61.76,-164.49 64.96,-154.39 56.16,-160.29 61.76,-164.49"/>
+</g>
+<g id="edge16" class="edge">
+<path fill="none" stroke="black" d="M54.02,-188.88C69.24,-179.81 88.45,-168.35 104.94,-158.51"/>
+<polygon fill="black" stroke="black" points="106.99,-161.36 113.78,-153.24 103.4,-155.35 106.99,-161.36"/>
+</g>
+<g id="edge7" class="edge">
+<path fill="none" stroke="black" d="M251.82,-189.53C250.55,-188.98 249.27,-188.47 248,-188 225.43,-179.68 218.34,-182.83 195,-177 176.58,-172.4 172.34,-169.92 154,-165 137.22,-160.5 130.38,-161.07 114.84,-155.93"/>
+<polygon fill="black" stroke="black" points="115.79,-152.55 105.2,-152.42 113.4,-159.13 115.79,-152.55"/>
+<text text-anchor="middle" x="198.5" y="-168.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="edge12" class="edge">
+<path fill="none" stroke="black" d="M251.99,-190.09C250.64,-189.38 249.31,-188.68 248,-188 227.35,-177.29 222.28,-174.37 201,-165 191.34,-160.75 187.06,-159.84 177.31,-155.76"/>
+<polygon fill="black" stroke="black" points="178.69,-152.54 168.13,-151.68 175.85,-158.94 178.69,-152.54"/>
+<text text-anchor="middle" x="229.5" y="-168.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="edge17" class="edge">
+<path fill="none" stroke="black" d="M295.87,-187.81C303.53,-180.41 312.9,-171.89 322,-165 324.31,-163.25 326.73,-161.52 329.2,-159.82"/>
+<polygon fill="black" stroke="black" points="331.29,-162.64 337.73,-154.22 327.45,-156.79 331.29,-162.64"/>
+<text text-anchor="middle" x="325.5" y="-168.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="edge20" class="edge">
+<path fill="none" stroke="black" d="M265.41,-187.67C259.43,-180.41 252.14,-172.03 245,-165 243.61,-163.63 242.16,-162.26 240.68,-160.89"/>
+<polygon fill="black" stroke="black" points="242.9,-158.19 233.08,-154.22 238.28,-163.45 242.9,-158.19"/>
+<text text-anchor="middle" x="258.5" y="-168.2" font-family="Times,serif" font-size="11.00">2</text>
+</g>
+<g id="node16" class="node">
+<text text-anchor="middle" x="78" y="-73.9" font-family="Times,serif" font-size="12.00">hb&#39;</text>
+</g>
+<g id="edge27" class="edge">
+<path fill="none" stroke="black" d="M78,-117.9C78,-113.95 78,-109.66 78,-105.4"/>
+<polygon fill="black" stroke="black" points="81.5,-105.09 78,-95.09 74.5,-105.09 81.5,-105.09"/>
+</g>
+<g id="node17" class="node">
+<text text-anchor="middle" x="141" y="-73.9" font-family="Times,serif" font-size="12.00">lb&#39;</text>
+</g>
+<g id="edge28" class="edge">
+<path fill="none" stroke="black" d="M141,-117.9C141,-113.95 141,-109.66 141,-105.4"/>
+<polygon fill="black" stroke="black" points="144.5,-105.09 141,-95.09 137.5,-105.09 144.5,-105.09"/>
+</g>
+<g id="edge26" class="edge">
+<path fill="none" stroke="black" d="M350.3,-117.9C345.16,-112.94 339.46,-107.43 333.97,-102.12"/>
+<polygon fill="black" stroke="black" points="336.31,-99.52 326.69,-95.09 331.45,-104.56 336.31,-99.52"/>
+</g>
+<g id="edge24" class="edge">
+<path fill="none" stroke="black" d="M240.4,-117.9C250.71,-111.9 262.4,-105.1 273.18,-98.84"/>
+<polygon fill="black" stroke="black" points="275.08,-101.78 281.96,-93.73 271.56,-95.73 275.08,-101.78"/>
+</g>
+<g id="node18" class="node">
+<text text-anchor="middle" x="274" y="-14.9" font-family="Times,serif" font-size="12.00">halted&#39;</text>
+</g>
+<g id="edge29" class="edge">
+<path fill="none" stroke="black" d="M298.5,-58.9C295.8,-54.5 292.83,-49.67 289.93,-44.94"/>
+<polygon fill="black" stroke="black" points="292.71,-42.78 284.49,-36.09 286.74,-46.44 292.71,-42.78"/>
+</g>
+<g id="node19" class="node">
+<text text-anchor="middle" x="343" y="-14.9" font-family="Times,serif" font-size="12.00">accepted&#39;</text>
+</g>
+<g id="edge30" class="edge">
+<path fill="none" stroke="black" d="M319.2,-58.9C321.82,-54.5 324.7,-49.67 327.53,-44.94"/>
+<polygon fill="black" stroke="black" points="330.69,-46.47 332.81,-36.09 324.68,-42.89 330.69,-46.47"/>
+</g>
+</g>
+</svg><figcaption>A stepper, ten boxes</figcaption></figure><p><code>tests/test_circuit.c</code> holds the stepper to <code>sat_step</code> on all 64 settings of its six inputs. The flags agree on every setting, and <code>AX</code> on every setting but <code>decr</code> at 0, where the decrementer reads 1 and <code>sat_step</code> keeps 0; the machine has halted there, and its verdict is settled. Its gates, box by box:</p>
 <table>
 <thead>
 <tr>
@@ -505,27 +552,6 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </thead>
 <tbody>
 <tr>
-<td>decoder</td>
-<td>2</td>
-<td>4</td>
-<td>0</td>
-<td>6</td>
-</tr>
-<tr>
-<td>op decoder</td>
-<td>2</td>
-<td>4</td>
-<td>0</td>
-<td>6</td>
-</tr>
-<tr>
-<td>hold</td>
-<td>1</td>
-<td>3</td>
-<td>1</td>
-<td>5</td>
-</tr>
-<tr>
 <td>nada</td>
 <td>0</td>
 <td>0</td>
@@ -534,38 +560,59 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 <tr>
 <td>zero</td>
+<td>1</td>
 <td>0</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
+<td>1</td>
+<td>2</td>
 </tr>
 <tr>
 <td>decr</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
+<td>2</td>
+<td>1</td>
+<td>1</td>
+<td>4</td>
 </tr>
 <tr>
 <td>mod2</td>
 <td>0</td>
 <td>0</td>
-<td>2</td>
-<td>2</td>
+<td>0</td>
+<td>0</td>
 </tr>
 <tr>
-<td>selector</td>
+<td>hold</td>
+<td>1</td>
+<td>2</td>
 <td>0</td>
-<td>15</td>
-<td>9</td>
-<td>24</td>
+<td>3</td>
 </tr>
 <tr>
-<td>encoder</td>
-<td>0</td>
-<td>0</td>
-<td>2</td>
-<td>2</td>
+<td>hb mux</td>
+<td>3</td>
+<td>6</td>
+<td>3</td>
+<td>12</td>
+</tr>
+<tr>
+<td>lb mux</td>
+<td>3</td>
+<td>6</td>
+<td>3</td>
+<td>12</td>
+</tr>
+<tr>
+<td>accepts mux</td>
+<td>3</td>
+<td>6</td>
+<td>3</td>
+<td>12</td>
+</tr>
+<tr>
+<td>halts mux</td>
+<td>3</td>
+<td>6</td>
+<td>3</td>
+<td>12</td>
 </tr>
 <tr>
 <td>latches</td>
@@ -576,34 +623,29 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 <tr>
 <td><strong>the stepper</strong></td>
-<td>5</td>
-<td>26</td>
 <td>16</td>
-<td>47</td>
+<td>27</td>
+<td>16</td>
+<td>59</td>
 </tr>
 <tr>
 <td><strong>a core</strong>, six steppers</td>
-<td>30</td>
-<td>156</td>
 <td>96</td>
-<td>282</td>
+<td>162</td>
+<td>96</td>
+<td>354</td>
 </tr>
 <tr>
 <td><strong>the decider</strong>, four cores and the comparators</td>
-<td>128</td>
-<td>635</td>
+<td>392</td>
+<td>659</td>
 <td>388</td>
-<td>1,151</td>
+<td>1,439</td>
 </tr>
 </tbody>
 </table>
-<p>The three machines <code>nada</code>, <code>zero</code> and <code>decr</code> are wires alone, at 0 gates. The selector is more than half the stepper: one AND for each wire a machine drives, and the ORs that join them. One wire ends at the selector: it builds <code>next_0</code>, and the encoder reads only wires 1 to 3. It stays, because each part does its whole job as its rule says.</p>
 <h2 id="the-stepper-of-the-second-part">The stepper of the second part <a class="section-link" href="#the-stepper-of-the-second-part" aria-label="Link to this section">§</a></h2>
-<p><code>sat_step</code> in <code>src/sat.c</code>, the stepper of <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, is the same design in 34 gates, and <code>tests/test_circuit.c</code> holds this stepper to it on all 64 settings. It folds and merges where this stepper is literal; the 13 gates between them are these:</p>
-<ul>
-<li>it writes each NOT as a literal&#39;s sign, which is free in a formula: 5 gates;</li>
-<li>it leaves out wire 0, since value 0 is what remains when wires 1 to 3 are off: <code>fold_0</code> and <code>next_0</code>&#39;s 4 AND and 3 OR gates, 8 in all.</li>
-</ul>
+<p><code>sat_step</code> in <code>src/sat.c</code>, the stepper of <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, computes the same flags in 34 gates. It writes each NOT as a literal&#39;s sign, which is free in a formula, so it counts AND and OR alone; counted that way, this stepper has 43. The two differ in kind. <code>sat_step</code> decodes <code>AX</code> and the line into one-hot wires, gates each opcode&#39;s wires with an enable, and folds away every constant. This stepper keeps <code>AX</code> as two bits, chooses with multiplexers, and feeds the flag muxes their constant 0s: those two muxes alone are 18 AND and OR gates, where <code>sat_step</code> spends one AND on each flag.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
