@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nibble++ meets rocsat · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li class="here"><a href="nibble-meets-rocsat.html"><span class="number">24</span>Nibble++ meets rocsat</a><ol class="sections"><li><a href="nibble-meets-rocsat.html#the-machine-as-a-circuit">The machine as a circuit</a></li><li><a href="nibble-meets-rocsat.html#the-questions-asked">The questions asked</a></li><li><a href="nibble-meets-rocsat.html#the-search">The search</a></li><li><a href="nibble-meets-rocsat.html#two-observations">Two observations</a></li></ol></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">25</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">26</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">27</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">28</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">29</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">30</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">31</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">32</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">33</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">34</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">35</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">36</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">37</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">38</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">39</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">40</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 24</p>
+<h1 id="nibble-meets-rocsat">Nibble++ meets rocsat</h1>
+<p><a class="chapter-link" href="nibble.html">“Nibble++”</a> settles every formal language&#39;s shortest program by searching the machine&#39;s states. This chapter puts the same questions to rocsat, as <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a> frames them, in a CNF that <code>src/plus_sat.c</code> builds on the toy&#39;s gates.</p>
+<h2 id="the-machine-as-a-circuit">The machine as a circuit <a class="section-link" href="#the-machine-as-a-circuit" aria-label="Link to this section">§</a></h2>
+<p><code>src/plus_sat.c</code> writes the Nibble++ step on a 4-bit <code>AX</code> in the AND and OR gates of <code>src/sat.c</code>, a complement being a literal&#39;s sign: a test of <code>AX</code> for 0, a borrow chain for <code>decr</code>, and for each bit of <code>AX</code> a four-way multiplexer steered by the line&#39;s two bits. Unrolled for a k-line program, one run&#39;s circuit takes the 2k program bits and the input&#39;s four bits, and its output is <code>accepted</code>. At 28 lines, the longest shortest length, <code>src/plus_sat_main.c</code> counts:</p>
+<table>
+<thead>
+<tr>
+<th>CNF at 28 lines</th>
+<th align="right">Gates</th>
+<th align="right">Variables</th>
+<th align="right">Clauses</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>one run, its input free</td>
+<td align="right">1340</td>
+<td align="right">1400</td>
+<td align="right">4020</td>
+</tr>
+<tr>
+<td>the search for {0, ..., 13, 15}</td>
+<td align="right">19034</td>
+<td align="right">19090</td>
+<td align="right">57118</td>
+</tr>
+</tbody>
+</table>
+<p>Each gate is one variable and three clauses. The second row is the search below, for the case at 28 lines.</p>
+<h2 id="the-questions-asked">The questions asked <a class="section-link" href="#the-questions-asked" aria-label="Link to this section">§</a></h2>
+<p>An evaluation claim fixes every input of one run with unit clauses, the program&#39;s bits and the input&#39;s, and a unit clause asks for accept. With every input fixed, <code>solve</code> only evaluates the circuit, as in <a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a>. The happy path comes first. The census witness of {15} accepts input 15, and the witness of {2, 3, 6, 7, 10, 11, 14, 15} accepts input 6. rocsat answers SATISFIABLE, and <code>rocsat check</code> accepts the model it found, with accept at 1:</p>
+<pre><code class="language-text">program decr,half,decr,half,decr,half,decr,zero (8 lines) accepts input 15: SAT; rocsat check: c model ok; accept (399) = 1
+program half,decr,mod2,zero (4 lines) accepts input 6: SAT; rocsat check: c model ok; accept (199) = 1
+</code></pre>
+<p>The unhappy path takes input 14, outside {15}. Left free, the run is SATISFIABLE with accept at 0. That model with accept turned to 1 breaks a clause, which <code>check</code> names. With accept forced, the answer is UNSATISFIABLE, the one expected, and rocsat&#39;s DRAT proof replays in <code>src/drat.c</code>:</p>
+<pre><code class="language-text">program decr,half,decr,half,decr,half,decr,zero (8 lines) on input 14, accept left free: SAT, accept (399) = 0
+program decr,half,decr,half,decr,half,decr,zero (8 lines) accepts input 14, the honest model with accept set to 1: rocsat check: exit 1, c model falsifies clause 1136
+program decr,half,decr,half,decr,half,decr,zero (8 lines) accepts input 14: UNSAT; drat check: verified: 401 lemmas (0 by RAT), 0 deletions, over 400 variables and 1161 clauses; the empty clause at line 401
+</code></pre>
+<p><code>sat/plus.shale</code> asks these, and <code>build.shale</code> runs it. It writes <code>sat/plus/verdicts.txt</code> with its times left out, so a changed answer shows in <code>git status</code>.</p>
+<h2 id="the-search">The search <a class="section-link" href="#the-search" aria-label="Link to this section">§</a></h2>
+<p>The search is the heart of the chapter. For a formal language W and a length k, <code>plus_sat search W k</code> writes one CNF. The 2k program bits are free, and 16 copies of the run share them, one per input, each with <code>AX</code> fixed to its input, so constant folding trims each copy. A unit clause holds each copy&#39;s output to W&#39;s want bit: accept for a member, reject for the rest.</p>
+<p>A model is then a k-line program that decides W, so SATISFIABLE hands back a program. <code>sat/plus_search.shale</code> checks each one with <code>rocsat check</code>, with <code>src/drat.c</code>&#39;s model check and on the interpreter. One line below the census length L, UNSATISFIABLE says that every program of L − 1 lines decides some other formal language. Shorter programs are covered too: a <code>decr</code> added after a program&#39;s last line keeps its formal language (<a class="chapter-link" href="nibble.html">“Nibble++”</a>), so any shorter program for W pads to one of L − 1 lines. The DRAT proof of that answer, replayed by <code>src/drat.c</code>, proves L minimal on its own, apart from the census.</p>
+<p>The script ran 11 cases spread across the lengths, up to two of the hardest, at 27 and 28 lines. Its file, <code>sat/plus/search.txt</code>, also records each solve&#39;s time in the run of commit <code>9ff83c9</code>; times vary from run to run, so the table leaves them out:</p>
+<table>
+<thead>
+<tr>
+<th>Formal language</th>
+<th align="right">Census length L</th>
+<th>L lines</th>
+<th>L − 1 lines</th>
+<th align="right">The proof at L − 1</th>
+<th>Model and proof checked</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{0}</td>
+<td align="right">1</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">6 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{0, 1}</td>
+<td align="right">2</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">53 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{2, 3, 6, 7, 10, 11, 14, 15}</td>
+<td align="right">4</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">13,638 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{8, ..., 15}</td>
+<td align="right">5</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">34,723 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{15}</td>
+<td align="right">8</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">117,323 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{0, ..., 4, 6}</td>
+<td align="right">12</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">490,951 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{0, ..., 6, 8}</td>
+<td align="right">16</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">1,640,192 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{0, ..., 8, 10}</td>
+<td align="right">20</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">2,691,961 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{0, ..., 10, 12}</td>
+<td align="right">24</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">6,145,378 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{1, ..., 10, 12, 15}</td>
+<td align="right">27</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">11,954,817 bytes</td>
+<td>yes</td>
+</tr>
+<tr>
+<td>{0, ..., 13, 15}</td>
+<td align="right">28</td>
+<td>SAT</td>
+<td>UNSAT</td>
+<td align="right">17,192,870 bytes</td>
+<td>yes</td>
+</tr>
+</tbody>
+</table>
+<p>Every case answered as expected: SATISFIABLE at the census length, UNSATISFIABLE one line shorter, each model and each proof checked. The proofs grow with the length, to about 17 MB at 28 lines.</p>
+<h2 id="two-observations">Two observations <a class="section-link" href="#two-observations" aria-label="Link to this section">§</a></h2>
+<p>rocsat&#39;s programs are its own. A solver hands back whichever model it reaches first, and here that model differs from the census witness in 2 of the 11 cases. At 8 lines, for {15}:</p>
+<pre><code class="language-text">{15}, the census: decr, half, decr, half, decr, half, decr, zero
+{15}, rocsat:     decr, half, decr, half, decr, decr, decr, zero
+</code></pre>
+<p>After the second <code>half</code>, input 15 holds 3 in both. The census brings it to 0 with <code>decr, half, decr</code>, and rocsat with three <code>decr</code>s, in the same four lines with <code>zero</code>.</p>
+<p>Three methods agree on every case: the census, a breadth-first search over states in <code>src/census.c</code>; rocsat&#39;s search over assignments, in Roc; and <code>src/drat.c</code>&#39;s replay of each refutation. Each is its own code, so each shortest length in the table is confirmed three separate ways.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="two-theorems-about-nibble.html"><small>Previous</small>Two theorems about Nibble++</a>
+<a rel="next" href="p-np-and-cook-levin.html"><small>Next</small>P, NP and Cook-Levin</a>
+</nav>
+</main>
+</body>
+</html>

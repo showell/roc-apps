@@ -40,28 +40,29 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
 <li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
 <li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">24</span>P, NP and Cook-Levin</a></li>
-<li><a href="six-expressions-composed.html"><span class="number">25</span>Six expressions, composed</a></li>
-<li><a href="arithmetization.html"><span class="number">26</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">27</span>Why composing blew up</a></li>
-<li class="here"><a href="six-steps-composed.html"><span class="number">28</span>Six steps composed</a><ol class="sections"><li><a href="six-steps-composed.html#the-sizes">The sizes</a></li><li><a href="six-steps-composed.html#the-proof">The proof</a></li></ol></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">29</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">30</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">31</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">32</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">33</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">34</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">35</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">36</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">37</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">38</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">39</span>What comes next</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">24</span>Nibble++ meets rocsat</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">25</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">26</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">27</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">28</span>Why composing blew up</a></li>
+<li class="here"><a href="six-steps-composed.html"><span class="number">29</span>Six steps composed</a><ol class="sections"><li><a href="six-steps-composed.html#the-sizes">The sizes</a></li><li><a href="six-steps-composed.html#the-proof">The proof</a></li></ol></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">30</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">31</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">32</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">33</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">34</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">35</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">36</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">37</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">38</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">39</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">40</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 28</p>
+<p class="chapter-number">Chapter 29</p>
 <h1 id="six-steps-composed">Six steps composed</h1>
 <p><code>src/compose.c</code> substitutes the step polynomials into themselves six times (<code>1146d43</code>). The Roc port&#39;s step, from <code>roc/Compose.roc</code>:</p>
 <figure class="listing"><figcaption>roc/Compose.roc, the function after_step</figcaption><pre><code class="language-roc"><span class="syn-comment">## The state after step `index` (1 to 6), from the state before it: each</span>

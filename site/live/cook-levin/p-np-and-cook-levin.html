@@ -40,28 +40,29 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
 <li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
 <li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
-<li class="here"><a href="p-np-and-cook-levin.html"><span class="number">24</span>P, NP and Cook-Levin</a><ol class="sections"><li><a href="p-np-and-cook-levin.html#sat-as-hard-as-all-of-np">SAT, as hard as all of NP</a></li><li><a href="p-np-and-cook-levin.html#guessing-and-the-computation-history">Guessing, and the computation history</a></li><li><a href="p-np-and-cook-levin.html#the-toy-as-a-checker">The toy as a checker</a></li></ol></li>
-<li><a href="six-expressions-composed.html"><span class="number">25</span>Six expressions, composed</a></li>
-<li><a href="arithmetization.html"><span class="number">26</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">27</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">28</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">29</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">30</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">31</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">32</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">33</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">34</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">35</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">36</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">37</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">38</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">39</span>What comes next</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">24</span>Nibble++ meets rocsat</a></li>
+<li class="here"><a href="p-np-and-cook-levin.html"><span class="number">25</span>P, NP and Cook-Levin</a><ol class="sections"><li><a href="p-np-and-cook-levin.html#sat-as-hard-as-all-of-np">SAT, as hard as all of NP</a></li><li><a href="p-np-and-cook-levin.html#guessing-and-the-computation-history">Guessing, and the computation history</a></li><li><a href="p-np-and-cook-levin.html#the-toy-as-a-checker">The toy as a checker</a></li></ol></li>
+<li><a href="six-expressions-composed.html"><span class="number">26</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">27</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">28</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">29</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">30</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">31</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">32</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">33</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">34</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">35</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">36</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">37</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">38</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">39</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">40</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 24</p>
+<p class="chapter-number">Chapter 25</p>
 <h1 id="p-np-and-cook-levin">P, NP and Cook-Levin</h1>
 <p><a class="chapter-link" href="p-and-np.html">“P and NP”</a> defines the two classes, and <a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a> places the toy among them. This chapter states the theorem that ties NP to one formal language, SAT, and says what it means for the toy.</p>
 <h2 id="sat-as-hard-as-all-of-np">SAT, as hard as all of NP <a class="section-link" href="#sat-as-hard-as-all-of-np" aria-label="Link to this section">§</a></h2>
@@ -74,7 +75,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="two-theorems-about-nibble.html"><small>Previous</small>Two theorems about Nibble++</a>
+<a rel="prev" href="nibble-meets-rocsat.html"><small>Previous</small>Nibble++ meets rocsat</a>
 <a rel="next" href="six-expressions-composed.html"><small>Next</small>Six expressions, composed</a>
 </nav>
 </main>
