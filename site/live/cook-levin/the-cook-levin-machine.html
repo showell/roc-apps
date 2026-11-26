@@ -12,9 +12,6 @@ figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px;
 figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
 figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
 @media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
-</style><style>
-figure.diagram:has(g.fullsize) { max-height: 80vh; overflow: auto; }
-svg.diagram:has(g.fullsize) { max-width: none; }
 </style></head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
@@ -59,7 +56,7 @@ svg.diagram:has(g.fullsize) { max-width: none; }
 <article>
 <p class="chapter-number">Chapter 23</p>
 <h1 id="the-cook-levin-machine">The Cook-Levin machine</h1>
-<p><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> is a checker: hand it a problem and a program, and it says true or false. Cook and Levin&#39;s idea is to run a checker backwards. Fix the problem, leave the program unknown, pin the output to true, and ask which programs fit. The circuit does the same work as before; only the question changes.</p>
+<p>The decider of <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a> is a checker: hand it a problem and a program, and it says true or false. Cook and Levin&#39;s idea is to run a checker backwards. Fix the problem, leave the program unknown, pin the output to true, and ask which programs fit. The circuit does the same work as before; only the question changes.</p>
 <h2 id="the-circuit-turned-around">The circuit, turned around <a class="section-link" href="#the-circuit-turned-around" aria-label="Link to this section">§</a></h2>
 <p>The want register is fixed at the problem&#39;s bits. The program register becomes twelve unknown wires, <code>v1</code> to <code>v12</code>. The output wire is required to be 1. Everything in between is the same 24 steppers and four comparators, and every wire in them is now an unknown too, tied to the wires feeding it by the rule of its gate.</p>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="The question the circuit now asks" width="256pt" height="188pt"
@@ -101,10 +98,10 @@ svg.diagram:has(g.fullsize) { max-width: none; }
 </g>
 </svg><figcaption>The question the circuit now asks</figcaption></figure><p>A setting of the twelve unknowns that satisfies every gate&#39;s rule and lights the output is a program that decides the problem. The circuit has a satisfying setting exactly when some program decides the problem.</p>
 <h2 id="the-tableau">The tableau <a class="section-link" href="#the-tableau" aria-label="Link to this section">§</a></h2>
-<p>Cook&#39;s proof draws the run of a checking machine as a grid, the tableau: one row for each moment of the run, each row the machine&#39;s whole state, and each row fixed by the row above it through a small local rule. Here the grid has seven rows, the start and the six steps, and four columns, one per core. Each cell is a state of four bits, <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>. The top row is known, since core <code>i</code> starts with <code>AX</code> = <code>i</code> and both flags 0, and each cell below it is one stepper applied to the cell above and to that row&#39;s line of the unknown program. The local rule is the stepper, drawn gate by gate in <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>.</p>
+<p>Cook&#39;s proof draws the run of a checking machine as a grid, the tableau: one row for each moment of the run, each row the machine&#39;s whole state, and each row fixed by the row above it through a small local rule. Here the grid has seven rows, the start and the six steps, and four columns, one per core. Each cell is a state of four bits, <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>. The top row is known, since core <code>i</code> starts with <code>AX</code> = <code>i</code> and both flags 0, and each cell below it is one stepper applied to the cell above and to that row&#39;s line of the unknown program. The local rule is the stepper, drawn from its parts in <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>.</p>
 <p>For a general checker the grid is as wide as its tape and as tall as its running time, and when the time is polynomial in the input&#39;s length, the grid and its rules are polynomial in size too. That is the whole of the theorem&#39;s construction: any question a fast checker can answer becomes the question of whether such a grid can be filled in consistently.</p>
 <h2 id="the-gates-counted">The gates, counted <a class="section-link" href="#the-gates-counted" aria-label="Link to this section">§</a></h2>
-<p>The stepper&#39;s gates as the SAT encoding builds them, in <code>sat_step</code> (<code>src/sat.c</code>): 34, where the drawing in <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> has 49, and that chapter accounts for the 15 between them.</p>
+<p>The stepper&#39;s gates as the SAT encoding builds them, in <code>sat_step</code> (<code>src/sat.c</code>): 34, where the stepper of <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> has 47, and that chapter accounts for the 13 between them.</p>
 <figure class="listing"><figcaption>src/sat.c, an excerpt</figcaption><pre><code class="language-c">    Lit is_3 = <span class="syn-name">AND</span>(hb, lb);
     Lit is_2 = <span class="syn-name">AND</span>(hb, <span class="syn-name">NOT</span>(lb));
     Lit is_1 = <span class="syn-name">AND</span>(<span class="syn-name">NOT</span>(hb), lb);
