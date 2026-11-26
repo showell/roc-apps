@@ -11,7 +11,8 @@
 -- that checkout when it has changes of any kind (an untracked file included)
 -- or its HEAD is on no branch of GitHub's, so what is published is always a
 -- commit anyone can fetch. It builds there with the repository's own
--- web/build.shale, which compiles the machine's C to wasm, writes the page
+-- web/build.shale, which builds the Roc port's machine (roc/NibbleWasm.roc)
+-- into the page's wasm, writes the page
 -- into its out/web/site/ and checks it in headless Chromium. A build that
 -- leaves the checkout changed is refused.
 --
