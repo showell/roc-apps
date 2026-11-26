@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One formula for the whole machine · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li class="here"><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a><ol class="sections"><li><a href="one-formula-for-the-whole-machine.html#formulas-as-values">Formulas as values</a></li><li><a href="one-formula-for-the-whole-machine.html#six-steps-every-bit-unknown">Six steps, every bit unknown</a></li><li><a href="one-formula-for-the-whole-machine.html#graph-and-tree">Graph and tree</a></li></ol></li>
+<li><a href="checking-a-claim.html"><span class="number">11</span>Checking a claim</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">12</span>The machine as a circuit</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">13</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">14</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">15</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">16</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">17</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">18</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">19</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">20</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">21</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">22</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">23</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">24</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">25</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">26</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">27</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">28</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">29</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">30</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 10</p>
+<h1 id="one-formula-for-the-whole-machine">One formula for the whole machine</h1>
+<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> ran the machine as gates on known bits. Its four step functions never ask what their bits are, so they can be handed something else: formulas. The machine is then one function of 14 bits, f, the input&#39;s two and the program&#39;s twelve, true where the program accepts the input, and running the step functions on formulas writes f down. The Roc port states f directly, in <code>roc/Fourteen.roc</code>:</p>
+<figure class="listing"><figcaption>roc/Fourteen.roc, the function f</figcaption><pre><code class="language-roc"><span class="syn-comment">## f itself: true when the program accepts the input. A run that gets</span>
+<span class="syn-comment">## past line 6 still going rejects.</span>
+<span class="syn-name">f</span> : <span class="syn-type">U64</span> -&gt; <span class="syn-type">Bool</span>
+<span class="syn-name">f</span> = |bits| {
+	input = bits // <span class="syn-number">4096</span>
+	program = bits % <span class="syn-number">4096</span>
+	<span class="syn-comment"># Each line&#39;s two bits, line 1 first: 4^5, 4^4, ... 4^0.</span>
+	places = [<span class="syn-number">1024</span>, <span class="syn-number">256</span>, <span class="syn-number">64</span>, <span class="syn-number">16</span>, <span class="syn-number">4</span>, <span class="syn-number">1</span>]
+	places.fold(<span class="syn-type">Going</span>(input), |run, place| <span class="syn-type">Fourteen</span>.step(run, (program // place) % <span class="syn-number">4</span>)) == <span class="syn-type">Accepted</span>
+}
+</code></pre></figure><h2 id="formulas-as-values">Formulas as values <a class="section-link" href="#formulas-as-values" aria-label="Link to this section">§</a></h2>
+<p><code>python/steps.py</code> keeps a formula as a graph of nodes, each a variable, a constant, or a complement, AND or OR of nodes before it. Its operators are the step functions&#39; <code>~</code>, <code>&amp;</code> and <code>|</code>. They fold the plain cases away (a constant, a doubled complement, x AND x, and x OR (¬x AND y), which is x OR y), and a node already built is reused, so equal parts of a formula are one node:</p>
+<figure class="listing"><figcaption>python/steps.py, an excerpt</figcaption><pre><code class="language-python">class F:
+    table = {}
+
+    def __new__(cls, op, *args):
+        key = (op, args)
+        if key not in F.table:
+            f = object.__new__(cls)
+            f.op, f.args = op, args
+            F.table[key] = f
+        return F.table[key]
+
+    def __invert__(self):
+        if self is TRUE:
+            return FALSE
+        if self is FALSE:
+            return TRUE
+        if self.op == &quot;not&quot;:
+            return self.args[0]
+        return F(&quot;not&quot;, self)
+
+    def __and__(self, other):
+        if self is FALSE or other is FALSE:
+            return FALSE
+        if self is TRUE:
+            return other
+        if other is TRUE or self is other:
+            return self
+        return F(&quot;and&quot;, self, other)
+
+    def __or__(self, other):
+        if self is TRUE or other is TRUE:
+            return TRUE
+        if self is FALSE:
+            return other
+        if other is FALSE or self is other:
+            return self
+        # Absorption: x OR (NOT x AND y) is x OR y.
+        if other.op == &quot;and&quot; and other.args[0] is ~self:
+            return self | other.args[1]
+</code></pre></figure><h2 id="six-steps-every-bit-unknown">Six steps, every bit unknown <a class="section-link" href="#six-steps-every-bit-unknown" aria-label="Link to this section">§</a></h2>
+<p>Name the 14 bits v1 to v14: v1 and v2 the input&#39;s, high then low, and v3 to v14 the program&#39;s, two a line, line 1 first, so that v3 to v14 read as the program&#39;s number. Start from the input&#39;s two unknowns with both flags 0, and run the six steps, each on its line&#39;s two unknowns (<code>python/fourteen_cnf.py</code>):</p>
+<figure class="listing"><figcaption>python/fourteen_cnf.py, an excerpt</figcaption><pre><code class="language-python">def formula():
+    state = (var(1), var(2), FALSE, FALSE)
+    for k in range(1, 7):
+        state = step(var(2 * k + 1), var(2 * k + 2), state)
+    return state[3]
+</code></pre></figure><p>What comes back is f. After line 1 the four state bits are short enough to read:</p>
+<pre><code class="language-text">hb&#39;       = ((NOT v3 AND NOT v4 AND v1) OR (NOT v3 AND v4 AND v1) OR (v3 AND NOT v4 AND v1 AND v2))
+lb&#39;       = ((NOT v3 AND NOT v4 AND v2) OR (NOT v3 AND v4 AND v2) OR (v3 AND v4 AND v2) OR (v3 AND NOT v4 AND v1 AND NOT v2))
+halted&#39;   = (v3 AND NOT v4 AND NOT v1 AND NOT v2)
+accepted&#39; = (NOT v3 AND v4 AND NOT v1 AND NOT v2)
+</code></pre>
+<p><code>accepted&#39;</code> is line 1 being <code>zero</code> (<code>NOT v3 AND v4</code>) on an <code>AX</code> of 0 (<code>NOT v1 AND NOT v2</code>). <code>hb&#39;</code> is the high bit kept by <code>nada</code>, kept by <code>zero</code>, or kept by a <code>decr</code> from 3; <code>mod2</code> clears it. After line 2, <code>accepted</code> has the line-1 bits pasted in wherever it uses them:</p>
+<pre><code class="language-text">((NOT v3 AND v4 AND NOT v1 AND NOT v2) OR (NOT (v3 AND NOT v4 AND NOT v1 AND NOT v2) AND NOT v5 AND v6 AND NOT ((NOT v3 AND NOT v4 AND v1) OR (NOT v3 AND v4 AND v1) OR (v3 AND NOT v4 AND v1 AND v2)) AND NOT ((NOT v3 AND NOT v4 AND v2) OR (NOT v3 AND v4 AND v2) OR (v3 AND v4 AND v2) OR (v3 AND NOT v4 AND v1 AND NOT v2))))
+</code></pre>
+<p>It reads: line 1 accepted, or line 1 left the machine running, line 2 is <code>zero</code>, and <code>AX</code> after line 1 is 0.</p>
+<h2 id="graph-and-tree">Graph and tree <a class="section-link" href="#graph-and-tree" aria-label="Link to this section">§</a></h2>
+<p>Written out as text, each line&#39;s formula repeats the last line&#39;s state bits wherever it uses them, and the text grows about six-fold a line. Kept as a graph, the same formula grows by about 35 gates a line:</p>
+<table>
+<thead>
+<tr>
+<th>after line</th>
+<th>gates in the graph</th>
+<th>written out, characters</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>6</td>
+<td>37</td>
+</tr>
+<tr>
+<td>2</td>
+<td>34</td>
+<td>322</td>
+</tr>
+<tr>
+<td>3</td>
+<td>69</td>
+<td>2,131</td>
+</tr>
+<tr>
+<td>4</td>
+<td>104</td>
+<td>13,598</td>
+</tr>
+<tr>
+<td>5</td>
+<td>139</td>
+<td>86,211</td>
+</tr>
+<tr>
+<td>6</td>
+<td>174</td>
+<td>546,105</td>
+</tr>
+</tbody>
+</table>
+<p>The last row is f: 174 gates, or more than half a million characters. <a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a> works with the graph.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-problems-seen-from-outside.html"><small>Previous</small>The problems, seen from outside</a>
+<a rel="next" href="checking-a-claim.html"><small>Next</small>Checking a claim</a>
+</nav>
+</main>
+</body>
+</html>
