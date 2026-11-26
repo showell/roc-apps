@@ -20,25 +20,29 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#what-the-book-covers">What the book covers</a></li><li><a href="introduction.html#why-the-name-fits">Why the name fits</a></li><li><a href="introduction.html#where-the-numbers-come-from">Where the numbers come from</a></li></ol></li>
 <li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
 <li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
-<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
-<li><a href="nibble-the-puzzle-page.html"><span class="number">5</span>Nibble, the puzzle page</a></li>
-<li><a href="the-machine-as-a-circuit.html"><span class="number">6</span>The machine as a circuit</a></li>
-<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">7</span>How it got here</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">8</span>P, NP and Cook-Levin</a></li>
-<li><a href="arithmetization.html"><span class="number">9</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">10</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">11</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">12</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">13</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">14</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">15</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">16</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">17</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">18</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">19</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">20</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">21</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">22</span>What comes next</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">8</span>The machine as a circuit</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">12</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">13</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">14</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">15</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">16</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">17</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">18</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">19</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">20</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">22</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">23</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">24</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">25</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">26</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -91,8 +95,8 @@ def OR(x, y):
 <p><strong>That agreement is the thesis of this book: the machine and its Cook-Levin translation answer every question the same way.</strong> Everything after it widens the check. The C runs both on all 4,096 programs and all four inputs; the six steps are chained into four polynomials that agree with the machine on all 2^14 points; a SAT solver, given the same machine as a formula, finds exactly the machine&#39;s programs; and seven implementations in five languages compute the same answers. His Python stopped short of chaining all six steps, and this repository finishes the chain (<a class="chapter-link" href="how-it-got-here.html">“How it got here”</a>).</p>
 <p>Steve wrote the first version by hand in Python, in <a href="https://github.com/showell/virtual-machine">virtual-machine</a>: the machine (<code>virtual_machine.py</code>), a general polynomial library (<code>poly.py</code>) and a stepper that writes one step of the machine as polynomials (<code>stepper.py</code>). In the cook-levin-riff repository, the code was written by AI coding agents (Claude), with human supervision, as its <code>README.md</code> says in its second line.</p>
 <h2 id="what-the-book-covers">What the book covers <a class="section-link" href="#what-the-book-covers" aria-label="Link to this section">§</a></h2>
-<p>The first part is the toy for its own sake: a finite language, completely understood, every question settled by running everything, even in Python. <a class="chapter-link" href="the-machine.html">“The machine”</a> sets it out, <a class="chapter-link" href="languages-and-machines.html">“Languages and machines”</a> gives the computer science behind the word &quot;language&quot;, <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> searches all 4,096 programs and proves the first theorems, <a class="chapter-link" href="nibble-the-puzzle-page.html">“Nibble, the puzzle page”</a> turns the 16 languages into puzzles, and <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> builds the machine as hardware.</p>
-<p>The second part is Cook-Levin: <a class="chapter-link" href="how-it-got-here.html">“How it got here”</a>, <a class="chapter-link" href="p-np-and-cook-levin.html">“P, NP and Cook-Levin”</a>, then the step as polynomials, from <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> to <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a>, and the circuit as a tableau and a formula, from <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> to <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>.</p>
+<p>The first part is the toy for its own sake: a finite language, completely understood, every question settled by running everything, even in Python. It runs from <a class="chapter-link" href="the-machine.html">“The machine”</a> and the theory behind the word &quot;language&quot; through plain Python, the search of all 4,096 programs and its theorems, the puzzle page and the machine as hardware, to <a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a>, the order in which Steve built it.</p>
+<p>The second part is Cook-Levin: <a class="chapter-link" href="how-it-got-here.html">“How it got here”</a>, <a class="chapter-link" href="p-np-and-cook-levin.html">“P, NP and Cook-Levin”</a>, <a class="chapter-link" href="six-expressions-composed.html">“Six expressions, composed”</a>, then the step as polynomials, from <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> to <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a>, and the circuit as a tableau and a formula, from <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> to <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>.</p>
 <p>The third part is the cross-checks: <a class="chapter-link" href="the-oracles.html">“The oracles”</a>, <a class="chapter-link" href="the-roc-port.html">“The Roc port”</a>, <a class="chapter-link" href="what-is-shale.html">“What is Shale?”</a> and <a class="chapter-link" href="the-vm-in-shale.html">“The VM in Shale”</a>, then <a class="chapter-link" href="what-comes-next.html">“What comes next”</a>. The theorems are numbered through the book, each proved by an exhaustive run that its proof names.</p>
 <h2 id="why-the-name-fits">Why the name fits <a class="section-link" href="#why-the-name-fits" aria-label="Link to this section">§</a></h2>
 <p>The Cook-Levin theorem says that satisfiability of Boolean formulas is NP-complete: any problem whose answers a machine can check in polynomial time reduces to it. The proof unrolls the checking machine, step by step, into one formula. This repository does that unrolling on a toy instrument. It makes no claim about NP, and it reduces one machine&#39;s questions, never an arbitrary verifier&#39;s. It also goes one step past the formula, into arithmetic: the whole program becomes four polynomials with integer coefficients. &quot;A riff&quot; is the honest word for that.</p>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deciding in plain Python · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li class="here"><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a><ol class="sections"><li><a href="deciding-in-plain-python.html#two-versions-of-decides">Two versions of decides</a></li><li><a href="deciding-in-plain-python.html#some-languages-as-one-test">Some languages as one test</a></li><li><a href="deciding-in-plain-python.html#what-the-machine-adds">What the machine adds</a></li></ol></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">8</span>The machine as a circuit</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">12</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">13</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">14</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">15</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">16</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">17</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">18</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">19</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">20</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">22</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">23</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">24</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">25</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">26</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 4</p>
+<h1 id="deciding-in-plain-python">Deciding in plain Python</h1>
+<p>A language over {0, 1, 2, 3} is four answers, one per input, so deciding one takes a line of ordinary code. The code here is <code>python/decides.py</code>, which <code>build.shale</code> runs on every build: it holds its two versions to each other on all 16 languages and all four inputs, and each one-line test below to its language.</p>
+<h2 id="two-versions-of-decides">Two versions of <code>decides</code> <a class="section-link" href="#two-versions-of-decides" aria-label="Link to this section">§</a></h2>
+<p>A language&#39;s <em>want</em> code has bit n set when input n is in it, as in the table of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a>: {0, 2, 3} is 1 + 4 + 8 = 13. The plain version lists the members and looks n up among them:</p>
+<figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">def decides(want, n):
+    # The members of the language: each input whose bit is set in `want`.
+    members = []
+    for i in range(4):
+        if want &amp; (1 &lt;&lt; i):
+            members.append(i)
+    # The language accepts n when n is one of its members.
+    return n in members
+</code></pre></figure><p>The golfed version reads bit n of <code>want</code> directly:</p>
+<figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">decides_golfed = lambda want, n: want &gt;&gt; n &amp; 1
+</code></pre></figure><h2 id="some-languages-as-one-test">Some languages as one test <a class="section-link" href="#some-languages-as-one-test" aria-label="Link to this section">§</a></h2>
+<p>Many of the 16 languages have a natural test of n, or of its two bits, <code>hb</code> and <code>lb</code> (n is 2·<code>hb</code> + <code>lb</code>):</p>
+<figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">ONE_LINERS = {
+    14: lambda n: n != 0,  # {1, 2, 3}
+    5: lambda n: n % 2 == 0,  # {0, 2}
+    8: lambda n: n == 3,  # {3}
+    6: lambda n: n in (1, 2),  # {1, 2}: hb XOR lb
+</code></pre></figure><p><a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a> lists all 16 this way, as Boolean expressions of the two bits.</p>
+<h2 id="what-the-machine-adds">What the machine adds <a class="section-link" href="#what-the-machine-adds" aria-label="Link to this section">§</a></h2>
+<p>The want code already says everything about a language. The Nibble machine takes up to six lines to say the same thing, and for {0, 2, 3} it takes all six, in its one program. The composed polynomial of <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a>, which runs every program on every input at once, takes 10,324 terms. The machine is there to be the thing analysed, a small checker that Cook and Levin&#39;s construction can turn into a formula; the question it answers is a lookup.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="languages-and-machines.html"><small>Previous</small>Languages and machines</a>
+<a rel="next" href="programs-as-languages.html"><small>Next</small>Programs as languages</a>
+</nav>
+</main>
+</body>
+</html>

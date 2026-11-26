@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Six expressions, composed · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">8</span>The machine as a circuit</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
+<li class="here"><a href="six-expressions-composed.html"><span class="number">12</span>Six expressions, composed</a><ol class="sections"><li><a href="six-expressions-composed.html#the-step-as-expressions">The step as expressions</a></li><li><a href="six-expressions-composed.html#composition">Composition</a></li><li><a href="six-expressions-composed.html#the-question-as-one-expression">The question as one expression</a></li><li><a href="six-expressions-composed.html#the-payoff">The payoff</a></li><li><a href="six-expressions-composed.html#two-ways-to-compose">Two ways to compose</a></li></ol></li>
+<li><a href="arithmetization.html"><span class="number">13</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">14</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">15</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">16</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">17</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">18</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">19</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">20</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">22</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">23</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">24</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">25</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">26</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 12</p>
+<h1 id="six-expressions-composed">Six expressions, composed</h1>
+<p><a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a> showed each language as a Boolean function of two bits. The machine&#39;s step is one too, of six bits, and six steps composed are one of fourteen. This chapter writes the step as plain Boolean expressions, composes them into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
+<h2 id="the-step-as-expressions">The step as expressions <a class="section-link" href="#the-step-as-expressions" aria-label="Link to this section">§</a></h2>
+<p>A step reads <code>hb</code>, <code>lb</code>, <code>halted</code>, <code>accepted</code>, <code>op_hb</code> and <code>op_lb</code>, as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>, and writes the next four. Eight small facts about the machine come first, then the four next-state bits, each read with the facts above it (<code>src/decides.c</code>):</p>
+<pre><code class="language-text">ax_is_0 = NOT hb AND NOT lb
+ax_is_2 = hb AND NOT lb
+ax_is_3 = hb AND lb
+is_zero = NOT op_hb AND op_lb
+is_decr = op_hb AND NOT op_lb
+is_mod2 = op_hb AND op_lb
+runs = NOT halted
+keeps = halted OR NOT op_hb
+hb&#39; = (hb AND keeps) OR (ax_is_3 AND is_decr AND runs)
+lb&#39; = (lb AND (keeps OR (is_mod2 AND runs))) OR (ax_is_2 AND is_decr AND runs)
+halted&#39; = halted OR (ax_is_0 AND is_decr)
+accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
+</code></pre>
+<p><code>keeps</code> says that <code>AX</code> stays as it is: the machine has halted, or the line is <code>nada</code> or <code>zero</code>. So <code>hb&#39;</code> is the old <code>hb</code> kept, or a <code>decr</code> from 3 to 2. <code>lb&#39;</code> is the old <code>lb</code> kept, or kept by <code>mod2</code>, which keeps <code>lb</code> and clears <code>hb</code>, or a <code>decr</code> from 2 to 1. <code>halted&#39;</code> adds a <code>decr</code> at 0, and <code>accepted&#39;</code> a <code>zero</code> at 0 on a running machine. <code>tests/test_boolean.c</code> holds the four to <code>src/stepper.c</code>&#39;s step on all 64 settings of the six bits, and <code>src/boolean_main.c</code> checks them again before it prints them for this book. They are the gates of <code>sat_step</code> in <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, merged by hand.</p>
+<h2 id="composition">Composition <a class="section-link" href="#composition" aria-label="Link to this section">§</a></h2>
+<p>Chain six copies. The first reads the input&#39;s two bits, both flags at 0 and line 1&#39;s two bits; each later copy reads the state the one before it wrote, and its own line&#39;s bits. After the sixth, <code>accepted</code> is an expression accepted(n, v) of 2 + 12 bits: the input&#39;s two and the program&#39;s twelve, v1 to v12, numbered as in <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>, where instruction i is 2·v(2i − 1) + v(2i).</p>
+<h2 id="the-question-as-one-expression">The question as one expression <a class="section-link" href="#the-question-as-one-expression" aria-label="Link to this section">§</a></h2>
+<p>A puzzle asks whether a program decides L. That is one more expression, of the twelve program bits alone:</p>
+<pre><code class="language-text">decides_L(v1, ..., v12) = AND over n in 0..3 of (accepted(n, v) == L(n))
+</code></pre>
+<p>L(n) is the constant 1 or 0, so each of the four comparisons is <code>accepted(n, v)</code> or its complement. The true points of <code>decides_L</code> are exactly the programs that decide L.</p>
+<h2 id="the-payoff">The payoff <a class="section-link" href="#the-payoff" aria-label="Link to this section">§</a></h2>
+<p>Expanded and simplified, <code>decides_L</code> is a sum of products over v1 to v12. <code>src/boolean_main.c</code> computes one for every language: it finds the programs that decide L by running all 4,096, takes the prime implicants of that set, and covers it greedily, the product holding the most programs left taken first. Each product is written as its twelve bits, two a line of the program: 1 for v, 0 for its complement, and - for a bit the product leaves free. For {0, 2, 3} the expression is one product, the conjunction of 12 literals that spells its one program, <code>zero, decr, decr, zero, decr, zero</code>:</p>
+<pre><code class="language-text">01 10 10 01 10 01
+</code></pre>
+<p>For {0, 3}, 12 programs take 8 products. The first is <code>zero, decr, decr, decr, zero</code> with line 6 free:</p>
+<pre><code class="language-text">01 10 10 10 01 --
+0- 01 10 10 10 01
+01 10 10 00 10 01
+01 10 00 10 10 01
+01 0- 10 10 10 01
+01 10 10 11 10 01
+01 10 10 10 -1 01
+01 10 10 10 0- 01
+</code></pre>
+<p>The counts for all 16, programs and products, from the same run:</p>
+<table>
+<thead>
+<tr>
+<th>code</th>
+<th>language</th>
+<th>programs</th>
+<th>products</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>{ }</td>
+<td>844</td>
+<td>87</td>
+</tr>
+<tr>
+<td>1</td>
+<td>{0}</td>
+<td>681</td>
+<td>41</td>
+</tr>
+<tr>
+<td>2</td>
+<td>{1}</td>
+<td>303</td>
+<td>32</td>
+</tr>
+<tr>
+<td>3</td>
+<td>{0, 1}</td>
+<td>172</td>
+<td>26</td>
+</tr>
+<tr>
+<td>4</td>
+<td>{2}</td>
+<td>248</td>
+<td>80</td>
+</tr>
+<tr>
+<td>5</td>
+<td>{0, 2}</td>
+<td>883</td>
+<td>121</td>
+</tr>
+<tr>
+<td>6</td>
+<td>{1, 2}</td>
+<td>74</td>
+<td>31</td>
+</tr>
+<tr>
+<td>7</td>
+<td>{0, 1, 2}</td>
+<td>13</td>
+<td>8</td>
+</tr>
+<tr>
+<td>8</td>
+<td>{3}</td>
+<td>63</td>
+<td>30</td>
+</tr>
+<tr>
+<td>9</td>
+<td>{0, 3}</td>
+<td>12</td>
+<td>8</td>
+</tr>
+<tr>
+<td>10</td>
+<td>{1, 3}</td>
+<td>520</td>
+<td>130</td>
+</tr>
+<tr>
+<td>11</td>
+<td>{0, 1, 3}</td>
+<td>150</td>
+<td>54</td>
+</tr>
+<tr>
+<td>12</td>
+<td>{2, 3}</td>
+<td>13</td>
+<td>9</td>
+</tr>
+<tr>
+<td>13</td>
+<td>{0, 2, 3}</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>14</td>
+<td>{1, 2, 3}</td>
+<td>15</td>
+<td>10</td>
+</tr>
+<tr>
+<td>15</td>
+<td>{0, 1, 2, 3}</td>
+<td>104</td>
+<td>40</td>
+</tr>
+</tbody>
+</table>
+<p><code>tests/test_boolean.c</code> holds every language&#39;s sum of products to <code>run_progam</code>, program by program, and the book&#39;s build holds the blocks here to <code>boolean_main</code>&#39;s output.</p>
+<h2 id="two-ways-to-compose">Two ways to compose <a class="section-link" href="#two-ways-to-compose" aria-label="Link to this section">§</a></h2>
+<p>The composing above ran all 4,096 programs, which a toy allows. For a real checker there are two ways to compose the step&#39;s expressions, and the rest of this part takes each in turn.</p>
+<ul>
+<li><strong>Expand it.</strong> Substitute each step&#39;s expressions into the next and multiply out. That is arithmetization: <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> writes the step as polynomials over the integers, and <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> expands all six, to 10,324 terms for <code>accepted</code>. The size grows with every step substituted.</li>
+<li><strong>Name it.</strong> Give each intermediate wire a fresh variable, and state only how it relates to its inputs. That is Tseitin&#39;s encoding and SAT: <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> has 416 variables and 1,216 clauses for each puzzle, and the count grows linearly with the steps, one step unit&#39;s gates per step.</li>
+</ul>
+<p>Naming is why Cook-Levin&#39;s formula stays polynomial in size: each step adds the same few clauses, whatever came before it.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="p-np-and-cook-levin.html"><small>Previous</small>P, NP and Cook-Levin</a>
+<a rel="next" href="arithmetization.html"><small>Next</small>Arithmetization</a>
+</nav>
+</main>
+</body>
+</html>
