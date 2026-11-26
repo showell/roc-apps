@@ -102,7 +102,7 @@ def next_accepted(op_hb, op_lb, hb, lb, halted, accepted):
     return accepted | (~halted &amp; (is_zero &amp; ax_is_0))
 </code></pre></figure><p>These are the machine&#39;s rules, one bit at a time. <code>nada</code> and <code>zero</code> leave <code>AX</code> alone. <code>decr</code> takes 3 to 2, 2 to 1 and 1 to 0, so the new high bit is 1 only when it starts at 3, and the new low bit only when it starts at 2; at 0 it halts. <code>mod2</code> keeps the low bit and clears the high one. <code>zero</code> at 0 accepts. A halted machine keeps every bit as it is, and once a flag is on it stays on.</p>
 <h2 id="six-steps-everything-fixed">Six steps, everything fixed <a class="section-link" href="#six-steps-everything-fixed" aria-label="Link to this section">§</a></h2>
-<p>Now fix the input and the program. With <code>AX</code> = 2 and the program <code>decr, mod2, zero, decr, zero, nada</code>, each of the six bits a step reads is a known 0 or 1, and so is each bit it writes. Composing the six steps is running the machine, one row a step:</p>
+<p>Now fix the input and the program. With <code>AX</code> = 2 and program 2916 (<code>decr, mod2, zero, decr, zero, nada</code>), each of the six bits a step reads is a known 0 or 1, and so is each bit it writes. Composing the six steps is running the machine, one row a step:</p>
 <pre><code class="language-text">                hb lb halted accepted
 start            1  0     0        0
 step 1  decr 10   0  1     0        0

@@ -190,7 +190,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p><strong>Theorem 4.</strong> Each problem&#39;s shortest program has the length in the table&#39;s shortest column.</p>
 <p><em>Proof.</em> <code>tests/test_theorems.c</code> measures the length of all 4,096 programs, takes each problem&#39;s least, and holds the 16 to the table. The second part proves it again a different way: a SAT solver shows each length one line shorter impossible, with a proof a checker replays (<a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>).</p>
 <h2 id="the-rare-one">The rare one <a class="section-link" href="#the-rare-one" aria-label="Link to this section">§</a></h2>
-<p><strong>Theorem 5.</strong> {0, 2, 3} is decided by exactly one program, and that program uses all six lines:</p>
+<p><strong>Theorem 5.</strong> {0, 2, 3} is decided by exactly one program, and that program uses all six lines. It is program 1689:</p>
 <pre><code class="language-text">zero
 decr
 decr

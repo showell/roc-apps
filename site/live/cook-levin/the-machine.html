@@ -18,7 +18,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <a class="book-name" href="index.html">A riff on Cook-Levin</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li class="part">Part I: the toy</li><li class="here"><a href="the-machine.html"><span class="number">2</span>The machine</a><ol class="sections"><li><a href="the-machine.html#steves-spec">Steve&#39;s spec</a></li><li><a href="the-machine.html#four-opcodes">Four opcodes</a></li><li><a href="the-machine.html#one-program-input-by-input">One program, input by input</a></li><li><a href="the-machine.html#counting">Counting</a></li></ol></li>
+<li class="part">Part I: the toy</li><li class="here"><a href="the-machine.html"><span class="number">2</span>The machine</a><ol class="sections"><li><a href="the-machine.html#steves-spec">Steve&#39;s spec</a></li><li><a href="the-machine.html#four-opcodes">Four opcodes</a></li><li><a href="the-machine.html#one-program-input-by-input">One program, input by input</a></li><li><a href="the-machine.html#counting">Counting</a></li><li><a href="the-machine.html#program-numbers">Program numbers</a></li></ol></li>
 <li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
 <li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
 <li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
@@ -114,7 +114,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </ul>
 <p>A run that reaches the end of its six instructions rejects. So a program accepts some of the four inputs and rejects the rest, and the set it accepts is the problem it decides.</p>
 <h2 id="one-program-input-by-input">One program, input by input <a class="section-link" href="#one-program-input-by-input" aria-label="Link to this section">§</a></h2>
-<p>Here is a program that decides {3}, the problem the puzzle page calls <code>is_huge</code>. In an ordinary programming language it is <code>n == 3</code>.</p>
+<p>Here is a program that decides {3}, the problem the puzzle page calls <code>is_huge</code>. In an ordinary programming language it is <code>n == 3</code>. In Nibble it is program 2704:</p>
 <pre><code class="language-text">decr
 decr
 decr
@@ -133,6 +133,8 @@ nada
 <p>Steve&#39;s own view of <code>nada</code> and of the design, in his words: &quot;nada is kinda not a real instruction under my machine. It just makes it so that every program is exactly 12 bits. It&#39;s also worth saying that the language was designed to have some complexity. It&#39;s using an imperfect machine to solve the problem somewhat by design.&quot; <a class="chapter-link" href="which-instructions-are-needed.html">“Which instructions are needed”</a> makes both points exact: <code>nada</code> is redundant (Theorem 6), and two instructions of another design would decide every problem in four lines (Theorem 7).</p>
 <h2 id="counting">Counting <a class="section-link" href="#counting" aria-label="Link to this section">§</a></h2>
 <p>Each instruction is one of 4 opcodes, so there are 4^6 = 4,096 programs. Each problem is a subset of {0, 1, 2, 3}, so there are 2^4 = 16 problems. Each program is a 12-bit number, two bits an instruction, and <code>assemble</code> and <code>disassemble</code> in <code>src/vm.c</code> convert between the two forms.</p>
+<h2 id="program-numbers">Program numbers <a class="section-link" href="#program-numbers" aria-label="Link to this section">§</a></h2>
+<p>This book names a program by its number. Read the six lines as the digits of a base-4 number, line 1 first, with <code>nada</code> 0, <code>zero</code> 1, <code>decr</code> 2 and <code>mod2</code> 3: the number is op₁·4⁵ + op₂·4⁴ + op₃·4³ + op₄·4² + op₅·4 + op₆. So program 0 (<code>nada, nada, nada, nada, nada, nada</code>) is the first, program 4095 (<code>mod2, mod2, mod2, mod2, mod2, mod2</code>) is the last, and the number&#39;s twelve bits, line 1&#39;s two first, are the program&#39;s machine code as the puzzle page shows it. A program of fewer than six lines ends in <code>nada</code>, so its number ends in base-4 zeros. Steve&#39;s Python, and the C that matches it byte for byte, count through the programs in the other order, line 1 as the lowest digit. That order only decides which program the search finds first; the numbers in this book are all of the kind defined here, and the build checks each against the program it names.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
