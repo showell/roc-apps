@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>is_not_14 needs 28 lines · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">24</span>Nibble++ meets rocsat</a></li>
+<li class="here"><a href="is-not-14-needs-28-lines.html"><span class="number">25</span>is_not_14 needs 28 lines</a><ol class="sections"><li><a href="is-not-14-needs-28-lines.html#the-claim">The claim</a></li><li><a href="is-not-14-needs-28-lines.html#rocsats-proof">rocsat&#39;s proof</a></li><li><a href="is-not-14-needs-28-lines.html#the-censuss-proof">The census&#39;s proof</a></li><li><a href="is-not-14-needs-28-lines.html#one-method-two-models">One method, two models</a></li></ol></li>
+<li><a href="guided-search.html"><span class="number">26</span>Guided search</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">27</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">28</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">29</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">30</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">31</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">32</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">33</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">34</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">35</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">36</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">37</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">38</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">39</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">40</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">41</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">42</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 25</p>
+<h1 id="is-not-14-needs-28-lines">is_not_14 needs 28 lines</h1>
+<p>Steve asked the Roc Zulip, on 2026-11-26: &quot;How do we prove that no 27-line Nibble++ programs can recognize the language is_not_14?&quot; This chapter answers that question in full. The parts are in <a class="chapter-link" href="nibble.html">“Nibble++”</a> and <a class="chapter-link" href="nibble-meets-rocsat.html">“Nibble++ meets rocsat”</a>.</p>
+<h2 id="the-claim">The claim <a class="section-link" href="#the-claim" aria-label="Link to this section">§</a></h2>
+<p>is_not_14 is the formal language {0, ..., 13, 15}, every input but 14, one of the three in <a class="chapter-link" href="nibble.html">“Nibble++”</a>&#39;s section &quot;The hardest&quot;. A 28-line program decides it. The claim at 27 lines covers every program of that length, 4^27 = 2^54 of them, about 1.8 × 10^16, past running each one on 16 inputs. Two proofs settle it, in separate code.</p>
+<h2 id="rocsats-proof">rocsat&#39;s proof <a class="section-link" href="#rocsats-proof" aria-label="Link to this section">§</a></h2>
+<p><code>plus_sat search 49151 27</code> writes the opposite claim as one CNF: some 27-line program decides is_not_14. Its 54 program bits are free. 16 copies of the run share them, one per input, and a unit clause holds each copy&#39;s verdict: reject for input 14, accept for the other 15. The CNF has 18,365 variables and 54,949 clauses, by its header, written while this chapter was written. A model would be a 27-line program for is_not_14.</p>
+<p>rocsat answered UNSATISFIABLE in 17.0 s, and its DRAT proof of 17,192,870 bytes replayed in <code>src/drat.c</code> in 26.9 s (<code>sat/plus/search.txt</code>, commit <code>9ff83c9</code>). The answer covers shorter programs too: a <code>decr</code> after a program&#39;s last line keeps its formal language, so a shorter program for is_not_14 would pad to one of 27 lines.</p>
+<p>The proof is trusted through its checker. <code>src/drat.c</code> is the book&#39;s own C, apart from rocsat&#39;s Roc. It checks each lemma of the proof again and accepts the proof only when every step derives, through to the empty clause.</p>
+<h2 id="the-censuss-proof">The census&#39;s proof <a class="section-link" href="#the-censuss-proof" aria-label="Link to this section">§</a></h2>
+<p><code>src/census.c</code> searches the machine&#39;s states instead of its programs, as <a class="chapter-link" href="nibble.html">“Nibble++”</a> describes. 374,003 states are reachable, against 2^54 programs of 27 lines, because many programs reach the same state. Breadth first, a formal language&#39;s shortest length is the first level where a state with that language appears. is_not_14 first appears at level 28, so every program of 27 lines or fewer decides some other formal language.</p>
+<h2 id="one-method-two-models">One method, two models <a class="section-link" href="#one-method-two-models" aria-label="Link to this section">§</a></h2>
+<p>Both proofs replace the programs with a finite model of the machine, the circuit for rocsat and the graph of states for the census, and ask the question of the model once. The census lists every reachable state, 374,003 here. rocsat needs only the circuit, which grows with the program&#39;s length and the machine&#39;s width, so its method carries over to machines with more states than a list can hold.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="nibble-meets-rocsat.html"><small>Previous</small>Nibble++ meets rocsat</a>
+<a rel="next" href="guided-search.html"><small>Next</small>Guided search</a>
+</nav>
+</main>
+</body>
+</html>
