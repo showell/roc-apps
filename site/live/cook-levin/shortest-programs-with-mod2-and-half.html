@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shortest programs with mod2 and half · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li class="here"><a href="shortest-programs-with-mod2-and-half.html"><span class="number">24</span>Shortest programs with mod2 and half</a><ol class="sections"><li><a href="shortest-programs-with-mod2-and-half.html#walks-and-splits">Walks and splits</a></li><li><a href="shortest-programs-with-mod2-and-half.html#the-recursion">The recursion</a></li><li><a href="shortest-programs-with-mod2-and-half.html#zero-decr-mod2">{zero, decr, mod2}</a></li><li><a href="shortest-programs-with-mod2-and-half.html#when-half-helps">When half helps</a></li><li><a href="shortest-programs-with-mod2-and-half.html#open-and-refuted">Open, and refuted</a></li></ol></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">25</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">26</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">27</span>Guided search</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">28</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">29</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">30</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">31</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">32</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">33</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">34</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">35</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">36</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">37</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">38</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">39</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">40</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">41</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">42</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">43</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 24</p>
+<h1 id="shortest-programs-with-mod2-and-half">Shortest programs with mod2 and half</h1>
+<p><a class="chapter-link" href="two-theorems-about-nibble.html">“Two theorems about Nibble++”</a> settles <code>zero</code> and <code>decr</code> alone. This chapter brings in <code>mod2</code> and <code>half</code>, the split lines, and explains every length the census of <a class="chapter-link" href="nibble.html">“Nibble++”</a> finds. The proofs are in <code>docs/NIBBLE_PLUS_THEORY.md</code>, and <code>tests/test_theory_plus.c</code> holds each theorem to the census on all 65,536 formal languages, in the build.</p>
+<h2 id="walks-and-splits">Walks and splits <a class="section-link" href="#walks-and-splits" aria-label="Link to this section">§</a></h2>
+<p>A walk is a program of <code>zero</code> and <code>decr</code> alone, and Theorem 10 gives its length. Every other program is a walk, then its first split line, then the rest. A split line merges inputs: <code>half</code> sends d and d + 1 to one value, d + 2 and d + 3 to the next, and so on, and <code>mod2</code> sends every input of one parity to one value. Inputs merged into a block share <code>AX</code> from then on, so they share every verdict, and the rest of the program runs on a smaller machine with one input a block. After <code>half</code> that machine has at most half the inputs, after <code>mod2</code> at most 2.</p>
+<p>A formal language S lines up at d for a split line when each block of the inputs still running is wholly inside S or wholly outside it. Input d may be the one exception, accepted alone by a <code>zero</code> just before the split.</p>
+<h2 id="the-recursion">The recursion <a class="section-link" href="#the-recursion" aria-label="Link to this section">§</a></h2>
+<p><strong>Theorem 12.</strong> For every opcode set holding <code>zero</code> and <code>decr</code>, the shortest program for S is the least of its walk, max(S) + |S| lines, and, for each split line f and each d where S lines up for f, the walk to d, f, and the shortest program for the smaller formal language on the smaller machine.</p>
+<p>The smaller machines have 8, 4, 2 and 1 inputs, so <code>src/theory_plus.c</code> fills four small tables. Its lengths are the census&#39;s for all 65,536 formal languages under each of the four opcode sets, and the programs it builds decide their formal languages on <code>src/plus.c</code>&#39;s interpreter.</p>
+<p><strong>Theorem 13.</strong> A shortest program has at most four split lines, at most one <code>mod2</code>, and at most one <code>half</code> after its <code>mod2</code>.</p>
+<p>A split line that leaves every <code>AX</code> as it was can be dropped, so each split in a shortest program lowers the largest <code>AX</code> still running. From 15 that is at most 15, 7, 3, 1, 0: four steps. After <code>mod2</code> every value is 0 or 1, which a second <code>mod2</code> leaves as it is.</p>
+<h2 id="zero-decr-mod2">{zero, decr, mod2} <a class="section-link" href="#zero-decr-mod2" aria-label="Link to this section">§</a></h2>
+<p><strong>Theorem 14.</strong> With {zero, decr, mod2}, every formal language has a shortest program of one of three shapes:</p>
+<ol>
+<li>a walk;</li>
+<li>a walk to d, then <code>mod2, zero</code>, when S from d on is the inputs of d&#39;s parity;</li>
+<li>a walk to d, then <code>mod2, zero, decr, zero</code>, when S holds every input from d on.</li>
+</ol>
+<p><strong>Theorem 15.</strong> With {zero, decr, mod2}, the number of formal languages whose shortest program has L lines is F(L + 1) for L from 1 to 15, apart from 6 at L = 4, and F(17) − 2 at L = 16.</p>
+<p>The count comes from tiles. A walk is a row of tiles, <code>zero, decr</code> for a member and <code>decr</code> for the rest, and rows of tiles of 1 and 2 lines are counted by Fibonacci numbers. The walks give F(L) and the parity shapes F(L − 1), F(L + 1) together. At length 4 the third shape with an empty walk adds one: <code>mod2, zero, decr, zero</code> accepts all 16 inputs. At 16, two formal languages the count places there belong lower, {14} at 15 lines and {12, 14} at 14. This explains the table of <a class="chapter-link" href="two-theorems-about-nibble.html">“Two theorems about Nibble++”</a>.</p>
+<h2 id="when-half-helps">When half helps <a class="section-link" href="#when-half-helps" aria-label="Link to this section">§</a></h2>
+<p><strong>Theorem 16.</strong> With {zero, decr, half}, <code>half</code> gives S a program shorter than its walk exactly when S lines up at some d with a pair among its accepted blocks, or S holds 15 and leaves out 12, 13 and 14.</p>
+<p><code>tests/test_theory_plus.c</code> counts 38,911 formal languages that <code>half</code> helps, 3,414 of them by the second condition alone. That condition is the trick behind {15}: a walk to 11, then <code>half</code>, leaves 15 alone at 2, which <code>decr, decr, zero</code> accepts.</p>
+<h2 id="open-and-refuted">Open, and refuted <a class="section-link" href="#open-and-refuted" aria-label="Link to this section">§</a></h2>
+<p>One conjecture stands, checked on all 65,536 formal languages and unproved: <code>half</code> helps over {zero, decr, mod2} exactly when it helps over {zero, decr}, 38,911 formal languages each way.</p>
+<p>Three guesses failed on the census:</p>
+<ul>
+<li>The four opcodes beat both three-opcode sets on 4,178 formal languages. The inputs with bit 2 clear, {0, ..., 3, 8, ..., 11}, take 4 lines with all four, <code>half, half, mod2, zero</code>, against 6 with {zero, decr, half} and 19 with {zero, decr, mod2}.</li>
+<li><code>half</code> helps 377 formal languages whose members are all at least 2 apart, {15} the first: 8 lines against a 16-line walk.</li>
+<li>Lining up for <code>half</code> is required for it to help, and short of enough: 10,240 formal languages line up with {15} as their one accepted block and keep their walk&#39;s length.</li>
+</ul>
+<p>A closed form for {zero, decr, half} like Theorem 14 is open, and so is the reason four opcodes beat three.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="two-theorems-about-nibble.html"><small>Previous</small>Two theorems about Nibble++</a>
+<a rel="next" href="nibble-meets-rocsat.html"><small>Next</small>Nibble++ meets rocsat</a>
+</nav>
+</main>
+</body>
+</html>
