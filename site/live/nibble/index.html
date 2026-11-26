@@ -4,82 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nibble puzzles</title>
-<style>
-:root {
-  --bg: #fbfaf7; --fg: #1d1d1f; --muted: #6b6b70; --line: #deddd8; --panel: #ffffff;
-  --accent: #2f5fb3; --accent-fg: #ffffff; --good: #1f7a3d; --good-bg: #e6f4ea; --bad: #b3261e; --bad-bg: #fbe9e7;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #17171a; --fg: #ececef; --muted: #9a9aa2; --line: #34343a; --panel: #202024;
-    --accent: #7aa2f0; --accent-fg: #101014; --good: #7fd49a; --good-bg: #1d3325; --bad: #f2948c; --bad-bg: #3a2120;
-  }
-}
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--fg); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { max-width: 760px; margin: 0 auto; padding: 20px 16px 48px; }
-h1 { margin: 0 0 4px; font-size: 1.7rem; }
-h2 { margin: 0; font-size: 1.25rem; }
-p { margin: 8px 0; }
-code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.help { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; }
-.help[hidden], .intro[hidden] { display: none; }
-.intro { color: var(--muted); }
-.intro code { color: var(--fg); }
-nav { display: flex; flex-wrap: wrap; gap: 6px; margin: 16px 0; }
-nav button { min-width: 2.4rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
-nav button.current { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-nav button.solved { background: var(--good); border-color: var(--good); color: var(--bg); font-weight: 600; }
-nav button:disabled { color: var(--muted); opacity: 0.5; cursor: default; }
-section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
-.hint { color: var(--muted); font-style: italic; }
-.slots { margin: 12px 0; display: grid; gap: 6px; }
-.slots[hidden] { display: none; }
-.slot { display: flex; align-items: center; gap: 6px; }
-.slot .num { width: 1.4rem; color: var(--muted); text-align: right; font-family: ui-monospace, Menlo, monospace; }
-.slot button { flex: 1; min-width: 0; padding: 6px 0; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; cursor: pointer; }
-.slot button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-fg); }
-.slot button.nada:not(.on) { color: var(--muted); }
-.actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.actions button { padding: 8px 18px; border-radius: 6px; border: 1px solid var(--accent); font: inherit; cursor: pointer; background: var(--panel); color: var(--accent); }
-.actions button.primary { background: var(--accent); color: var(--accent-fg); }
-.actions button[hidden] { display: none; }
-.actions { align-items: center; }
-.machine { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; font-size: 0.85rem; color: var(--muted); }
-.machine code { white-space: pre; }
-.actions .code-help { padding: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%; font-size: 0.85rem; }
-#code-explain[hidden] { display: none; }
-.slot.locked button { opacity: 0.45; cursor: default; }
-.lesson { margin: 8px 0; }
-.trace { overflow-x: auto; margin-top: 14px; }
-table { border-collapse: collapse; width: 100%; font-size: 0.92rem; table-layout: fixed; }
-th, td { padding: 4px 4px; border-bottom: 1px solid var(--line); text-align: center; white-space: nowrap; }
-th { color: var(--muted); font-weight: 500; }
-th.step { text-align: left; width: 5.2rem; }
-th.mono, td.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
-td.halt { color: var(--muted); }
-tr.end td { white-space: normal; font-size: 0.85rem; }
-tr[data-row="outcome"] td { font-size: 0.72rem; }
-.wrong { background: var(--bad-bg); }
-.verdict { margin-top: 12px; padding: 10px 12px; border-radius: 6px; }
-.verdict.good { background: var(--good-bg); color: var(--good); }
-.verdict.bad { background: var(--bad-bg); color: var(--bad); }
-.verdict:empty { display: none; }
-.ops { margin-top: 20px; color: var(--muted); font-size: 0.92rem; }
-.ops dt { font-family: ui-monospace, Menlo, monospace; color: var(--fg); float: left; width: 3.5rem; }
-.ops dd { margin: 0 0 2px 3.5rem; }
-.err { color: var(--bad); }
-.intro[hidden] { display: none; }
-.explain { margin: 8px 0 4px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); color: var(--fg); }
-.explain summary { cursor: pointer; color: var(--accent); }
-.explain ul { margin: 4px 0; padding-left: 1.3rem; }
-.explain p { margin: 6px 0; }
-</style>
+<link rel="stylesheet" href="nibble.2c4d2b1ebcdb6e41.css">
 </head>
 <body>
 <main>
-  <header><h1>Nibble puzzles</h1><button type="button" class="help" id="help" aria-expanded="false" aria-controls="intro">Help</button></header>
+  <header><h1>Nibble puzzles</h1><span class="links"><a href="sandbox.html" id="sandbox-link">Sandbox</a><button type="button" class="help" id="help" aria-expanded="false" aria-controls="intro">Help</button></span></header>
   <div class="intro" id="intro">
   <p>Nibble is the language of a tiny machine. It has one register, <code>AX</code>, which holds 0, 1, 2 or 3, and a program is exactly six instructions. A run starts with <code>AX</code> set to the input. It accepts when <code>zero</code> finds <code>AX</code> at 0, and it rejects when <code>decr</code> finds <code>AX</code> at 0 or when it runs off the end. Each puzzle names a set of inputs: write a program that accepts exactly those and rejects the rest. The first four puzzles teach you Nibble, one opcode at a time.</p>
   <details class="explain" id="languages-help">
@@ -108,6 +37,6 @@ tr[data-row="outcome"] td { font-size: 0.72rem; }
   </section>
   <dl class="ops" id="ops"></dl>
 </main>
-<script type="module" src="nibble.f8ae18ae4aac5e22.js"></script>
+<script type="module" src="nibble.08f530245da8aa9f.js"></script>
 </body>
 </html>
