@@ -17,8 +17,9 @@
 --
 -- The built folder is copied over site/live/nibble/ whole, with a
 -- PROVENANCE: the cook-levin-riff commit and a hash of the wasm. Then it
--- checks what it copied: exactly index.html and the three files
--- web/build.shale names by their bytes, and no `src`, `href`, `fetch` or
+-- checks what it copied: exactly the two pages, index.html (the puzzles) and
+-- sandbox.html, and the files web/build.shale names by their bytes, and no
+-- `src`, `href`, `fetch` or
 -- `url()` URL starting with `/` or naming a network scheme. A failed check
 -- stops before git, leaving site/live/ changed and uncommitted. The folder is
 -- committed alone, with the PROVENANCE in the message, and pushed with
@@ -38,9 +39,10 @@ const LIVE = "site/live"
 const DRY_DIR = "build:roc-apps/publish_nibble.dry"
 const BUILT = CL .. "/out/web/site"
 const STAGING = "http://localhost:9200/"
--- index.html, and the files web/build.shale names by their bytes,
--- `<name>.<16 hex digits>.<ext>`.
-const PAGE_HASHED = {"nibble.js", "nibble.wasm", "puzzles.json"}
+-- The two pages, named as they are, and the files web/build.shale names by
+-- their bytes, `<name>.<16 hex digits>.<ext>`.
+const PAGES = {"index.html", "sandbox.html"}
+const PAGE_HASHED = {"nibble.js", "sandbox.js", "machine.js", "nibble.css", "nibble.wasm", "puzzles.json"}
 
 -- Stops the publish when cook-levin-riff has a change of any kind.
 function refuse_changes(when)
@@ -114,13 +116,13 @@ function check_line(name, ok, detail)
   return nil
 end
 
--- The page holds PROVENANCE, index.html and each of PAGE_HASHED once, by
+-- The page holds PROVENANCE, the PAGES and each of PAGE_HASHED once, by
 -- its hashed name, and nothing else.
 function check_page_files(page)
   local found = files_under(page)
   local left = {}
   for f in found do
-    if f ~= "PROVENANCE" and f ~= "index.html" then push(left, f) end
+    if f ~= "PROVENANCE" and not has_item(PAGES, f) then push(left, f) end
   end
   local named = 0
   for want in PAGE_HASHED do
@@ -132,8 +134,12 @@ function check_page_files(page)
     end
     if hits == 1 then named = named + 1 end
   end
-  local ok = has_item(found, "PROVENANCE") and has_item(found, "index.html") and #left == #PAGE_HASHED and named == #PAGE_HASHED
-  check_line("files", ok, page .. " holds " .. join(found, " ") .. "; expected PROVENANCE, index.html and " .. join(PAGE_HASHED, ", ") .. ", each named by its bytes")
+  local pages = 0
+  for p in PAGES do
+    if has_item(found, p) then pages = pages + 1 end
+  end
+  local ok = has_item(found, "PROVENANCE") and pages == #PAGES and #left == #PAGE_HASHED and named == #PAGE_HASHED
+  check_line("files", ok, page .. " holds " .. join(found, " ") .. "; expected PROVENANCE, " .. join(PAGES, " and ") .. ", and " .. join(PAGE_HASHED, ", ") .. ", each named by its bytes")
   return nil
 end
 
