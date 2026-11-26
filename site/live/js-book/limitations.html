@@ -51,9 +51,8 @@
 <h2 id="language">Language <a class="section-link" href="#language" aria-label="Link to this section">§</a></h2>
 <p>The language itself is fairly complete: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps, Sets and classes (<a class="chapter-link" href="introduction.html">“Introduction”</a>). These are its known differences from node:</p>
 <ul>
-<li>Each class instance holds its own method closures, so <code>a.m === b.m</code> is false where node&#39;s is true (<code>js/README.md</code>, &quot;Classes are syntax sugar&quot;).</li>
-<li>A method read off an instance and called alone keeps its instance, where node loses <code>this</code> and throws (the same section).</li>
-<li>Printing or listing a class instance, or printing a class, is refused: node prints an instance by its class&#39;s name, and an instance here holds its methods beside its fields (the same section).</li>
+<li>Printing or listing a class instance, or printing a class, is refused: node prints an instance by its class&#39;s name first (<code>js/README.md</code>, &quot;Classes are syntax sugar&quot;).</li>
+<li>An instance&#39;s property named <code>&quot;þsuper m&quot;</code> reads its class&#39;s parent&#39;s method <code>m</code>, which is the key <code>super.m</code> is written as, where node&#39;s is <code>undefined</code> (the same section). The key starts with þ, outside ASCII, so only a program that spells that letter can reach it.</li>
 <li>An exhausted Map iterator still sees entries added after it finished, where node&#39;s stays done. No corpus program holds this yet.</li>
 <li>A builtin&#39;s callback (<code>map</code>, <code>sort</code>, a Map&#39;s <code>forEach</code>) throws a RangeError once 400 calls wait under it, where a plain call goes 10,000 deep, near node&#39;s own limit (<code>f4320451</code>).</li>
 <li>A string method that counts positions is refused on non-ASCII text: JavaScript counts UTF-16 units, and these strings are UTF-8 (<code>js/README.md</code>, &quot;The subset&quot;).</li>

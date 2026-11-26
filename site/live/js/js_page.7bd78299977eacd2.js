@@ -15,7 +15,7 @@
 
 import { loadRunner, unescaped } from "./js_runner.3cb6ca5e735cb7cd.js";
 import { makePainter, SIZE } from "./js_painter.199dc8d08b3a2d42.js";
-import { CANVAS_SAMPLES, CONSOLE_SAMPLES, FEATURED_SAMPLES } from "./js_samples.4ca337d6b2e67406.js";
+import { CANVAS_SAMPLES, CONSOLE_SAMPLES, FEATURED_SAMPLES } from "./js_samples.27821f382f201571.js";
 import { memoryView, MEMORY_CSS, STRATEGY } from "./js_memory.751aa2b79bd604b7.js";
 
 const FRAMES_PER_SECOND = 30;
@@ -382,6 +382,6 @@ export function buildPage(runner, env = window) {
 }
 
 if (typeof window !== "undefined" && !window.JS_PAGE_CHECK) {
-  const bytes = await (await fetch("js.592f01801d8fdb43.wasm")).arrayBuffer();
+  const bytes = await (await fetch("js.126604b8f79f94b7.wasm")).arrayBuffer();
   buildPage(await loadRunner(bytes));
 }

@@ -2526,7 +2526,7 @@ console.log(<span class="syn-string">&quot;balances:&quot;</span>, ada.balance, 
   console.log(who.owner, who <span class="syn-keyword">instanceof</span> Account, who <span class="syn-keyword">instanceof</span> Savings);
 }
 
-<span class="syn-comment">// Many accounts, each with its own closures over its own `this`.</span>
+<span class="syn-comment">// Many accounts, sharing their classes&#39; methods.</span>
 <span class="syn-keyword">const</span> town = Array.from({ length: <span class="syn-number">5</span> }, (_, i) =&gt; <span class="syn-keyword">new</span> Savings(<span class="syn-string">`saver</span>${i}<span class="syn-string">`</span>, <span class="syn-number">100</span> * (i + <span class="syn-number">1</span>), <span class="syn-number">0.1</span>));
 town.forEach((s) =&gt; s.addInterest());
 console.log(town.map((s) =&gt; s.balance).join(<span class="syn-string">&quot; &quot;</span>), opened.length);

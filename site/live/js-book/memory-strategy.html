@@ -51,11 +51,10 @@
 </code></pre></figure><p>A cell is one of these:</p>
 <figure class="listing"><figcaption>js/roc/Heap.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Cell</span> : [
 		<span class="syn-type">Object</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
-		<span class="syn-comment"># A class&#39;s instance: an object marked with the names of its class and</span>
-		<span class="syn-comment"># of each class that class extends, nearest first, which `instanceof`</span>
-		<span class="syn-comment"># reads. Its properties are its fields and its methods&#39; closures</span>
-		<span class="syn-comment"># (`Parser`&#39;s &quot;classes&quot;), so it is never printed or listed.</span>
-		<span class="syn-type">Instance</span>(<span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
+		<span class="syn-comment"># A class&#39;s instance: its class (`Class`), and its own properties, its</span>
+		<span class="syn-comment"># fields. It is never printed or listed, since node writes its class&#39;s</span>
+		<span class="syn-comment"># name.</span>
+		<span class="syn-type">Instance</span>(<span class="syn-type">Heap.Class</span>, <span class="syn-type">List</span>(<span class="syn-type">Heap.Property</span>)),
 		<span class="syn-type">Array</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>)),
 		<span class="syn-type">Fun</span>(<span class="syn-type">Heap.Closure</span>),
 		<span class="syn-comment"># A builtin function, and the properties it carries (`String.fromCharCode`).</span>
@@ -91,7 +90,7 @@
 		<span class="syn-comment"># A cell the collector freed, and the free cell after it, which the</span>
 		<span class="syn-comment"># next allocation after this cell&#39;s takes.</span>
 		<span class="syn-type">Freed</span>(<span class="syn-type">Heap.Free</span>),
-</code></pre></figure><p>An <code>Instance</code> is an object marked with the names of its class and of each class it extends, which <code>x instanceof C</code> reads. Two variables that hold one array hold one index, so each sees the other&#39;s writes.</p>
+</code></pre></figure><p>An <code>Instance</code> is an object marked with the names of its class and of each class it extends, which <code>x instanceof C</code> reads, and holding its class&#39;s table of methods, where a property outside the instance&#39;s own fields is read. Two variables that hold one array hold one index, so each sees the other&#39;s writes.</p>
 <h2 id="the-free-list">The free list <a class="section-link" href="#the-free-list" aria-label="Link to this section">§</a></h2>
 <p>A freed cell stays in its place as <code>Freed(next)</code>, a link to the next free cell, and the machine&#39;s <code>free</code> names the first, <code>FreeAt(id)</code> or <code>NoneFree</code>. An allocation reads the link out of the first free cell and writes the new cell into its place with one <code>set</code>; only an empty free list appends:</p>
 <figure class="listing"><figcaption>js/roc/Heap.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-name">allocated</span> : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>), <span class="syn-type">Heap.Free</span>, <span class="syn-type">Heap.Cell</span> -&gt; <span class="syn-type">Heap.Allocated</span>
