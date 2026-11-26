@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Two theorems about Nibble++ · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li class="here"><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">24</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">25</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">26</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">27</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">28</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">29</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">30</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">31</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">32</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">33</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">34</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">35</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">36</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">37</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">38</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">39</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 23</p>
+<h1 id="two-theorems-about-nibble">Two theorems about Nibble++</h1>
+<p>With <code>zero</code> and <code>decr</code> alone, a short proof gives every formal language&#39;s shortest length and the count of formal languages at each length. The census of <a class="chapter-link" href="nibble.html">“Nibble++”</a> checks both, and <code>tests/test_census.c</code> holds them.</p>
+<p><strong>Theorem 10.</strong> With <code>zero</code> and <code>decr</code> alone, the shortest program for a nonempty set S of inputs has exactly max(S) + |S| lines, and the empty set&#39;s has 0.</p>
+<p><em>Proof.</em> The inputs move in lockstep: after d <code>decr</code>s, an input x still running has <code>AX</code> = x − d. The <code>decr</code> numbered x + 1 finds input x at 0 and rejects it. A <code>zero</code> accepts the inputs whose <code>AX</code> is 0 when it runs, so a <code>zero</code> after exactly d <code>decr</code>s accepts input d, and every other input passes it: those above d hold <code>AX</code> above 0, and those below d have halted. Inputs above the last such d run to the end and are rejected. So a program decides the set of counts d at which some <code>zero</code> runs. For S it needs a <code>zero</code> at each member&#39;s count, |S| lines, and max(S) <code>decr</code>s before the last of them, max(S) lines more. The program that walks d from 0 to max(S), with a <code>zero</code> at each member and a <code>decr</code> between counts, has exactly max(S) + |S| lines. The empty program decides the empty set.</p>
+<p><strong>Theorem 11.</strong> With <code>zero</code> and <code>decr</code> alone, the number of formal languages whose shortest program has L lines is F(L), the Fibonacci number with F(1) = F(2) = 1, for L from 1 to 16, and F(17) − 1 at L = 17.</p>
+<p><em>Proof.</em> By Theorem 10, the count at length L is the number of sets S with max(S) + |S| = L. A set with largest member m and k members picks its other k − 1 members from {0, ..., m − 1}, so there are C(m, k − 1) of them, with m = L − k. The count is the sum over k ≥ 1 of C(L − k, k − 1). With j = k − 1 it is the sum over j of C(L − 1 − j, j), the sum along a shallow diagonal of Pascal&#39;s triangle, which is F(L). The inputs end at 15, so m is at most 15. For L up to 16 every term has m = L − k ≤ 15. At L = 17 the term k = 1 is the set {16}, past the machine&#39;s inputs, and the count is F(17) − 1.</p>
+<p>The census agrees. The last column is {zero, decr, mod2}, for contrast:</p>
+<table>
+<thead>
+<tr>
+<th align="right">Length L</th>
+<th align="right">{zero, decr}</th>
+<th align="right">F(L)</th>
+<th align="right">{zero, decr, mod2}</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td align="right">1</td>
+<td align="right">1</td>
+<td align="right">2</td>
+</tr>
+<tr>
+<td align="right">3</td>
+<td align="right">2</td>
+<td align="right">2</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td align="right">4</td>
+<td align="right">3</td>
+<td align="right">3</td>
+<td align="right">6</td>
+</tr>
+<tr>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right">5</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td align="right">6</td>
+<td align="right">8</td>
+<td align="right">8</td>
+<td align="right">13</td>
+</tr>
+<tr>
+<td align="right">7</td>
+<td align="right">13</td>
+<td align="right">13</td>
+<td align="right">21</td>
+</tr>
+<tr>
+<td align="right">8</td>
+<td align="right">21</td>
+<td align="right">21</td>
+<td align="right">34</td>
+</tr>
+<tr>
+<td align="right">9</td>
+<td align="right">34</td>
+<td align="right">34</td>
+<td align="right">55</td>
+</tr>
+<tr>
+<td align="right">10</td>
+<td align="right">55</td>
+<td align="right">55</td>
+<td align="right">89</td>
+</tr>
+<tr>
+<td align="right">11</td>
+<td align="right">89</td>
+<td align="right">89</td>
+<td align="right">144</td>
+</tr>
+<tr>
+<td align="right">12</td>
+<td align="right">144</td>
+<td align="right">144</td>
+<td align="right">233</td>
+</tr>
+<tr>
+<td align="right">13</td>
+<td align="right">233</td>
+<td align="right">233</td>
+<td align="right">377</td>
+</tr>
+<tr>
+<td align="right">14</td>
+<td align="right">377</td>
+<td align="right">377</td>
+<td align="right">610</td>
+</tr>
+<tr>
+<td align="right">15</td>
+<td align="right">610</td>
+<td align="right">610</td>
+<td align="right">987</td>
+</tr>
+<tr>
+<td align="right">16</td>
+<td align="right">987</td>
+<td align="right">987</td>
+<td align="right">1595</td>
+</tr>
+<tr>
+<td align="right">17</td>
+<td align="right">1596</td>
+<td align="right">1597</td>
+<td align="right">2556</td>
+</tr>
+</tbody>
+</table>
+<p>With <code>mod2</code> the counts follow the Fibonacci numbers one place on, F(L + 1), from length 1 to 15, apart from length 4, which has 6 where F(5) is 5. At 16 the count is 1,595, two below F(17). <code>mod2</code> breaks the lockstep that Theorem 10 rests on, since it merges inputs, and a formula for these counts is open here.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="nibble.html"><small>Previous</small>Nibble++</a>
+<a rel="next" href="p-np-and-cook-levin.html"><small>Next</small>P, NP and Cook-Levin</a>
+</nav>
+</main>
+</body>
+</html>

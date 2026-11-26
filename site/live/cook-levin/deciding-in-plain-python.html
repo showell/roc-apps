@@ -19,9 +19,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
-<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
 <li class="here"><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a><ol class="sections"><li><a href="deciding-in-plain-python.html#two-versions-of-decides">Two versions of decides</a></li><li><a href="deciding-in-plain-python.html#some-problems-as-one-test">Some problems as one test</a></li><li><a href="deciding-in-plain-python.html#what-the-machine-adds">What the machine adds</a></li></ol></li>
-<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
 <li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
 <li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
 <li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
@@ -38,22 +38,24 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
 <li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
 <li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">22</span>P, NP and Cook-Levin</a></li>
-<li><a href="six-expressions-composed.html"><span class="number">23</span>Six expressions, composed</a></li>
-<li><a href="arithmetization.html"><span class="number">24</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">25</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">26</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">27</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">28</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">29</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">30</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">31</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">32</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">33</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">34</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">35</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">36</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">37</span>What comes next</a></li>
+<li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">24</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">25</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">26</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">27</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">28</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">29</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">30</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">31</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">32</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">33</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">34</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">35</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">36</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">37</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">38</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">39</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -63,7 +65,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <h1 id="deciding-in-plain-python">Deciding in plain Python</h1>
 <p>A problem is four answers, one per input, so deciding one takes a line of ordinary code. The code here is <code>python/decides.py</code>, which <code>build.shale</code> runs on every build: it holds its two versions to each other on all 16 problems and all four inputs, and each one-line test below to its problem.</p>
 <h2 id="two-versions-of-decides">Two versions of <code>decides</code> <a class="section-link" href="#two-versions-of-decides" aria-label="Link to this section">§</a></h2>
-<p>A problem&#39;s <em>want</em> code has bit n set when input n is in it, as in the table of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a>: {0, 2, 3} is 1 + 4 + 8 = 13. The plain version lists the members and looks n up among them:</p>
+<p>A problem&#39;s <em>want</em> code has bit n set when input n is in it, as in the table of <a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a>: {0, 2, 3} is 1 + 4 + 8 = 13. The plain version lists the members and looks n up among them:</p>
 <figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">def decides(want, n):
     # The members of the problem: each input whose bit is set in `want`.
     members = []
@@ -87,8 +89,8 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="languages-and-machines.html"><small>Previous</small>Languages and machines</a>
-<a rel="next" href="programs-as-languages.html"><small>Next</small>Programs as languages</a>
+<a rel="prev" href="formal-languages-and-machines.html"><small>Previous</small>Formal languages and machines</a>
+<a rel="next" href="programs-as-formal-languages.html"><small>Next</small>Programs as formal languages</a>
 </nav>
 </main>
 </body>

@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Formal languages and machines · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li class="here"><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a><ol class="sections"><li><a href="formal-languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="formal-languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="formal-languages-and-machines.html#a-simple-example">A simple example</a></li><li><a href="formal-languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">24</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">25</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">26</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">27</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">28</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">29</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">30</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">31</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">32</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">33</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">34</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">35</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">36</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">37</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">38</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">39</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 3</p>
+<h1 id="formal-languages-and-machines">Formal languages and machines</h1>
+<p>In computer science a <em>formal language</em> is a set of strings. The book spends two words on it because it also has a <em>programming language</em>, Nibble, the notation its programs are written in, and the two are different things: a Nibble program decides a formal language. Pick an alphabet, say the digits 0 to 9, and any set of strings over it is a formal language: the decimal numerals of the primes, the palindromes, the strings that are valid Roc programs. A formal language is the cleanest way to state a decision question. &quot;Is 91 prime?&quot; becomes &quot;is the string <code>91</code> in the formal language of primes?&quot;</p>
+<h2 id="machines-that-decide">Machines that decide <a class="section-link" href="#machines-that-decide" aria-label="Link to this section">§</a></h2>
+<p>A machine <em>decides</em> a formal language when, given any string, it halts, accepting the strings in the language and rejecting the rest. A program that decides the primes is a primality test; a compiler&#39;s parser decides the formal language of well-formed programs, and rejects the rest with an error.</p>
+<h2 id="turings-machine">Turing&#39;s machine <a class="section-link" href="#turings-machine" aria-label="Link to this section">§</a></h2>
+<p>In 1936 Alan Turing described a machine with a finite set of states and an unbounded tape, in &quot;On Computable Numbers, with an Application to the Entscheidungsproblem&quot; (<em>Proceedings of the London Mathematical Society</em>, series 2, volume 42; a <a href="https://www.cs.virginia.edu/~robins/Turing_Paper_1936.pdf">free scan</a>). It reads and writes the tape one cell at a time, and every algorithm anyone has written since can be carried out by such a machine; that claim is the Church-Turing thesis. Turing also showed that some formal languages are undecidable: whatever machine one builds for them, some string defeats it. The best known is the halting problem, the formal language of programs that halt on their input. A machine can <em>recognize</em> it, accepting every member by running it, but for some strings outside the language it runs forever, still waiting to answer.</p>
+<h2 id="a-simple-example">A simple example <a class="section-link" href="#a-simple-example" aria-label="Link to this section">§</a></h2>
+<p>Take the alphabet {a, b} and the formal language of strings with an even count of a&#39;s: <code>aba</code> and <code>bb</code> are in it, <code>ab</code> and <code>aaab</code> are out. A Turing machine decides it with two working states, <code>even</code> and <code>odd</code>, and a head that reads the tape left to right. The input is written on the tape, with blank cells after it, and the machine starts in <code>even</code> on the first symbol.</p>
+<table>
+<thead>
+<tr>
+<th>state</th>
+<th>reads</th>
+<th>writes</th>
+<th>moves</th>
+<th>next state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>even</code></td>
+<td>a</td>
+<td>a</td>
+<td>right</td>
+<td><code>odd</code></td>
+</tr>
+<tr>
+<td><code>even</code></td>
+<td>b</td>
+<td>b</td>
+<td>right</td>
+<td><code>even</code></td>
+</tr>
+<tr>
+<td><code>even</code></td>
+<td>blank</td>
+<td>blank</td>
+<td>stays</td>
+<td>accept</td>
+</tr>
+<tr>
+<td><code>odd</code></td>
+<td>a</td>
+<td>a</td>
+<td>right</td>
+<td><code>even</code></td>
+</tr>
+<tr>
+<td><code>odd</code></td>
+<td>b</td>
+<td>b</td>
+<td>right</td>
+<td><code>odd</code></td>
+</tr>
+<tr>
+<td><code>odd</code></td>
+<td>blank</td>
+<td>blank</td>
+<td>stays</td>
+<td>reject</td>
+</tr>
+</tbody>
+</table>
+<p>Each row is one rule: in this state, reading this symbol, write this, move, and go to that state. The state remembers the one fact that matters, whether the a&#39;s seen so far are even, and the blank after the input is where the machine answers.</p>
+<p>A run on <code>aba</code>:</p>
+<table>
+<thead>
+<tr>
+<th>step</th>
+<th>state</th>
+<th>reading</th>
+<th>tape, head in brackets</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>even</code></td>
+<td>a</td>
+<td>[a] b a _</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>odd</code></td>
+<td>b</td>
+<td>a [b] a _</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>odd</code></td>
+<td>a</td>
+<td>a b [a] _</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>even</code></td>
+<td>blank</td>
+<td>a b a [_]</td>
+</tr>
+<tr>
+<td></td>
+<td>accept</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>And on <code>ab</code>: <code>even</code> reads a and moves to <code>odd</code>, <code>odd</code> reads b and stays <code>odd</code>, <code>odd</code> reads the blank and rejects. Every run takes one step per symbol and then halts, so the machine decides the formal language: it accepts exactly the strings with an even count of a&#39;s.</p>
+<p>This machine only reads and moves right, so it is also a finite automaton; Turing&#39;s machines earn their tape on harder formal languages, such as the strings of a&#39;s followed by the same number of b&#39;s, where the machine writes marks on the tape to pair each a with a b. The idea carries over unchanged: states, a rule table, a run that ends in accept or reject, and a formal language made of the strings accepted.</p>
+<h2 id="this-books-machine">This book&#39;s machine <a class="section-link" href="#this-books-machine" aria-label="Link to this section">§</a></h2>
+<p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four strings 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything. Its formal languages are the 16 subsets of {0, 1, 2, 3}, the problems of the Introduction, which a program, a circuit and a SAT formula each decide alike. A program decides exactly one of them, the set of inputs it accepts. <a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a> asks which programs decide which problems, by running all of them. The second part of the book asks what deciding costs when trying everything is out of reach, the question Cook and Levin answered.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-machine.html"><small>Previous</small>The machine</a>
+<a rel="next" href="deciding-in-plain-python.html"><small>Next</small>Deciding in plain Python</a>
+</nav>
+</main>
+</body>
+</html>

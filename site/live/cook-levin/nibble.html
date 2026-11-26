@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nibble++ · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li class="here"><a href="nibble.html"><span class="number">22</span>Nibble++</a><ol class="sections"><li><a href="nibble.html#the-machine">The machine</a></li><li><a href="nibble.html#searching-states">Searching states</a></li><li><a href="nibble.html#what-half-and-mod2-buy">What half and mod2 buy</a></li></ol></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">24</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">25</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">26</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">27</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">28</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">29</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">30</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">31</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">32</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">33</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">34</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">35</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">36</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">37</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">38</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">39</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 22</p>
+<h1 id="nibble">Nibble++</h1>
+<p>The toy is small enough to settle by listing every program, 4,096 of them. Nibble++ is the case n = 4 of <a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a>, with programs of any length: inputs 0 to 15, and 2^16 = 65,536 formal languages, the sets of inputs a program can decide. It is too big to list, and small enough to settle exactly by searching the machine&#39;s states. <code>src/plus.c</code> is its interpreter and <code>src/census.c</code> its census.</p>
+<h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
+<p>Nibble++ keeps <code>zero</code>, <code>decr</code> and <code>mod2</code> with their rules, and gives <code>nada</code>&#39;s code, 0, to a new opcode, <code>half</code>, which sets <code>AX</code> to <code>AX</code> &gt;&gt; 1, half of it rounded down. The four codes fill two bits exactly, so a line is still two bits.</p>
+<p><code>nada</code> can go because <code>decr</code> is a safe pad: a <code>decr</code> added after a program&#39;s last line keeps the formal language it decides. An input that has halted stays halted. An input still running at the old end was rejected there, and after the pad it is rejected too, by a <code>decr</code> that finds <code>AX</code> at 0 or at the new end; <code>decr</code>&#39;s only verdict is to reject. <code>tests/test_census.c</code> pads the shortest program of every formal language with <code>decr</code> to 32 lines and checks that each still decides its formal language.</p>
+<p><code>mod2</code> stays for two reasons: the four codes fill the two bits exactly, and the machine stays continuous with the toy.</p>
+<h2 id="searching-states">Searching states <a class="section-link" href="#searching-states" aria-label="Link to this section">§</a></h2>
+<p>The longest shortest program has 28 lines, and there are 4^28 = 2^56 programs of that length. The census searches states instead. A state is the whole machine on all 16 inputs at once: each input&#39;s <code>AX</code>, or accepted, or rejected. Two programs that reach the same state have the same futures, so the search keeps each state once, at the length that first reaches it, and grows the states a line at a time, breadth first. A state&#39;s formal language is the set of its accepted inputs, so a formal language&#39;s shortest length is the first level where a state with that language appears, and following a state back to its parents gives a witness program. <code>tests/test_census.c</code> runs every witness on the interpreter, and checks the census against every program of up to 9 lines. The four censuses below took 0.67 seconds together, run by <code>src/plus_book_main.c</code> while this chapter was written:</p>
+<table>
+<thead>
+<tr>
+<th>Opcodes</th>
+<th align="right">States reached</th>
+<th align="right">Mean shortest length</th>
+<th align="right">Longest</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{zero, decr}</td>
+<td align="right">163838</td>
+<td align="right">22.00</td>
+<td align="right">31</td>
+</tr>
+<tr>
+<td>{zero, decr, mod2}</td>
+<td align="right">262136</td>
+<td align="right">21.06</td>
+<td align="right">30</td>
+</tr>
+<tr>
+<td>{zero, decr, half}</td>
+<td align="right">240401</td>
+<td align="right">19.77</td>
+<td align="right">30</td>
+</tr>
+<tr>
+<td>{zero, decr, mod2, half}</td>
+<td align="right">374003</td>
+<td align="right">19.07</td>
+<td align="right">28</td>
+</tr>
+</tbody>
+</table>
+<p>Each set decides every formal language. With all four, every formal language has a program of 28 lines or fewer, so each has a 32-line program of 64 bits, padded with <code>decr</code>. The formal languages by shortest length, with all four:</p>
+<table>
+<thead>
+<tr>
+<th align="right">Shortest length</th>
+<th align="right">Formal languages</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">0</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td align="right">1</td>
+<td align="right">1</td>
+</tr>
+<tr>
+<td align="right">2</td>
+<td align="right">3</td>
+</tr>
+<tr>
+<td align="right">3</td>
+<td align="right">7</td>
+</tr>
+<tr>
+<td align="right">4</td>
+<td align="right">16</td>
+</tr>
+<tr>
+<td align="right">5</td>
+<td align="right">34</td>
+</tr>
+<tr>
+<td align="right">6</td>
+<td align="right">72</td>
+</tr>
+<tr>
+<td align="right">7</td>
+<td align="right">126</td>
+</tr>
+<tr>
+<td align="right">8</td>
+<td align="right">212</td>
+</tr>
+<tr>
+<td align="right">9</td>
+<td align="right">331</td>
+</tr>
+<tr>
+<td align="right">10</td>
+<td align="right">494</td>
+</tr>
+<tr>
+<td align="right">11</td>
+<td align="right">707</td>
+</tr>
+<tr>
+<td align="right">12</td>
+<td align="right">991</td>
+</tr>
+<tr>
+<td align="right">13</td>
+<td align="right">1376</td>
+</tr>
+<tr>
+<td align="right">14</td>
+<td align="right">1898</td>
+</tr>
+<tr>
+<td align="right">15</td>
+<td align="right">2612</td>
+</tr>
+<tr>
+<td align="right">16</td>
+<td align="right">3599</td>
+</tr>
+<tr>
+<td align="right">17</td>
+<td align="right">4928</td>
+</tr>
+<tr>
+<td align="right">18</td>
+<td align="right">6555</td>
+</tr>
+<tr>
+<td align="right">19</td>
+<td align="right">8171</td>
+</tr>
+<tr>
+<td align="right">20</td>
+<td align="right">9158</td>
+</tr>
+<tr>
+<td align="right">21</td>
+<td align="right">8870</td>
+</tr>
+<tr>
+<td align="right">22</td>
+<td align="right">7164</td>
+</tr>
+<tr>
+<td align="right">23</td>
+<td align="right">4667</td>
+</tr>
+<tr>
+<td align="right">24</td>
+<td align="right">2368</td>
+</tr>
+<tr>
+<td align="right">25</td>
+<td align="right">896</td>
+</tr>
+<tr>
+<td align="right">26</td>
+<td align="right">237</td>
+</tr>
+<tr>
+<td align="right">27</td>
+<td align="right">39</td>
+</tr>
+<tr>
+<td align="right">28</td>
+<td align="right">3</td>
+</tr>
+</tbody>
+</table>
+<h2 id="what-half-and-mod2-buy">What <code>half</code> and <code>mod2</code> buy <a class="section-link" href="#what-half-and-mod2-buy" aria-label="Link to this section">§</a></h2>
+<p>Five formal languages&#39; shortest lengths under each set:</p>
+<table>
+<thead>
+<tr>
+<th>Formal language</th>
+<th align="right">{zero, decr}</th>
+<th align="right">{zero, decr, mod2}</th>
+<th align="right">{zero, decr, half}</th>
+<th align="right">{zero, decr, mod2, half}</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>{15}</td>
+<td align="right">16</td>
+<td align="right">16</td>
+<td align="right">8</td>
+<td align="right">8</td>
+</tr>
+<tr>
+<td>{8, ..., 15}</td>
+<td align="right">23</td>
+<td align="right">12</td>
+<td align="right">5</td>
+<td align="right">5</td>
+</tr>
+<tr>
+<td>{2, 3, 6, 7, 10, 11, 14, 15}</td>
+<td align="right">23</td>
+<td align="right">23</td>
+<td align="right">12</td>
+<td align="right">4</td>
+</tr>
+<tr>
+<td>all but 13</td>
+<td align="right">30</td>
+<td align="right">30</td>
+<td align="right">28</td>
+<td align="right">28</td>
+</tr>
+<tr>
+<td>all 16</td>
+<td align="right">31</td>
+<td align="right">4</td>
+<td align="right">5</td>
+<td align="right">3</td>
+</tr>
+</tbody>
+</table>
+<p><code>half</code> buys the most on formal languages with bit structure, since it moves a high bit of <code>AX</code> down to where <code>zero</code> and <code>mod2</code> test it. Beside {zero, decr, mod2}, it takes {15} from 16 lines to 8, the top half from 12 to 5, and the inputs with bit 1 set from 23 to 4. The census&#39;s witnesses, with all four:</p>
+<pre><code class="language-text">{15}: decr, half, decr, half, decr, half, decr, zero
+{8, ..., 15}: half, half, half, decr, zero
+{2, 3, 6, 7, 10, 11, 14, 15}: half, decr, mod2, zero
+all 16: mod2, half, zero
+</code></pre>
+<p><code>mod2</code> folds every input onto 0 or 1, so it buys the most on large sets: all 16 inputs cost 31 lines with {zero, decr} and 4 with <code>mod2</code> added. Both opcodes together buy little on the hardest formal languages, near-full sets with an isolated gap: everything but 13 costs 30 lines with {zero, decr, mod2} and 28 with all four. A formal language&#39;s cost tracks its boundaries, the places where membership flips between neighbours, more than its size: all 16 inputs cost 3 lines.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="nibble-sized.html"><small>Previous</small>Nibble, sized</a>
+<a rel="next" href="two-theorems-about-nibble.html"><small>Next</small>Two theorems about Nibble++</a>
+</nav>
+</main>
+</body>
+</html>
