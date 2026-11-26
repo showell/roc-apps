@@ -28,21 +28,22 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="here"><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a><ol class="sections"><li><a href="some-history-of-the-approach.html#the-order-of-the-work">The order of the work</a></li><li><a href="some-history-of-the-approach.html#the-view-the-order-passed-over">The view the order passed over</a></li><li><a href="some-history-of-the-approach.html#why-polynomials">Why polynomials</a></li></ol></li>
 <li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
 <li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
-<li><a href="six-expressions-composed.html"><span class="number">12</span>Six expressions, composed</a></li>
-<li><a href="arithmetization.html"><span class="number">13</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">14</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">15</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">16</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">17</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">18</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">19</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">20</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">22</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">23</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">24</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">25</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">26</span>What comes next</a></li>
+<li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">13</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">14</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">15</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">16</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">17</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">18</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">19</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">20</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">21</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">22</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">23</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">24</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">25</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">26</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">27</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -61,101 +62,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><strong>2023-03-14:</strong> the step polynomials at 12:22 (<a href="https://github.com/showell/virtual-machine/commit/a4e4765">a4e4765</a>), and at 12:32 programs of six lines, with the assertion that every problem has a program (<a href="https://github.com/showell/virtual-machine/commit/8646cbe">8646cbe</a>).</li>
 </ol>
 <h2 id="the-view-the-order-passed-over">The view the order passed over <a class="section-link" href="#the-view-the-order-passed-over" aria-label="Link to this section">§</a></h2>
-<p>From the machine Steve went straight to arithmetization, polynomials over the integers. The plain Boolean view sits between the two. Read an input n as its two bits, n = 2·<code>hb</code> + <code>lb</code>, and each problem is a Boolean function of them: {3} is <code>hb AND lb</code>, {1, 2, 3} is <code>hb OR lb</code>, {1, 2} is <code>hb XOR lb</code>, and {0, 2, 3} is <code>hb OR NOT lb</code>.</p>
-<p><strong>Theorem 9.</strong> The 16 problems are exactly the 16 Boolean functions of two bits: each problem is one function of <code>hb</code> and <code>lb</code>, and each function is one problem.</p>
-<p><em>Proof.</em> A function of two bits is its four values, one per input, and a problem is the same four answers, so the two are counted alike, 2^4 = 16. <code>tests/test_theorems.c</code> evaluates the 16 expressions below at all four inputs, finds each one true at its problem&#39;s members alone and the 16 truth tables all different, and finds each problem decided by some program. <code>src/boolean_main.c</code> holds each expression to a program run on the machine and prints the table, and the book&#39;s build holds the table to that output.</p>
-<table>
-<thead>
-<tr>
-<th>code</th>
-<th>problem</th>
-<th>as hb and lb</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>0</td>
-<td>{ }</td>
-<td><code>0</code></td>
-</tr>
-<tr>
-<td>1</td>
-<td>{0}</td>
-<td><code>NOT (hb OR lb)</code></td>
-</tr>
-<tr>
-<td>2</td>
-<td>{1}</td>
-<td><code>NOT hb AND lb</code></td>
-</tr>
-<tr>
-<td>3</td>
-<td>{0, 1}</td>
-<td><code>NOT hb</code></td>
-</tr>
-<tr>
-<td>4</td>
-<td>{2}</td>
-<td><code>hb AND NOT lb</code></td>
-</tr>
-<tr>
-<td>5</td>
-<td>{0, 2}</td>
-<td><code>NOT lb</code></td>
-</tr>
-<tr>
-<td>6</td>
-<td>{1, 2}</td>
-<td><code>hb XOR lb</code></td>
-</tr>
-<tr>
-<td>7</td>
-<td>{0, 1, 2}</td>
-<td><code>NOT (hb AND lb)</code></td>
-</tr>
-<tr>
-<td>8</td>
-<td>{3}</td>
-<td><code>hb AND lb</code></td>
-</tr>
-<tr>
-<td>9</td>
-<td>{0, 3}</td>
-<td><code>NOT (hb XOR lb)</code></td>
-</tr>
-<tr>
-<td>10</td>
-<td>{1, 3}</td>
-<td><code>lb</code></td>
-</tr>
-<tr>
-<td>11</td>
-<td>{0, 1, 3}</td>
-<td><code>NOT hb OR lb</code></td>
-</tr>
-<tr>
-<td>12</td>
-<td>{2, 3}</td>
-<td><code>hb</code></td>
-</tr>
-<tr>
-<td>13</td>
-<td>{0, 2, 3}</td>
-<td><code>hb OR NOT lb</code></td>
-</tr>
-<tr>
-<td>14</td>
-<td>{1, 2, 3}</td>
-<td><code>hb OR lb</code></td>
-</tr>
-<tr>
-<td>15</td>
-<td>{0, 1, 2, 3}</td>
-<td><code>1</code></td>
-</tr>
-</tbody>
-</table>
-<p>So the 16 problems, the 16 puzzles of Nibble, are the 16 two-input connectives, and one step of the machine is a Boolean expression of six bits, which <a class="chapter-link" href="six-expressions-composed.html">“Six expressions, composed”</a> writes out.</p>
+<p>From the machine Steve went straight to polynomials: he wrote the machine&#39;s logic as arithmetic on integers, so that the machine&#39;s whole run could become one big polynomial. The plain Boolean view of the toy, its problems and its step written with ordinary logic gates, sits between the two, and the order passed over it. <a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> sets it out.</p>
 <h2 id="why-polynomials">Why polynomials <a class="section-link" href="#why-polynomials" aria-label="Link to this section">§</a></h2>
 <p>The polynomials were part of the point. Steve, on 2026-11-25, said that part of the project was &quot;to generate obscenely large [polynomials] that actually mapped to a simple Nibble VM solving our 2-bit language&quot;. The second part of the book composes them, and <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> prints them whole.</p>
 

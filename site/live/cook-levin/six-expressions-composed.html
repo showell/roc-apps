@@ -28,49 +28,30 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="some-history-of-the-approach.html"><span class="number">9</span>Some history of the approach</a></li>
 <li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">10</span>How it got here</a></li>
 <li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
-<li class="here"><a href="six-expressions-composed.html"><span class="number">12</span>Six expressions, composed</a><ol class="sections"><li><a href="six-expressions-composed.html#the-step-as-expressions">The step as expressions</a></li><li><a href="six-expressions-composed.html#composition">Composition</a></li><li><a href="six-expressions-composed.html#the-question-as-one-expression">The question as one expression</a></li><li><a href="six-expressions-composed.html#the-payoff">The payoff</a></li><li><a href="six-expressions-composed.html#two-ways-to-compose">Two ways to compose</a></li></ol></li>
-<li><a href="arithmetization.html"><span class="number">13</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">14</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">15</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">16</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">17</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">18</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">19</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">20</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">22</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">23</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">24</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">25</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">26</span>What comes next</a></li>
+<li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
+<li class="here"><a href="six-expressions-composed.html"><span class="number">13</span>Six expressions, composed</a><ol class="sections"><li><a href="six-expressions-composed.html#composition">Composition</a></li><li><a href="six-expressions-composed.html#the-question-as-one-expression">The question as one expression</a></li><li><a href="six-expressions-composed.html#the-payoff">The payoff</a></li><li><a href="six-expressions-composed.html#two-ways-to-compose">Two ways to compose</a></li></ol></li>
+<li><a href="arithmetization.html"><span class="number">14</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">15</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">16</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">17</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">18</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">19</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">20</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">21</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">22</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">23</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">24</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">25</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">26</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">27</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 12</p>
+<p class="chapter-number">Chapter 13</p>
 <h1 id="six-expressions-composed">Six expressions, composed</h1>
-<p><a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a> showed each problem as a Boolean function of two bits. The machine&#39;s step is a function too, of six bits, and six steps composed are one function of fourteen bits: the input&#39;s two and the program&#39;s twelve. This chapter writes the step as plain Boolean expressions, composes them into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
-<h2 id="the-step-as-expressions">The step as expressions <a class="section-link" href="#the-step-as-expressions" aria-label="Link to this section">§</a></h2>
-<p>A step reads six bits, as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>: the four of the state, <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>, and the line&#39;s two, <code>op_hb</code> and <code>op_lb</code>. It is twelve statements (<code>src/decides.c</code>):</p>
-<ul>
-<li><strong>eight intermediate facts</strong> about the machine, each used only inside this step;</li>
-<li><strong>four primed bits</strong>, <code>hb&#39;</code>, <code>lb&#39;</code>, <code>halted&#39;</code> and <code>accepted&#39;</code>, the next state. These four are all that survive into the next step, where they are its unprimed four.</li>
-</ul>
-<pre><code class="language-text">ax_is_0 = NOT hb AND NOT lb
-ax_is_2 = hb AND NOT lb
-ax_is_3 = hb AND lb
-is_zero = NOT op_hb AND op_lb
-is_decr = op_hb AND NOT op_lb
-is_mod2 = op_hb AND op_lb
-runs = NOT halted
-keeps = halted OR NOT op_hb
-hb&#39; = (hb AND keeps) OR (ax_is_3 AND is_decr AND runs)
-lb&#39; = (lb AND (keeps OR (is_mod2 AND runs))) OR (ax_is_2 AND is_decr AND runs)
-halted&#39; = halted OR (ax_is_0 AND is_decr)
-accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
-</code></pre>
-<p><code>keeps</code> says that <code>AX</code> stays as it is: the machine has halted, or the line is <code>nada</code> or <code>zero</code>. So <code>hb&#39;</code> is the old <code>hb</code> kept, or a <code>decr</code> from 3 to 2. <code>lb&#39;</code> is the old <code>lb</code> kept, or kept by <code>mod2</code>, which keeps <code>lb</code> and clears <code>hb</code>, or a <code>decr</code> from 2 to 1. <code>halted&#39;</code> adds a <code>decr</code> at 0, and <code>accepted&#39;</code> a <code>zero</code> at 0 on a running machine. <code>tests/test_boolean.c</code> holds the four to <code>src/stepper.c</code>&#39;s step on all 64 settings of the six bits, and <code>src/boolean_main.c</code> checks them again before it prints them for this book. They are the gates of <code>sat_step</code> in <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, merged by hand.</p>
+<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> wrote one step of the machine as twelve Boolean statements of six bits. Six steps composed are one function of fourteen bits: the input&#39;s two and the program&#39;s twelve. This chapter composes them into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
 <h2 id="composition">Composition <a class="section-link" href="#composition" aria-label="Link to this section">§</a></h2>
 <p>Chain six copies. The first reads the input&#39;s two bits as <code>hb</code> and <code>lb</code>, both flags at 0, and line 1&#39;s two bits. Each later copy reads the four primed bits the one before it wrote, and its own line&#39;s two bits. So the only bits that enter from outside the chain are the input&#39;s two and each line&#39;s two, six lines of them:</p>
 <table>
@@ -232,14 +213,14 @@ accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
 <h2 id="two-ways-to-compose">Two ways to compose <a class="section-link" href="#two-ways-to-compose" aria-label="Link to this section">§</a></h2>
 <p>The composing above ran all 4,096 programs, which a toy allows. For a real checker there are two ways to compose the step&#39;s expressions, and the rest of this part takes each in turn.</p>
 <ul>
-<li><strong>Expand it.</strong> Substitute each step&#39;s expressions into the next and multiply out. That is arithmetization: <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> writes the step as polynomials over the integers, and <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> expands all six, to 10,324 terms for <code>accepted</code>. The size grows with every step substituted.</li>
+<li><strong>Expand it.</strong> Substitute each step&#39;s expressions into the next and multiply them out, into one big expression of the fourteen bits. <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> does this with the logic written as arithmetic on integers, AND as a product and the complement of x as 1 − x, which makes each expression a polynomial; that move is called arithmetization. <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> expands all six, to 10,324 terms for <code>accepted</code>. The size grows with every step substituted.</li>
 <li><strong>Name it.</strong> Give each intermediate wire a fresh variable, and state only how it relates to its inputs. That is Tseitin&#39;s encoding and SAT: <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> has 416 variables and 1,216 clauses for each problem, and the count grows linearly with the steps, one step unit&#39;s gates per step.</li>
 </ul>
 <p>Naming is why Cook-Levin&#39;s formula stays polynomial in size: each step adds the same few clauses, whatever came before it.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="p-np-and-cook-levin.html"><small>Previous</small>P, NP and Cook-Levin</a>
+<a rel="prev" href="the-boolean-view.html"><small>Previous</small>The Boolean view</a>
 <a rel="next" href="arithmetization.html"><small>Next</small>Arithmetization</a>
 </nav>
 </main>
