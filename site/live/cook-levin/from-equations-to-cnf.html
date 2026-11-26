@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From equations to CNF · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="checking-a-claim.html"><span class="number">11</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">12</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">13</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">14</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">15</span>The circuit as equations</a></li>
+<li class="here"><a href="from-equations-to-cnf.html"><span class="number">16</span>From equations to CNF</a><ol class="sections"><li><a href="from-equations-to-cnf.html#the-library">The library</a></li><li><a href="from-equations-to-cnf.html#the-size">The size</a></li><li><a href="from-equations-to-cnf.html#rocsat-evaluates-it">rocsat evaluates it</a></li><li><a href="from-equations-to-cnf.html#by-distribution">By distribution</a></li></ol></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">17</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">18</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">19</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">20</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">21</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">22</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">23</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">24</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">25</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">26</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">27</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">28</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">29</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">30</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">31</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">32</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">33</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">34</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 16</p>
+<h1 id="from-equations-to-cnf">From equations to CNF</h1>
+<p><a class="chapter-link" href="the-circuit-as-equations.html">“The circuit as equations”</a> writes the decider as 1,439 gates. This chapter turns those equations into CNF with a small Roc library, <code>roc/Cnf.roc</code>, and hands claims about the decider to rocsat, which evaluates them. The encoding is the one <a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a> uses on the 14-bit machine, now applied to the whole decider.</p>
+<h2 id="the-library">The library <a class="section-link" href="#the-library" aria-label="Link to this section">§</a></h2>
+<p><code>roc/Cnf.roc</code> has four parts. An expression, <code>Cnf.Expr</code>, is a variable, a constant, the AND or OR of two expressions, or the complement of one. <code>Cnf.parse</code> reads the equations text into the inputs and one expression a wire. <code>Cnf.encode</code> is Tseitin&#39;s encoding, and <code>Cnf.dimacs</code> writes the result as DIMACS, with a <code>c</code> comment line naming each input&#39;s and each wire&#39;s literal.</p>
+<p>The encoding numbers the 16 inputs v1 to v16, in the order of the <code>inputs:</code> line, and then reads the wires in order. A complement is a literal&#39;s sign, which is free. An AND or OR with a constant operand folds: x AND 0 is 0 and x AND 1 is x, and OR the same way with the constants swapped. Every other AND or OR gets the next fresh variable and three clauses:</p>
+<figure class="listing"><figcaption>roc/Cnf.roc, the function gate</figcaption><pre><code class="language-roc"><span class="syn-comment">## An AND (`Both`) or an OR (`Either`) of two expressions. A constant operand</span>
+<span class="syn-comment">## settles the gate or leaves the other operand; otherwise the gate is a new</span>
+<span class="syn-comment">## variable g, and for AND its clauses are (-g a), (-g b), (g -a -b), for OR</span>
+<span class="syn-comment">## (g -a), (g -b), (-g a b).</span>
+<span class="syn-name">gate</span> : [<span class="syn-type">Both</span>, <span class="syn-type">Either</span>], <span class="syn-type">Cnf.Expr</span>, <span class="syn-type">Cnf.Expr</span>, <span class="syn-type">State</span> -&gt; <span class="syn-type">Try</span>({ value : <span class="syn-type">Cnf.Value</span>, state : <span class="syn-type">State</span> }, [<span class="syn-type">Undefined</span>(<span class="syn-type">Str</span>)])
+<span class="syn-name">gate</span> = |kind, a, b, state| {
+	left = value_of(a, state)?
+	right = value_of(b, left.state)?
+	after = right.state
+	is_and = kind == <span class="syn-type">Both</span>
+	<span class="syn-keyword">match</span> (left.value, right.value) {
+		(<span class="syn-type">Fixed</span>(bit), other) | (other, <span class="syn-type">Fixed</span>(bit)) =&gt;
+			<span class="syn-keyword">if</span> (bit == is_and) <span class="syn-type">Ok</span>({ value: other, state: after }) <span class="syn-keyword">else</span> <span class="syn-type">Ok</span>({ value: <span class="syn-type">Fixed</span>(bit), state: after })
+		(<span class="syn-type">Literal</span>(x), <span class="syn-type">Literal</span>(y)) =&gt; {
+			g = after.next
+			clauses =
+				<span class="syn-keyword">if</span> is_and {
+					[[-g, x], [-g, y], [g, -x, -y]]
+				} <span class="syn-keyword">else</span> {
+					[[g, -x], [g, -y], [-g, x, y]]
+				}
+			<span class="syn-type">Ok</span>({ value: <span class="syn-type">Literal</span>(g), state: { ..after, next: g + <span class="syn-number">1</span>, clauses: after.clauses.concat(clauses) } })
+		}
+	}
+}
+</code></pre></figure><p>The app <code>roc/ClaimCnf.roc</code> writes one claim as a CNF: &quot;program P decides problem W&quot;. It takes the program&#39;s number, the problem&#39;s code (input n is in the problem when bit n is 1, so 13 is {0, 2, 3}) and the equations, one line an argument, since its platform reads its arguments alone. To the encoding it adds 17 unit clauses: one for each of the 16 inputs, fixed to the program&#39;s and the want register&#39;s bits, and one asking <code>decides</code> = 1. <code>roc/check.shale</code> holds the library&#39;s 9 expects and the app&#39;s 13, which include the whole decider&#39;s sizes below.</p>
+<h2 id="the-size">The size <a class="section-link" href="#the-size" aria-label="Link to this section">§</a></h2>
+<p>The equations hold 1,047 AND and OR gates (659 AND, 388 OR), beside 392 complements and 8 copies. Many operands are constants: each core&#39;s input, <code>halted</code> and <code>accepted</code> at the start, and the multiplexer inputs wired to 0. So 586 of the AND and OR gates fold, to a constant or to one operand, and 461 are left:</p>
+<ul>
+<li>16 + 461 = 477 variables;</li>
+<li>3 × 461 + 17 = 1,400 clauses, the last 17 the claim&#39;s units.</li>
+</ul>
+<p><code>sat/claims.shale</code> writes the CNF of program 1689 deciding {0, 2, 3} and keeps two gates of it in <code>sat/claims/gates.txt</code>. First an AND, with its equation and the comment lines for its operands and its wires:</p>
+<pre><code class="language-text">core0.step1.lb_mux.top.pick1 = core0.step1.lb_mux.high.out AND core0.step1.hold.sel_hb
+c core0.step1.lb_mux.high.out = -6
+c core0.step1.hold.sel_hb = 5
+c core0.step1.lb_mux.top.pick1 = 17
+c core0.step1.lb&#39; = 17
+c core0.step2.zero.hb_or_lb = 17
+c core0.step2.decr.hb_or_lb = 17
+-17 -6 0
+-17 5 0
+17 6 -5 0
+</code></pre>
+<p>Core 0 starts at <code>AX</code> = 0, so its multiplexer&#39;s high input folds to ¬v6, the complement of <code>op1_lb</code>, and the select is <code>op1_hb</code> itself, v5. v17 is their AND, and three later wires fold onto it: a copy, and two ORs with a 0. Then an OR:</p>
+<pre><code class="language-text">core0.step2.lb_mux.low.out = core0.step2.lb_mux.low.pick0 OR core0.step2.lb_mux.low.pick1
+c core0.step2.lb_mux.low.pick0 = 22
+c core0.step2.lb_mux.low.pick1 = 23
+c core0.step2.lb_mux.low.out = 24
+24 -22 0
+24 -23 0
+-24 22 23 0
+</code></pre>
+<h2 id="rocsat-evaluates-it">rocsat evaluates it <a class="section-link" href="#rocsat-evaluates-it" aria-label="Link to this section">§</a></h2>
+<p><code>sat/claims.shale</code> runs <code>rocsat solve</code> on three claims and writes its verdicts to <code>sat/claims/verdicts.txt</code>, which the book&#39;s build holds here:</p>
+<pre><code class="language-text">program 1689 decides {0, 2, 3}: 477 variables, 1400 clauses: exit 10, s SATISFIABLE, decisions=0 conflicts=0 propagations=477; rocsat check: c model ok; decides (477) = 1
+program 1689 decides {0, 2}: 477 variables, 1400 clauses: exit 20, s UNSATISFIABLE, decisions=0 conflicts=0 propagations=477
+program 2704 decides {3}: 477 variables, 1400 clauses: exit 10, s SATISFIABLE, decisions=0 conflicts=0 propagations=477; rocsat check: c model ok; decides (477) = 1
+</code></pre>
+<p>A decision is a solver&#39;s guess: it sets a variable that propagation left open, and backs up if the guess fails. All three claims took 0. The 16 units fix every input, and each gate comes after its operands, so once both are known one of its three clauses forces its value. Propagation alone settles the whole circuit, 477 propagations for 477 variables, and the solver evaluates the circuit, as the circuit&#39;s own wires would. For {0, 2}, propagation sets <code>decides</code> to 0 against its unit clause, so rocsat answers UNSAT from the same 0 decisions. For each SAT claim the script checks the model with <code>rocsat check</code> and reads <code>decides</code> from it, by the literal its comment line names.</p>
+<h2 id="by-distribution">By distribution <a class="section-link" href="#by-distribution" aria-label="Link to this section">§</a></h2>
+<p>The other way to a CNF keeps to the 16 input variables: push each complement down to the inputs by De Morgan&#39;s laws and multiply out each OR over the ANDs below it. <code>python/distribute.py</code>, run by <code>build.shale</code>, does that for the same equations, dropping clauses that hold both x and ¬x and removing subsumed clauses from sets of up to 4,000, within a budget of 2,000,000 clauses. Its run while this book was built:</p>
+<pre><code class="language-text">core3.step1.accepted&#39;: 1 clauses
+core3.step2.accepted&#39;: 6 clauses
+core3.step3.accepted&#39;: 26 clauses
+core3.step4.accepted&#39;: 99 clauses
+core3.step5.accepted&#39;: 356 clauses
+core3.step6.accepted&#39;: 1,223 clauses
+decides: 3,869 clauses
+decides by distribution equals the circuit at all 65,536 points
+</code></pre>
+<p><code>decides</code> comes to 3,869 clauses over the 16 inputs alone. Core 3&#39;s <code>accepted</code> multiplies by 3.4 to 3.8 with each of the last three lines, so the expansion grows exponentially in the steps; it stays small here because the machine has six lines and 16 inputs. Tseitin&#39;s encoding grows linearly instead, one stepper&#39;s gates a step. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> takes the same encoding with the program&#39;s bits left free, where the solver has to search.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-circuit-as-equations.html"><small>Previous</small>The circuit as equations</a>
+<a rel="next" href="some-history-of-the-approach.html"><small>Next</small>Some history of the approach</a>
+</nav>
+</main>
+</body>
+</html>
