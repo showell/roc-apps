@@ -37,7 +37,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="the-tableau-filled-in.html"><span class="number">18</span>The tableau, filled in</a></li>
 <li><a href="cook-levin-as-sat.html"><span class="number">19</span>Cook-Levin as SAT</a></li>
 <li><a href="solved-by-hand.html"><span class="number">20</span>Solved by hand</a></li>
-<li class="here"><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a><ol class="sections"><li><a href="the-solvers-work-in-full.html#where-the-files-come-from">Where the files come from</a></li><li><a href="the-solvers-work-in-full.html#the-checker">The checker</a></li><li><a href="the-solvers-work-in-full.html#0-2-3-the-puzzle-with-one-answer">{0, 2, 3}, the puzzle with one answer</a></li><li><a href="the-solvers-work-in-full.html#five-lines-are-too-few">Five lines are too few</a></li><li><a href="the-solvers-work-in-full.html#the-largest-proof">The largest proof</a></li><li><a href="the-solvers-work-in-full.html#all-15-proofs">All 15 proofs</a></li></ol></li>
+<li class="here"><a href="the-solvers-work-in-full.html"><span class="number">21</span>The solver&#39;s work, in full</a><ol class="sections"><li><a href="the-solvers-work-in-full.html#where-the-files-come-from">Where the files come from</a></li><li><a href="the-solvers-work-in-full.html#the-checker">The checker</a></li><li><a href="the-solvers-work-in-full.html#0-2-3-the-problem-with-one-answer">{0, 2, 3}, the problem with one answer</a></li><li><a href="the-solvers-work-in-full.html#five-lines-are-too-few">Five lines are too few</a></li><li><a href="the-solvers-work-in-full.html#the-largest-proof">The largest proof</a></li><li><a href="the-solvers-work-in-full.html#all-15-proofs">All 15 proofs</a></li></ol></li>
 <li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">22</span>The oracles</a></li>
 <li><a href="the-roc-port.html"><span class="number">23</span>The Roc port</a></li>
 <li><a href="what-is-shale.html"><span class="number">24</span>What is Shale?</a></li>
@@ -50,15 +50,15 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 21</p>
 <h1 id="the-solvers-work-in-full">The solver&#39;s work, in full</h1>
-<p>This chapter prints what rocsat was given and what it answered for two puzzles, whole, the way <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> prints the polynomials. Over each box are the counts that the book&#39;s app (<code>book/app/SatFiles.roc</code>) makes from the text it shows. The chapter states one count for each box again in its source, and the build stops if the text has another.</p>
+<p>This chapter prints what rocsat was given and what it answered for two problems, whole, the way <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> prints the polynomials. Over each box are the counts that the book&#39;s app (<code>book/app/SatFiles.roc</code>) makes from the text it shows. The chapter states one count for each box again in its source, and the build stops if the text has another.</p>
 <h2 id="where-the-files-come-from">Where the files come from <a class="section-link" href="#where-the-files-come-from" aria-label="Link to this section">§</a></h2>
 <p>The formulas come from the repository&#39;s C: <code>book/book.shale</code> builds <code>src/sat_main.c</code> at each build of the book and writes them to <code>book/build/sat/</code>. rocsat&#39;s answers and proofs are data files in <code>sat/proofs/</code>, which <code>sat/oracle.shale</code> writes on every run (<code>19bff9e</code>). Two runs of the oracle on 2026-11-25 wrote the same bytes, and the 15 proofs match an earlier run&#39;s byte for byte, so rocsat&#39;s search is deterministic, and the book builds from the committed files alone. Before it shows them, the build checks each one again: every proof with the repository&#39;s DRAT checker, <code>src/drat.c</code>, against the formula it has just written, and every answer against its formula&#39;s clauses and, as a program, on the machine.</p>
 <h2 id="the-checker">The checker <a class="section-link" href="#the-checker" aria-label="Link to this section">§</a></h2>
 <p>A DRAT proof is a list of lines, each a clause added, a lemma, or a clause deleted, after a <code>d</code>. <code>src/drat.c</code> replays it forward. Each lemma has to follow by reverse unit propagation: set all its literals false, propagate over the formula and the lemmas so far, and some clause must come out with every literal false. Each deletion has to name a clause the database holds, and it is applied. The proof ends at the empty clause, which follows when propagation over the database alone reaches a conflict. A lemma that fails this test may still pass as a RAT on its first literal; all 15 of rocsat&#39;s proofs pass by the first test alone.</p>
 <p><code>tests/test_drat.c</code> holds the checker both ways in 12 tests: hand-made proofs that pass, planted ones that fail (a lemma the formula leaves open, a proof that stops short of the empty clause, a deletion of a clause a later lemma needs), and each committed proof, which verifies against its formula and fails against the formula one line longer.</p>
-<h2 id="0-2-3-the-puzzle-with-one-answer">{0, 2, 3}, the puzzle with one answer <a class="section-link" href="#0-2-3-the-puzzle-with-one-answer" aria-label="Link to this section">§</a></h2>
+<h2 id="0-2-3-the-problem-with-one-answer">{0, 2, 3}, the problem with one answer <a class="section-link" href="#0-2-3-the-problem-with-one-answer" aria-label="Link to this section">§</a></h2>
 <p><code>is_not_one</code> accepts exactly {0, 2, 3} (code 13), and one program of the 4,096 solves it (<code>tests/golden/find_solutions.txt</code>). Here is its formula, <code>sat 13</code>, in full. The <code>c</code> lines at its top name the variables: the program&#39;s 12 bits, then each input&#39;s state after each step as the literals that carry it, <code>T</code> and <code>F</code> where folding left a constant.</p>
-<figure class="scrolling"><figcaption><code>book/build/sat/13-len6.cnf</code>: the CNF of {0, 2, 3}, written by src/sat_main.c at the book&#39;s build<br>416 variables, 1,216 clauses, 2,832 literals, 16,004 bytes</figcaption><pre><code class="language-text">c Nibble puzzle: accept exactly {0, 2, 3} (language 13), lines past 6 nada, fixed lines mask 0 of program 0
+<figure class="scrolling"><figcaption><code>book/build/sat/13-len6.cnf</code>: the CNF of {0, 2, 3}, written by src/sat_main.c at the book&#39;s build<br>416 variables, 1,216 clauses, 2,832 literals, 15,994 bytes</figcaption><pre><code class="language-text">c problem: accept exactly {0, 2, 3} (code 13), lines past 6 nada, fixed lines mask 0 of program 0
 c a model&#39;s op i is 2 * v[2i - 1] + v[2i]: op1 1 2 op2 3 4 op3 5 6 op4 7 8 op5 9 10 op6 11 12
 c input 0 after step 1: hb F lb F halted 15 accepted 14
 c input 0 after step 2: hb F lb F halted 26 accepted 25
@@ -1978,7 +1978,7 @@ d -273 69 72 -75 286 -88 292 138 283 324 0
 -273 69 -75 72 138 286 292 324 0
 d -273 69 -75 72 283 138 286 292 324 0
 72 0
-0</code></pre></figure><p>The checker, run on it at the book&#39;s build, says <code>verified: 286 lemmas (0 by RAT), 387 deletions, over 416 variables and 1218 clauses; the empty clause at line 673</code>. A program of fewer than five lines has its line 6 at <code>nada</code> too, so the formula covers every program of five lines or fewer, and the proof shows that each one fails the puzzle. No program of five or fewer lines decides {0, 2, 3}. Its shortest program is the six-line one above.</p>
+0</code></pre></figure><p>The checker, run on it at the book&#39;s build, says <code>verified: 286 lemmas (0 by RAT), 387 deletions, over 416 variables and 1218 clauses; the empty clause at line 673</code>. A program of fewer than five lines has its line 6 at <code>nada</code> too, so the formula covers every program of five lines or fewer, and the proof shows that each one decides another problem. No program of five or fewer lines decides {0, 2, 3}. Its shortest program is the six-line one above.</p>
 <h2 id="the-largest-proof">The largest proof <a class="section-link" href="#the-largest-proof" aria-label="Link to this section">§</a></h2>
 <p>Of the 15 proofs, the largest by bytes is that of <code>is_big</code>, {2, 3} (code 12). Its shortest program has five lines, and this proof shows that four are too few:</p>
 <figure class="scrolling"><figcaption><code>sat/proofs/12-len4.drat</code>: rocsat&#39;s DRAT proof that the CNF of {2, 3} at length 4 is unsatisfiable<br>490 lemmas, 788 deletions, 14,698 bytes</figcaption><pre><code class="language-text">-9 0
@@ -3260,13 +3260,13 @@ d 29 30 -5 0
 15 0
 0</code></pre></figure><p>The checker says <code>verified: 490 lemmas (0 by RAT), 788 deletions, over 416 variables and 1220 clauses; the empty clause at line 1278</code>.</p>
 <h2 id="all-15-proofs">All 15 proofs <a class="section-link" href="#all-15-proofs" aria-label="Link to this section">§</a></h2>
-<p>Each puzzle whose shortest program has a line or more has one proof; <code>grumpy</code>, {} (code 0), is solved by the empty program. The build checks each proof again and holds each row to what it finds. By size:</p>
+<p>Each problem whose shortest program has a line or more has one proof; <code>grumpy</code>, {} (code 0), is solved by the empty program. The build checks each proof again and holds each row to what it finds. By size:</p>
 <table>
 <thead>
 <tr>
 <th>code</th>
 <th>puzzle</th>
-<th>language</th>
+<th>problem</th>
 <th>shortest</th>
 <th>proof bytes</th>
 <th>lemmas</th>

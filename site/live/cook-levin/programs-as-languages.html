@@ -50,9 +50,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 5</p>
 <h1 id="programs-as-languages">Programs as languages</h1>
-<p>Steve settled which programs decide which languages twice in Python: first by construction, then by running everything.</p>
+<p>Steve settled which programs decide which problems twice in Python: first by construction, then by running everything.</p>
 <h2 id="the-analytical-solution-2023">The analytical solution, 2023 <a class="section-link" href="#the-analytical-solution-2023" aria-label="Link to this section">§</a></h2>
-<p>The first, <code>find_solutions_analytically</code>, came on the machine&#39;s first day, 2023-03-11, in <a href="https://github.com/showell/virtual-machine/commit/d6bb78f">d6bb78f</a> (&quot;Add analytical solution.&quot;), stamped 13:02, and the stepper followed at 15:47 (<a href="https://github.com/showell/virtual-machine/commit/ba9388a">ba9388a</a>). The machine was smaller then. That commit has two opcodes, <code>check</code> (today&#39;s <code>zero</code>) and <code>decr</code>, programs of up to 8 instructions, and a brute-force search over the program numbers 0 to 255. Its <code>solve</code> (<a href="https://github.com/showell/virtual-machine/blob/d6bb78f/virtual_machine.py#L185-L195">virtual_machine.py, lines 185 to 195</a>) builds a language&#39;s program directly: <code>decr</code> down to the least member, <code>check</code>, and the same for the rest.</p>
+<p>The first, <code>find_solutions_analytically</code>, came on the machine&#39;s first day, 2023-03-11, in <a href="https://github.com/showell/virtual-machine/commit/d6bb78f">d6bb78f</a> (&quot;Add analytical solution.&quot;), stamped 13:02, and the stepper followed at 15:47 (<a href="https://github.com/showell/virtual-machine/commit/ba9388a">ba9388a</a>). The machine was smaller then. That commit has two opcodes, <code>check</code> (today&#39;s <code>zero</code>) and <code>decr</code>, programs of up to 8 instructions, and a brute-force search over the program numbers 0 to 255. Its <code>solve</code> (<a href="https://github.com/showell/virtual-machine/blob/d6bb78f/virtual_machine.py#L185-L195">virtual_machine.py, lines 185 to 195</a>) builds a problem&#39;s program directly: <code>decr</code> down to the least member, <code>check</code>, and the same for the rest.</p>
 <pre><code class="language-python">    def solve(lang):
         if not lang:
             # The program can terminate to reject all further numbers
@@ -65,23 +65,23 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 
         return program + [&quot;check&quot;] + solve(lang[1:])
 </code></pre>
-<p>For each of the 16 languages it asserted the program shorter than 8 and ran it on all four inputs (<code>assert f(x) == y</code>). Later commits removed it; it is absent at <a href="https://github.com/showell/virtual-machine/commit/94c3d31">94c3d31</a>.</p>
+<p>For each of the 16 problems it asserted the program shorter than 8 and ran it on all four inputs (<code>assert f(x) == y</code>). Later commits removed it; it is absent at <a href="https://github.com/showell/virtual-machine/commit/94c3d31">94c3d31</a>.</p>
 <h2 id="the-complete-calculation">The complete calculation <a class="section-link" href="#the-complete-calculation" aria-label="Link to this section">§</a></h2>
-<p>Today&#39;s <code>find_solutions</code> (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L148-L180">virtual_machine.py, lines 148 to 180</a>) runs every program on every input and groups the programs by the language each accepts. The runs are <code>run_progam</code>&#39;s (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L76-L105">lines 76 to 105</a>), the plain interpreter: a loop over the six instructions, an <code>if</code>/<code>elif</code> on each opcode and on <code>AX</code>, the spec above as code. That is the complete calculation, 4,096 programs on 4 inputs, 16,384 runs. It also re-runs each language&#39;s first program, 16 programs on 4 inputs, through the step polynomials of the second part (lines 178 to 180); the theorems here rest on the interpreter alone.</p>
+<p>Today&#39;s <code>find_solutions</code> (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L148-L180">virtual_machine.py, lines 148 to 180</a>) runs every program on every input and groups the programs by the problem each decides. The runs are <code>run_progam</code>&#39;s (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L76-L105">lines 76 to 105</a>), the plain interpreter: a loop over the six instructions, an <code>if</code>/<code>elif</code> on each opcode and on <code>AX</code>, the spec above as code. That is the complete calculation, 4,096 programs on 4 inputs, 16,384 runs. It also re-runs each problem&#39;s first program, 16 programs on 4 inputs, through the step polynomials of the second part (lines 178 to 180); the theorems here rest on the interpreter alone.</p>
 <h2 id="the-theorems">The theorems <a class="section-link" href="#the-theorems" aria-label="Link to this section">§</a></h2>
-<p><strong>Theorem 1.</strong> Every one of the 16 languages over {0, 1, 2, 3} is decided by some six-instruction program.</p>
-<p><em>Proof by construction.</em> On today&#39;s machine <code>solve</code> builds a program of six lines or fewer for 15 languages, and each decides its language. For {0, 1, 2, 3} it builds seven, <code>zero, decr, zero, decr, zero, decr, zero</code>, one past the limit, and Python&#39;s report gives <code>mod2, zero, decr, zero</code> for it. <code>tests/test_theorems.c</code> runs the construction on every language.</p>
-<p><em>Proof by exhaustion.</em> <code>find_solutions</code> runs all 4,096 programs on <code>run_progam</code> and asserts <code>len(solutions[y]) &gt; 0</code> for every language <code>y</code> (lines 159 to 160).</p>
-<p><strong>Theorem 2.</strong> With <code>nada</code>, <code>zero</code> and <code>decr</code> alone, exactly 15 of the 16 languages are decided by a six-instruction program; {0, 1, 2, 3} needs <code>mod2</code>.</p>
-<p><em>Proof.</em> <code>tests/test_theorems.c</code> runs the 3^6 = 729 programs over <code>nada</code>, <code>zero</code> and <code>decr</code> and finds 15 languages, {0, 1, 2, 3} the one missing.</p>
-<p><strong>Theorem 3.</strong> The number of programs deciding each language is the table&#39;s programs column, and the 16 counts sum to 4,096.</p>
-<p><em>Proof.</em> Each program is filed under the one language it accepts, so the counts partition the 4,096 programs. Python&#39;s report gives each count, and <code>tests/golden/find_solutions.txt</code> holds that report.</p>
-<p>In the table, a language&#39;s code is its inputs as bits: input i accepted sets bit i. A program&#39;s length is its instructions before its trailing <code>nada</code>s, and the shortest column is the least length among a language&#39;s programs.</p>
+<p><strong>Theorem 1.</strong> Every one of the 16 problems is decided by some six-instruction program.</p>
+<p><em>Proof by construction.</em> On today&#39;s machine <code>solve</code> builds a program of six lines or fewer for 15 problems, and each decides its problem. For {0, 1, 2, 3} it builds seven, <code>zero, decr, zero, decr, zero, decr, zero</code>, one past the limit, and Python&#39;s report gives <code>mod2, zero, decr, zero</code> for it. <code>tests/test_theorems.c</code> runs the construction on every problem.</p>
+<p><em>Proof by exhaustion.</em> <code>find_solutions</code> runs all 4,096 programs on <code>run_progam</code> and asserts <code>len(solutions[y]) &gt; 0</code> for every problem <code>y</code> (lines 159 to 160).</p>
+<p><strong>Theorem 2.</strong> With <code>nada</code>, <code>zero</code> and <code>decr</code> alone, exactly 15 of the 16 problems are decided by a six-instruction program; {0, 1, 2, 3} needs <code>mod2</code>.</p>
+<p><em>Proof.</em> <code>tests/test_theorems.c</code> runs the 3^6 = 729 programs over <code>nada</code>, <code>zero</code> and <code>decr</code> and finds 15 problems, {0, 1, 2, 3} the one missing.</p>
+<p><strong>Theorem 3.</strong> The number of programs deciding each problem is the table&#39;s programs column, and the 16 counts sum to 4,096.</p>
+<p><em>Proof.</em> Each program is filed under the one problem it decides, so the counts partition the 4,096 programs. Python&#39;s report gives each count, and <code>tests/golden/find_solutions.txt</code> holds that report.</p>
+<p>In the table, a problem&#39;s code is its inputs as bits: input i accepted sets bit i. A program&#39;s length is its instructions before its trailing <code>nada</code>s, and the shortest column is the least length among a problem&#39;s programs.</p>
 <table>
 <thead>
 <tr>
 <th>code</th>
-<th>language</th>
+<th>problem</th>
 <th>programs</th>
 <th>shortest</th>
 </tr>
@@ -185,8 +185,8 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p><strong>Theorem 4.</strong> Each language&#39;s shortest program has the length in the table&#39;s shortest column.</p>
-<p><em>Proof.</em> <code>tests/test_theorems.c</code> measures the length of all 4,096 programs, takes each language&#39;s least, and holds the 16 to the table. The second part proves it again a different way: a SAT solver shows each length one line shorter impossible, with a proof a checker replays (<a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>).</p>
+<p><strong>Theorem 4.</strong> Each problem&#39;s shortest program has the length in the table&#39;s shortest column.</p>
+<p><em>Proof.</em> <code>tests/test_theorems.c</code> measures the length of all 4,096 programs, takes each problem&#39;s least, and holds the 16 to the table. The second part proves it again a different way: a SAT solver shows each length one line shorter impossible, with a proof a checker replays (<a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>).</p>
 <h2 id="the-rare-one">The rare one <a class="section-link" href="#the-rare-one" aria-label="Link to this section">§</a></h2>
 <p><strong>Theorem 5.</strong> {0, 2, 3} is decided by exactly one program, and that program uses all six lines:</p>
 <pre><code class="language-text">zero
@@ -197,9 +197,9 @@ decr
 zero
 </code></pre>
 <p><em>Proof.</em> Python&#39;s report gives {0, 2, 3} a count of 1 and this program as its example, and Theorem 3&#39;s search is exhaustive. <code>solve</code> builds the same program.</p>
-<p>Input 0 is accepted on line 1. Input 1 drops to 0 on line 2 and is rejected by the <code>decr</code> on line 3. Input 2 reaches 0 on line 3 and is accepted on line 4. Input 3 reaches 0 on line 5 and is accepted on line 6. The language skips 1, and the only way past it is to count down past it.</p>
+<p>Input 0 is accepted on line 1. Input 1 drops to 0 on line 2 and is rejected by the <code>decr</code> on line 3. Input 2 reaches 0 on line 3 and is accepted on line 4. Input 3 reaches 0 on line 5 and is accepted on line 6. The problem skips 1, and the only way past it is to count down past it.</p>
 <h2 id="the-common-ones">The common ones <a class="section-link" href="#the-common-ones" aria-label="Link to this section">§</a></h2>
-<p>The empty language has 844 programs, since any program that rejects every input will do, and {0, 2} has 883: <code>mod2</code> then <code>zero</code> is two lines, and many longer programs reach the same verdicts.</p>
+<p>The empty problem, { }, has 844 programs, since any program that rejects every input will do, and {0, 2} has 883: <code>mod2</code> then <code>zero</code> is two lines, and many longer programs reach the same verdicts.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

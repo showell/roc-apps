@@ -20,7 +20,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
 <li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
-<li class="here"><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a><ol class="sections"><li><a href="deciding-in-plain-python.html#two-versions-of-decides">Two versions of decides</a></li><li><a href="deciding-in-plain-python.html#some-languages-as-one-test">Some languages as one test</a></li><li><a href="deciding-in-plain-python.html#what-the-machine-adds">What the machine adds</a></li></ol></li>
+<li class="here"><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a><ol class="sections"><li><a href="deciding-in-plain-python.html#two-versions-of-decides">Two versions of decides</a></li><li><a href="deciding-in-plain-python.html#some-problems-as-one-test">Some problems as one test</a></li><li><a href="deciding-in-plain-python.html#what-the-machine-adds">What the machine adds</a></li></ol></li>
 <li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
 <li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
 <li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
@@ -50,21 +50,21 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 4</p>
 <h1 id="deciding-in-plain-python">Deciding in plain Python</h1>
-<p>A language over {0, 1, 2, 3} is four answers, one per input, so deciding one takes a line of ordinary code. The code here is <code>python/decides.py</code>, which <code>build.shale</code> runs on every build: it holds its two versions to each other on all 16 languages and all four inputs, and each one-line test below to its language.</p>
+<p>A problem is four answers, one per input, so deciding one takes a line of ordinary code. The code here is <code>python/decides.py</code>, which <code>build.shale</code> runs on every build: it holds its two versions to each other on all 16 problems and all four inputs, and each one-line test below to its problem.</p>
 <h2 id="two-versions-of-decides">Two versions of <code>decides</code> <a class="section-link" href="#two-versions-of-decides" aria-label="Link to this section">§</a></h2>
-<p>A language&#39;s <em>want</em> code has bit n set when input n is in it, as in the table of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a>: {0, 2, 3} is 1 + 4 + 8 = 13. The plain version lists the members and looks n up among them:</p>
+<p>A problem&#39;s <em>want</em> code has bit n set when input n is in it, as in the table of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a>: {0, 2, 3} is 1 + 4 + 8 = 13. The plain version lists the members and looks n up among them:</p>
 <figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">def decides(want, n):
-    # The members of the language: each input whose bit is set in `want`.
+    # The members of the problem: each input whose bit is set in `want`.
     members = []
     for i in range(4):
         if want &amp; (1 &lt;&lt; i):
             members.append(i)
-    # The language accepts n when n is one of its members.
+    # The problem holds n when n is one of its members.
     return n in members
 </code></pre></figure><p>The golfed version reads bit n of <code>want</code> directly:</p>
 <figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">decides_golfed = lambda want, n: want &gt;&gt; n &amp; 1
-</code></pre></figure><h2 id="some-languages-as-one-test">Some languages as one test <a class="section-link" href="#some-languages-as-one-test" aria-label="Link to this section">§</a></h2>
-<p>Many of the 16 languages have a natural test of n, or of its two bits, <code>hb</code> and <code>lb</code> (n is 2·<code>hb</code> + <code>lb</code>):</p>
+</code></pre></figure><h2 id="some-problems-as-one-test">Some problems as one test <a class="section-link" href="#some-problems-as-one-test" aria-label="Link to this section">§</a></h2>
+<p>Many of the 16 problems have a natural test of n, or of its two bits, <code>hb</code> and <code>lb</code> (n is 2·<code>hb</code> + <code>lb</code>):</p>
 <figure class="listing"><figcaption>python/decides.py, an excerpt</figcaption><pre><code class="language-python">ONE_LINERS = {
     14: lambda n: n != 0,  # {1, 2, 3}
     5: lambda n: n % 2 == 0,  # {0, 2}
@@ -72,7 +72,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
     6: lambda n: n in (1, 2),  # {1, 2}: hb XOR lb
 </code></pre></figure><p><a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a> lists all 16 this way, as Boolean expressions of the two bits.</p>
 <h2 id="what-the-machine-adds">What the machine adds <a class="section-link" href="#what-the-machine-adds" aria-label="Link to this section">§</a></h2>
-<p>The want code already says everything about a language. The Nibble machine takes up to six lines to say the same thing, and for {0, 2, 3} it takes all six, in its one program. The composed polynomial of <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a>, which runs every program on every input at once, takes 10,324 terms. The machine is there to be the thing analysed, a small checker that Cook and Levin&#39;s construction can turn into a formula; the question it answers is a lookup.</p>
+<p>The want code already says everything about a problem. The Nibble machine takes up to six lines to say the same thing, and for {0, 2, 3} it takes all six, in its one program. The composed polynomial of <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a>, which runs every program on every input at once, takes 10,324 terms. The machine is there to be the thing analysed, a small checker that Cook and Levin&#39;s construction can turn into a formula; the question it answers is a lookup.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

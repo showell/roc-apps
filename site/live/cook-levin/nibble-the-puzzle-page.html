@@ -50,9 +50,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 7</p>
 <h1 id="nibble-the-puzzle-page">Nibble, the puzzle page</h1>
-<p><a href="https://roc.lynrummy.com/nibble/">Nibble</a> is a puzzle page with one puzzle for each of the 16 languages: pick instructions until the program accepts exactly the puzzle&#39;s inputs and rejects the rest. The search of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> says every puzzle has an answer, and how many programs are answers.</p>
+<p><a href="https://roc.lynrummy.com/nibble/">Nibble</a> is a puzzle page with one puzzle for each of the 16 problems: pick instructions until the program accepts exactly the puzzle&#39;s inputs and rejects the rest. The search of <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> says every puzzle has an answer, and how many programs are answers.</p>
 <h2 id="what-runs-in-the-page">What runs in the page <a class="section-link" href="#what-runs-in-the-page" aria-label="Link to this section">§</a></h2>
-<p>The page runs the Roc port&#39;s machine. <code>roc/NibbleWasm.roc</code> exports three functions built on <code>roc/Machine.roc</code>, compiled to a 9.5 KB wasm module by the pinned Roc with a small Zig host (<code>web/platform/</code>), and the puzzle table is printed by the C&#39;s <code>web/puzzles.c</code>, which counts every program&#39;s language and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are Roc&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the Roc wasm to the C on all 4,096 programs and all four inputs, so every build of the page is also a cross-check of the two ports, then plays every puzzle in headless Chromium by clicks.</p>
+<p>The page runs the Roc port&#39;s machine. <code>roc/NibbleWasm.roc</code> exports three functions built on <code>roc/Machine.roc</code>, compiled to a 9.5 KB wasm module by the pinned Roc with a small Zig host (<code>web/platform/</code>), and the puzzle table is printed by the C&#39;s <code>web/puzzles.c</code>, which files every program under the problem it decides and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are Roc&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the Roc wasm to the C on all 4,096 programs and all four inputs, so every build of the page is also a cross-check of the two ports, then plays every puzzle in headless Chromium by clicks.</p>
 <h2 id="playing-a-puzzle">Playing a puzzle <a class="section-link" href="#playing-a-puzzle" aria-label="Link to this section">§</a></h2>
 <p>Every pick runs the program at once on all four inputs, so the trace always shows the program as it stands. A trace shows each input&#39;s <code>AX</code> after every step, then how each run ended, what the puzzle wants, and a row marking each input correct or wrong. A wrong program&#39;s verdict names every way it is wrong, as in &quot;Your program falsely accepts 0. It falsely rejects 1 and 3.&quot; When the program is right, the page says so above the program, folds the instruction buttons away so the whole trace shows, and says how many of the 4,096 programs solve the puzzle. Beside the buttons, the program&#39;s machine code shows its twelve bits, two a line, and its number. Each opcode button&#39;s tip says what it does to each <code>AX</code>: <code>decr</code> is &quot;0-&gt;R, 1-&gt;0, 2-&gt;1, 3-&gt;2&quot;. A reload starts fresh at puzzle 1.</p>
 <h2 id="the-lessons">The lessons <a class="section-link" href="#the-lessons" aria-label="Link to this section">§</a></h2>
@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <tr>
 <th>#</th>
 <th>puzzle</th>
-<th>language</th>
+<th>problem</th>
 <th>shortest</th>
 <th>programs</th>
 </tr>
@@ -165,10 +165,10 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </table>
 <p>A program&#39;s length is its instructions before its trailing <code>nada</code>s. Each puzzle says how short its best program is, and the lines past that are locked to <code>nada</code>. Past the lessons, every puzzle&#39;s last open line is fixed as <code>zero</code>, by this theorem:</p>
 <p><strong>Theorem 8.</strong> Every shortest program of a line or more ends in <code>zero</code>.</p>
-<p><em>Proof.</em> An instruction after a program&#39;s last <code>zero</code> can only reject, as running off the end does, so a program whose last instruction is <code>decr</code> or <code>mod2</code> decides the same language with that instruction cut, in fewer lines. <code>tests/test_theorems.c</code> checks it on all 4,096 programs: every shortest program of a line or more ends in <code>zero</code>, and longer programs that end otherwise exist.</p>
+<p><em>Proof.</em> An instruction after a program&#39;s last <code>zero</code> can only reject, as running off the end does, so a program whose last instruction is <code>decr</code> or <code>mod2</code> decides the same problem with that instruction cut, in fewer lines. <code>tests/test_theorems.c</code> checks it on all 4,096 programs: every shortest program of a line or more ends in <code>zero</code>, and longer programs that end otherwise exist.</p>
 <p>The last puzzle, <code>is_not_tiny</code>, also gives its <code>mod2</code> on line 2, the line where the solution folds 2 onto 0; the player still picks the <code>decr</code> on line 1.</p>
 <h2 id="help-for-a-newcomer">Help for a newcomer <a class="section-link" href="#help-for-a-newcomer" aria-label="Link to this section">§</a></h2>
-<p>The page&#39;s intro, behind a Help link after puzzle 1, says what a language is here, how the machine runs a program four times to find the language it recognizes, and works <code>decr, zero</code> through to {1}; the page&#39;s check holds that example to the machine.</p>
+<p>The page&#39;s intro, behind a Help link after puzzle 1, says what a language is here (the page&#39;s word for a problem), how the machine runs a program four times to find the language it recognizes, and works <code>decr, zero</code> through to {1}; the page&#39;s check holds that example to the machine.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

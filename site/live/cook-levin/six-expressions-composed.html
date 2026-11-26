@@ -50,9 +50,13 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 12</p>
 <h1 id="six-expressions-composed">Six expressions, composed</h1>
-<p><a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a> showed each language as a Boolean function of two bits. The machine&#39;s step is one too, of six bits, and six steps composed are one of fourteen. This chapter writes the step as plain Boolean expressions, composes them into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
+<p><a class="chapter-link" href="some-history-of-the-approach.html">“Some history of the approach”</a> showed each problem as a Boolean function of two bits. The machine&#39;s step is a function too, of six bits, and six steps composed are one function of fourteen bits: the input&#39;s two and the program&#39;s twelve. This chapter writes the step as plain Boolean expressions, composes them into the question a puzzle asks, and then names the two ways of composing that the rest of this part follows.</p>
 <h2 id="the-step-as-expressions">The step as expressions <a class="section-link" href="#the-step-as-expressions" aria-label="Link to this section">§</a></h2>
-<p>A step reads <code>hb</code>, <code>lb</code>, <code>halted</code>, <code>accepted</code>, <code>op_hb</code> and <code>op_lb</code>, as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>, and writes the next four. Eight small facts about the machine come first, then the four next-state bits, each read with the facts above it (<code>src/decides.c</code>):</p>
+<p>A step reads six bits, as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>: the four of the state, <code>hb</code>, <code>lb</code>, <code>halted</code> and <code>accepted</code>, and the line&#39;s two, <code>op_hb</code> and <code>op_lb</code>. It is twelve statements (<code>src/decides.c</code>):</p>
+<ul>
+<li><strong>eight intermediate facts</strong> about the machine, each used only inside this step;</li>
+<li><strong>four primed bits</strong>, <code>hb&#39;</code>, <code>lb&#39;</code>, <code>halted&#39;</code> and <code>accepted&#39;</code>, the next state. These four are all that survive into the next step, where they are its unprimed four.</li>
+</ul>
 <pre><code class="language-text">ax_is_0 = NOT hb AND NOT lb
 ax_is_2 = hb AND NOT lb
 ax_is_3 = hb AND lb
@@ -68,14 +72,41 @@ accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
 </code></pre>
 <p><code>keeps</code> says that <code>AX</code> stays as it is: the machine has halted, or the line is <code>nada</code> or <code>zero</code>. So <code>hb&#39;</code> is the old <code>hb</code> kept, or a <code>decr</code> from 3 to 2. <code>lb&#39;</code> is the old <code>lb</code> kept, or kept by <code>mod2</code>, which keeps <code>lb</code> and clears <code>hb</code>, or a <code>decr</code> from 2 to 1. <code>halted&#39;</code> adds a <code>decr</code> at 0, and <code>accepted&#39;</code> a <code>zero</code> at 0 on a running machine. <code>tests/test_boolean.c</code> holds the four to <code>src/stepper.c</code>&#39;s step on all 64 settings of the six bits, and <code>src/boolean_main.c</code> checks them again before it prints them for this book. They are the gates of <code>sat_step</code> in <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>, merged by hand.</p>
 <h2 id="composition">Composition <a class="section-link" href="#composition" aria-label="Link to this section">§</a></h2>
-<p>Chain six copies. The first reads the input&#39;s two bits, both flags at 0 and line 1&#39;s two bits; each later copy reads the state the one before it wrote, and its own line&#39;s bits. After the sixth, <code>accepted</code> is an expression accepted(n, v) of 2 + 12 bits: the input&#39;s two and the program&#39;s twelve, v1 to v12, numbered as in <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>, where instruction i is 2·v(2i − 1) + v(2i).</p>
+<p>Chain six copies. The first reads the input&#39;s two bits as <code>hb</code> and <code>lb</code>, both flags at 0, and line 1&#39;s two bits. Each later copy reads the four primed bits the one before it wrote, and its own line&#39;s two bits. So the only bits that enter from outside the chain are the input&#39;s two and each line&#39;s two, six lines of them:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>bits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the input, <code>hb</code> and <code>lb</code> at the start</td>
+<td>2</td>
+</tr>
+<tr>
+<td>the flags at the start</td>
+<td>0 (both constant 0)</td>
+</tr>
+<tr>
+<td>the program, two a line for six lines</td>
+<td>12</td>
+</tr>
+<tr>
+<td><strong>the composed expression&#39;s variables</strong></td>
+<td><strong>14</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Everything else is internal: six steps of eight facts each, and of the 24 primed bits, the 20 that the next step reads. After the sixth step, <code>accepted&#39;</code> is an expression accepted(n, v) of those 14 bits. The program&#39;s bits are v1 to v12, numbered as in <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>, where instruction i is 2·v(2i − 1) + v(2i).</p>
 <h2 id="the-question-as-one-expression">The question as one expression <a class="section-link" href="#the-question-as-one-expression" aria-label="Link to this section">§</a></h2>
 <p>A puzzle asks whether a program decides L. That is one more expression, of the twelve program bits alone:</p>
 <pre><code class="language-text">decides_L(v1, ..., v12) = AND over n in 0..3 of (accepted(n, v) == L(n))
 </code></pre>
 <p>L(n) is the constant 1 or 0, so each of the four comparisons is <code>accepted(n, v)</code> or its complement. The true points of <code>decides_L</code> are exactly the programs that decide L.</p>
 <h2 id="the-payoff">The payoff <a class="section-link" href="#the-payoff" aria-label="Link to this section">§</a></h2>
-<p>Expanded and simplified, <code>decides_L</code> is a sum of products over v1 to v12. <code>src/boolean_main.c</code> computes one for every language: it finds the programs that decide L by running all 4,096, takes the prime implicants of that set, and covers it greedily, the product holding the most programs left taken first. Each product is written as its twelve bits, two a line of the program: 1 for v, 0 for its complement, and - for a bit the product leaves free. For {0, 2, 3} the expression is one product, the conjunction of 12 literals that spells its one program, <code>zero, decr, decr, zero, decr, zero</code>:</p>
+<p>Expanded and simplified, <code>decides_L</code> is a sum of products over v1 to v12. <code>src/boolean_main.c</code> computes one for every problem: it finds the programs that decide L by running all 4,096, takes the prime implicants of that set, and covers it greedily, the product holding the most programs left taken first. Each product is written as its twelve bits, two a line of the program: 1 for v, 0 for its complement, and - for a bit the product leaves free. For {0, 2, 3} the expression is one product, the conjunction of 12 literals that spells its one program, <code>zero, decr, decr, zero, decr, zero</code>:</p>
 <pre><code class="language-text">01 10 10 01 10 01
 </code></pre>
 <p>For {0, 3}, 12 programs take 8 products. The first is <code>zero, decr, decr, decr, zero</code> with line 6 free:</p>
@@ -93,7 +124,7 @@ accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
 <thead>
 <tr>
 <th>code</th>
-<th>language</th>
+<th>problem</th>
 <th>programs</th>
 <th>products</th>
 </tr>
@@ -197,12 +228,12 @@ accepted&#39; = accepted OR (ax_is_0 AND is_zero AND runs)
 </tr>
 </tbody>
 </table>
-<p><code>tests/test_boolean.c</code> holds every language&#39;s sum of products to <code>run_progam</code>, program by program, and the book&#39;s build holds the blocks here to <code>boolean_main</code>&#39;s output.</p>
+<p><code>tests/test_boolean.c</code> holds every problem&#39;s sum of products to <code>run_progam</code>, program by program, and the book&#39;s build holds the blocks here to <code>boolean_main</code>&#39;s output.</p>
 <h2 id="two-ways-to-compose">Two ways to compose <a class="section-link" href="#two-ways-to-compose" aria-label="Link to this section">§</a></h2>
 <p>The composing above ran all 4,096 programs, which a toy allows. For a real checker there are two ways to compose the step&#39;s expressions, and the rest of this part takes each in turn.</p>
 <ul>
 <li><strong>Expand it.</strong> Substitute each step&#39;s expressions into the next and multiply out. That is arithmetization: <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> writes the step as polynomials over the integers, and <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> expands all six, to 10,324 terms for <code>accepted</code>. The size grows with every step substituted.</li>
-<li><strong>Name it.</strong> Give each intermediate wire a fresh variable, and state only how it relates to its inputs. That is Tseitin&#39;s encoding and SAT: <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> has 416 variables and 1,216 clauses for each puzzle, and the count grows linearly with the steps, one step unit&#39;s gates per step.</li>
+<li><strong>Name it.</strong> Give each intermediate wire a fresh variable, and state only how it relates to its inputs. That is Tseitin&#39;s encoding and SAT: <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> has 416 variables and 1,216 clauses for each problem, and the count grows linearly with the steps, one step unit&#39;s gates per step.</li>
 </ul>
 <p>Naming is why Cook-Levin&#39;s formula stays polynomial in size: each step adds the same few clauses, whatever came before it.</p>
 

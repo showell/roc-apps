@@ -123,7 +123,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p>The bottom row&#39;s <code>accepted</code> flags read 0, 1, 1, 1, which is {1, 2, 3}, the language. One detail of the circuit shows here: an accept leaves the core running, since only <code>decr</code> at 0 sets <code>halted</code>. Cores 1 and 3 accept on line 3 and halt on line 4, and <code>accepted</code> stays 1, because the flags only ever turn on. The interpreter stops at the accept instead; the bottom row agrees either way.</p>
+<p>The bottom row&#39;s <code>accepted</code> flags read 0, 1, 1, 1, which is {1, 2, 3}, the problem. One detail of the circuit shows here: an accept leaves the core running, since only <code>decr</code> at 0 sets <code>halted</code>. Cores 1 and 3 accept on line 3 and halt on line 4, and <code>accepted</code> stays 1, because the flags only ever turn on. The interpreter stops at the accept instead; the bottom row agrees either way.</p>
 <h2 id="the-tableau-of-every-program">The tableau of every program <a class="section-link" href="#the-tableau-of-every-program" aria-label="Link to this section">§</a></h2>
 <p>Now leave the program free. The same grid, as the SAT encoding builds it for {1, 2, 3}, has in each cell the four wires of one core&#39;s state, written <code>hb lb · halted accepted</code>:</p>
 <ul>

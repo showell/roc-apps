@@ -56,19 +56,19 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <ol>
 <li><strong>2023-03-11, 01:49:</strong> the machine, <code>run_progam</code>, and the search <code>find_solutions</code>, in the first commit (<a href="https://github.com/showell/virtual-machine/commit/f01c1c3">f01c1c3</a>).</li>
 <li><strong>13:02 the same day:</strong> the analytical solution (<a href="https://github.com/showell/virtual-machine/commit/d6bb78f">d6bb78f</a>), as <a class="chapter-link" href="programs-as-languages.html">“Programs as languages”</a> tells.</li>
-<li><strong>15:47 the same day:</strong> the stepper (<a href="https://github.com/showell/virtual-machine/commit/ba9388a">ba9388a</a>), with its <code>NOT</code>, <code>AND</code> and <code>OR</code> already arithmetic on integers (<code>NOT x</code> was (x − 1)·(x − 1) then), and the assertion that the stepper accepts exactly the language&#39;s inputs.</li>
+<li><strong>15:47 the same day:</strong> the stepper (<a href="https://github.com/showell/virtual-machine/commit/ba9388a">ba9388a</a>), with its <code>NOT</code>, <code>AND</code> and <code>OR</code> already arithmetic on integers (<code>NOT x</code> was (x − 1)·(x − 1) then), and the assertion that the stepper accepts exactly the problem&#39;s inputs.</li>
 <li><strong>2023-03-12:</strong> <code>mod2</code> and <code>pass</code>, today&#39;s <code>nada</code> (<a href="https://github.com/showell/virtual-machine/commit/cad8e18">cad8e18</a>), then the polynomial library from 14:35 (<a href="https://github.com/showell/virtual-machine/commit/6bb7429">6bb7429</a>).</li>
-<li><strong>2023-03-14:</strong> the step polynomials at 12:22 (<a href="https://github.com/showell/virtual-machine/commit/a4e4765">a4e4765</a>), and at 12:32 programs of six lines, with the assertion that every language has a program (<a href="https://github.com/showell/virtual-machine/commit/8646cbe">8646cbe</a>).</li>
+<li><strong>2023-03-14:</strong> the step polynomials at 12:22 (<a href="https://github.com/showell/virtual-machine/commit/a4e4765">a4e4765</a>), and at 12:32 programs of six lines, with the assertion that every problem has a program (<a href="https://github.com/showell/virtual-machine/commit/8646cbe">8646cbe</a>).</li>
 </ol>
 <h2 id="the-view-the-order-passed-over">The view the order passed over <a class="section-link" href="#the-view-the-order-passed-over" aria-label="Link to this section">§</a></h2>
-<p>From the machine Steve went straight to arithmetization, polynomials over the integers. The plain Boolean view sits between the two. Read an input n as its two bits, n = 2·<code>hb</code> + <code>lb</code>, and each language is a Boolean function of them: {3} is <code>hb AND lb</code>, {1, 2, 3} is <code>hb OR lb</code>, {1, 2} is <code>hb XOR lb</code>, and {0, 2, 3} is <code>hb OR NOT lb</code>.</p>
-<p><strong>Theorem 9.</strong> The 16 languages are exactly the 16 Boolean functions of two bits: each language is one function of <code>hb</code> and <code>lb</code>, and each function is one language.</p>
-<p><em>Proof.</em> A function of two bits is its four values, one per input, and a language is the same four answers, so the two are counted alike, 2^4 = 16. <code>tests/test_theorems.c</code> evaluates the 16 expressions below at all four inputs, finds each one true at its language&#39;s members alone and the 16 truth tables all different, and finds each language decided by some program. <code>src/boolean_main.c</code> holds each expression to a program run on the machine and prints the table, and the book&#39;s build holds the table to that output.</p>
+<p>From the machine Steve went straight to arithmetization, polynomials over the integers. The plain Boolean view sits between the two. Read an input n as its two bits, n = 2·<code>hb</code> + <code>lb</code>, and each problem is a Boolean function of them: {3} is <code>hb AND lb</code>, {1, 2, 3} is <code>hb OR lb</code>, {1, 2} is <code>hb XOR lb</code>, and {0, 2, 3} is <code>hb OR NOT lb</code>.</p>
+<p><strong>Theorem 9.</strong> The 16 problems are exactly the 16 Boolean functions of two bits: each problem is one function of <code>hb</code> and <code>lb</code>, and each function is one problem.</p>
+<p><em>Proof.</em> A function of two bits is its four values, one per input, and a problem is the same four answers, so the two are counted alike, 2^4 = 16. <code>tests/test_theorems.c</code> evaluates the 16 expressions below at all four inputs, finds each one true at its problem&#39;s members alone and the 16 truth tables all different, and finds each problem decided by some program. <code>src/boolean_main.c</code> holds each expression to a program run on the machine and prints the table, and the book&#39;s build holds the table to that output.</p>
 <table>
 <thead>
 <tr>
 <th>code</th>
-<th>language</th>
+<th>problem</th>
 <th>as hb and lb</th>
 </tr>
 </thead>
@@ -155,7 +155,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tr>
 </tbody>
 </table>
-<p>So the 16 puzzles of Nibble are the 16 two-input connectives, and one step of the machine is a Boolean expression of six bits, which <a class="chapter-link" href="six-expressions-composed.html">“Six expressions, composed”</a> writes out.</p>
+<p>So the 16 problems, the 16 puzzles of Nibble, are the 16 two-input connectives, and one step of the machine is a Boolean expression of six bits, which <a class="chapter-link" href="six-expressions-composed.html">“Six expressions, composed”</a> writes out.</p>
 <h2 id="why-polynomials">Why polynomials <a class="section-link" href="#why-polynomials" aria-label="Link to this section">§</a></h2>
 <p>The polynomials were part of the point. Steve, on 2026-11-25, said that part of the project was &quot;to generate obscenely large [polynomials] that actually mapped to a simple Nibble VM solving our 2-bit language&quot;. The second part of the book composes them, and <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> prints them whole.</p>
 
