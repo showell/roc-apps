@@ -28,7 +28,8 @@
 <li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
 <li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
 <li class="here"><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a><ol class="sections"><li><a href="the-compiler-against-node.html#where-the-numbers-come-from">Where the numbers come from</a></li><li><a href="the-compiler-against-node.html#the-table">The table</a></li><li><a href="the-compiler-against-node.html#small-programs-the-win-is-start-up">Small programs: the win is start-up</a></li><li><a href="the-compiler-against-node.html#large-programs-warm-node-wins">Large programs: warm node wins</a></li><li><a href="the-compiler-against-node.html#the-fib-race">The fib race</a></li></ol></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">17</span>What the compiler leaves to an optimizer</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -153,12 +154,12 @@
 <p>One-shot node, start-up included, is faster at the large sizes too: in the table its time is below the executable&#39;s on all four, and fib&#39;s difference, 222 against 213 ms, is well inside the spread between runs.</p>
 <p><strong>Most of V8&#39;s warm-up happens inside the first call.</strong> At the large sizes the first run is already close to the steady time, because V8 optimizes a hot loop while it is still running (on-stack replacement). collatz&#39;s steady time came out slower than its first run in both runs, about 475 ms against about 370; <code>x86/BENCH.md</code> leaves the cause unexplored.</p>
 <h2 id="the-fib-race">The fib race <a class="section-link" href="#the-fib-race" aria-label="Link to this section">§</a></h2>
-<p><code>x86/race/</code> races the two for 20 seconds on iterative Fibonacci over arrays of base-10^7 limbs, each answer checked against BigInt&#39;s. Before the in-line paths, the executable reached F(129808) and node F(348552), about seven times the work, since the work grows as n squared; after them, F(179933) against F(358271), about four times (<code>x86/race/README.md</code>, one run each).</p>
+<p>These four programs are measured as they came. One program was tuned for: the fib race, which <a class="chapter-link" href="three-compilers-one-race.html">“Three compilers, one race”</a> follows.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="why-a-compiler-suits-roc.html"><small>Previous</small>Why a compiler suits Roc</a>
-<a rel="next" href="what-the-compiler-leaves-to-an-optimizer.html"><small>Next</small>What the compiler leaves to an optimizer</a>
+<a rel="next" href="three-compilers-one-race.html"><small>Next</small>Three compilers, one race</a>
 </nav>
 </main>
 </body>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Three compilers, one race · A JavaScript Interpreter in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
+<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
+<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
+<li class="here"><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a><ol class="sections"><li><a href="three-compilers-one-race.html#where-it-stands">Where it stands</a></li><li><a href="three-compilers-one-race.html#what-the-loop-costs">What the loop costs</a></li><li><a href="three-compilers-one-race.html#what-remains">What remains</a></li></ol></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 17</p>
+<h1 id="three-compilers-one-race">Three compilers, one race</h1>
+<p><code>x86/race/fib_race.js</code> computes F(740000) with the ordinary iterative algorithm. Its numbers are arrays of base-10^7 limbs, added one into the other in place. Three contestants run it, one after another, each timed from outside as its whole process (<code>shale x86/race.shale</code>):</p>
+<ul>
+<li><strong>js-x86</strong>, this repository&#39;s compiler, writing every byte of the executable from Roc;</li>
+<li><strong>node</strong>, on the same source;</li>
+<li><strong>Roc</strong>, on <code>x86/race/fibonacci_race.roc</code>, the same algorithm line for line, with <code>U64</code> limbs, built with <code>--opt=speed</code>, which hands the code to LLVM.</li>
+</ul>
+<p>Each one&#39;s whole output, more than 150,000 digits, is held to a stored sha256 of the answer. The rules are fixed: the algorithm stays the ordinary one, node runs the same source, and any trick in the compiler has to be one that would help other programs too.</p>
+<h2 id="where-it-stands">Where it stands <a class="section-link" href="#where-it-stands" aria-label="Link to this section">§</a></h2>
+<p>One run each on 2026-11-26, at load 0.88 (<code>x86/race/README.md</code>, after <code>8989013</code>):</p>
+<table>
+<thead>
+<tr>
+<th>contestant</th>
+<th>time</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>js-x86</td>
+<td>55.75 s</td>
+<td>0.74 of node&#39;s time</td>
+</tr>
+<tr>
+<td>Roc, LLVM</td>
+<td>56.42 s</td>
+<td>js-x86 takes 0.99 of it</td>
+</tr>
+<tr>
+<td>node</td>
+<td>75.80 s</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>Runs on this box move by about a tenth, so the honest reading is that js-x86 and LLVM&#39;s Roc are even, and both beat node by about a quarter. A day earlier, in the race&#39;s first form, node did seven times the compiled program&#39;s work.</p>
+<h2 id="what-the-loop-costs">What the loop costs <a class="section-link" href="#what-the-loop-costs" aria-label="Link to this section">§</a></h2>
+<p>The race lives in one loop, <code>addInto</code>&#39;s, one limb a time round. Counted with <code>objdump</code>, Roc&#39;s loop runs 46 to 51 instructions a limb and js-x86&#39;s 71. About 25 of js-x86&#39;s come from the numbers being JavaScript doubles: moves between the general and the floating-point registers, conversions to whole numbers for indexing, and unboxing an array&#39;s address. Roc pays for its own representation in turn: its <code>U64</code> arithmetic is checked, three overflow branches a limb, and each list write tests the list&#39;s reference count first.</p>
+<p>What closed the gap were the fixes that <code>x86/race/README.md</code> numbers 1 to 19, every one a general rule with its own test. Among them: an array&#39;s length and items read in line, a comparison fused with its jump, a select of two numbers made with a conditional move, which ended the carry&#39;s mispredicted branch, and a loop&#39;s carried values kept in registers first.</p>
+<h2 id="what-remains">What remains <a class="section-link" href="#what-remains" aria-label="Link to this section">§</a></h2>
+<p>The largest lead is an integer loop counter, about 15 instructions a limb, which needs the compiler to carry whole numbers as integers through a loop. The other two races are where node still leads: the bank ledger, about five times, and the fourteen race, about 2.7 times. Both are object and call heavy, where node&#39;s hidden classes and inlining pay.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-compiler-against-node.html"><small>Previous</small>The compiler against node</a>
+<a rel="next" href="what-the-compiler-leaves-to-an-optimizer.html"><small>Next</small>What the compiler leaves to an optimizer</a>
+</nav>
+</main>
+</body>
+</html>
