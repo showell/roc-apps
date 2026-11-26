@@ -31,13 +31,14 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="the-polynomials-in-full.html"><span class="number">12</span>The polynomials, in full</a></li>
 <li><a href="the-cook-levin-machine.html"><span class="number">13</span>The Cook-Levin machine</a></li>
 <li><a href="the-tableau-filled-in.html"><span class="number">14</span>The tableau, filled in</a></li>
-<li class="here"><a href="cook-levin-as-sat.html"><span class="number">15</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">16</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">17</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">18</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">19</span>What is Shale?</a></li>
-<li><a href="the-vm-in-shale.html"><span class="number">20</span>The VM in Shale</a></li>
-<li><a href="what-comes-next.html"><span class="number">21</span>What comes next</a></li>
+<li class="here"><a href="cook-levin-as-sat.html"><span class="number">15</span>Cook-Levin as SAT</a><ol class="sections"><li><a href="cook-levin-as-sat.html#one-gate-three-clauses">One gate, three clauses</a></li><li><a href="cook-levin-as-sat.html#one-step-unit">One step unit</a></li><li><a href="cook-levin-as-sat.html#the-unrolling">The unrolling</a></li><li><a href="cook-levin-as-sat.html#the-proof-by-propagation">The proof by propagation</a></li><li><a href="cook-levin-as-sat.html#rocsat-as-an-oracle">rocsat as an oracle</a></li></ol></li>
+<li><a href="solved-by-hand.html"><span class="number">16</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">17</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">18</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">19</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">20</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">21</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">22</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
@@ -45,10 +46,106 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 15</p>
 <h1 id="cook-levin-as-sat">Cook-Levin as SAT</h1>
-<p><code>src/sat.c</code> writes each puzzle as a Boolean formula in DIMACS CNF, the input format of SAT solvers (<code>8de51b7</code>). This is the Cook-Levin construction itself: the question &quot;which six-instruction programs accept exactly this language?&quot; becomes one formula whose satisfying assignments are exactly those programs.</p>
-<h2 id="the-unrolling">The unrolling <a class="section-link" href="#the-unrolling" aria-label="Link to this section">§</a></h2>
-<p>The formula&#39;s first 12 variables are the program&#39;s bits, two an instruction, so a solver&#39;s model reads straight off as a program. The machine is then unrolled: each of the six steps, on each of the four inputs, is a copy of the step&#39;s logic, wired to the state the step before left. The logic is the stepper&#39;s, gate for gate, NOT, AND and OR as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>.</p>
-<p>Each AND and OR becomes a Tseitin variable, tied to its inputs by three clauses, and a NOT is a literal&#39;s sign:</p>
+<p><code>src/sat.c</code> writes each puzzle as one Boolean formula in DIMACS CNF, the input format of SAT solvers (<code>8de51b7</code>), whose satisfying assignments are exactly the programs that decide the puzzle&#39;s language: the Cook-Levin construction itself. Expanded as polynomials, the circuit&#39;s <code>accepted</code> alone reached 10,324 terms (<a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a>). The formula names every wire instead: each gate&#39;s output gets a variable, tied to the gate&#39;s inputs by three clauses, so the formula grows linearly with the steps.</p>
+<h2 id="one-gate-three-clauses">One gate, three clauses <a class="section-link" href="#one-gate-three-clauses" aria-label="Link to this section">§</a></h2>
+<p>A clause is an OR of literals, each a variable or its complement, and a CNF formula is an AND of clauses; in DIMACS, <code>-14 2</code> says &quot;v14 is 0 or v2 is 1&quot;. The gate g = a AND b becomes <code>-g a</code>, <code>-g b</code> and <code>g -a -b</code>: g forces a, g forces b, and a and b together force g. <code>src/sat_hand_main.c</code>, run at the book&#39;s build, checks the eight rows: the three hold together exactly where g equals a AND b.</p>
+<table>
+<thead>
+<tr>
+<th>a</th>
+<th>b</th>
+<th>g</th>
+<th><code>-g a</code></th>
+<th><code>-g b</code></th>
+<th><code>g -a -b</code></th>
+<th>all three</th>
+<th>a AND b</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>The OR gate g = a OR b is the mirror image: <code>g -a</code>, <code>g -b</code> and <code>-g a b</code>. Each AND and OR becomes a Tseitin variable, tied to its inputs by three clauses, and a NOT is a literal&#39;s sign:</p>
 <figure class="listing"><figcaption>src/sat.c, an excerpt</figcaption><pre><code class="language-c">Lit <span class="syn-name">sat_and</span>(Cnf *c, Lit x, Lit y) {
     <span class="syn-keyword">if</span> (x == SAT_FALSE || y == SAT_FALSE) <span class="syn-keyword">return</span> SAT_FALSE;
     <span class="syn-keyword">if</span> (x == SAT_TRUE) <span class="syn-keyword">return</span> y;
@@ -63,18 +160,92 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
     Lit c1[<span class="syn-number">2</span>] = {-out, a};
     Lit c2[<span class="syn-number">2</span>] = {-out, b};
     Lit c3[<span class="syn-number">3</span>] = {out, -a, -b};
-</code></pre></figure><p>A gate on a constant is folded, and a gate already built from the same inputs is reused, so every puzzle&#39;s formula has 416 variables and 1,216 clauses. <code>out/tcc/sat facts</code>, run for this book, prints those two numbers for all 16. The last four clauses ask that each input&#39;s final <code>accepted</code> be what the language wants. <code>len=N</code> forces the lines past N to <code>nada</code>, and <code>fix=K:OP</code> fixes line K, as the puzzle page does.</p>
+</code></pre></figure><h2 id="one-step-unit">One step unit <a class="section-link" href="#one-step-unit" aria-label="Link to this section">§</a></h2>
+<p>The formula&#39;s first 12 variables are the program&#39;s bits: line k&#39;s <code>hb</code> is v(2k − 1) and its <code>lb</code> v(2k), so <code>nada</code> is 0 0, <code>zero</code> 0 1, <code>decr</code> 1 0 and <code>mod2</code> 1 1. The logic is the stepper&#39;s, gate for gate, NOT, AND and OR as in <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>. A gate on a constant is folded, and a gate already built from the same two inputs is reused. Core 0 starts with <code>AX</code> = 0 and both flags 0, so its state after line 1 reads two gates:</p>
+<table>
+<thead>
+<tr>
+<th>wire</th>
+<th>gate</th>
+<th>its clauses</th>
+<th>1 when line 1 is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v14</td>
+<td>-v1 AND v2</td>
+<td><code>-14 -1</code> <code>-14 2</code> <code>14 1 -2</code></td>
+<td><code>zero</code></td>
+</tr>
+<tr>
+<td>v15</td>
+<td>-v2 AND v1</td>
+<td><code>-15 -2</code> <code>-15 1</code> <code>15 2 -1</code></td>
+<td><code>decr</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">core 0 after line 1: hb 0, lb 0, halted v15, accepted v14
+</code></pre>
+<p>Core 0 is accepted after line 1 exactly when line 1 is <code>zero</code>, and halted exactly when it is <code>decr</code>; its <code>AX</code> stays the constant 0. These are the names in the symbolic tableau of <a class="chapter-link" href="the-tableau-filled-in.html">“The tableau, filled in”</a>. Core 1 starts with <code>AX</code> = 1. Its unit reads three of line 1&#39;s four decoders, built once for all four cores, and adds two OR gates:</p>
+<table>
+<thead>
+<tr>
+<th>wire</th>
+<th>gate</th>
+<th>its clauses</th>
+<th>1 when line 1 is</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>v13</td>
+<td>-v2 AND -v1</td>
+<td><code>-13 -2</code> <code>-13 -1</code> <code>13 2 1</code></td>
+<td><code>nada</code></td>
+</tr>
+<tr>
+<td>v14</td>
+<td>-v1 AND v2</td>
+<td><code>-14 -1</code> <code>-14 2</code> <code>14 1 -2</code></td>
+<td><code>zero</code></td>
+</tr>
+<tr>
+<td>v16</td>
+<td>v1 AND v2</td>
+<td><code>-16 1</code> <code>-16 2</code> <code>16 -1 -2</code></td>
+<td><code>mod2</code></td>
+</tr>
+<tr>
+<td>v67</td>
+<td>v13 OR v14</td>
+<td><code>67 -13</code> <code>67 -14</code> <code>-67 13 14</code></td>
+<td><code>nada</code> or <code>zero</code></td>
+</tr>
+<tr>
+<td>v68</td>
+<td>v16 OR v67</td>
+<td><code>68 -16</code> <code>68 -67</code> <code>-68 16 67</code></td>
+<td><code>nada</code>, <code>zero</code> or <code>mod2</code></td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">core 1 after line 1: hb 0, lb v68, halted 0, accepted 0
+</code></pre>
+<p>Core 1&#39;s <code>AX</code> falls to 0 exactly when line 1 is <code>decr</code>.</p>
+<h2 id="the-unrolling">The unrolling <a class="section-link" href="#the-unrolling" aria-label="Link to this section">§</a></h2>
+<p>Each of the six lines, on each of the four cores, is such a unit, wired to the state the unit above it left, and the last four clauses ask that each core&#39;s final <code>accepted</code> be what the language wants. Every puzzle&#39;s formula has 416 variables and 1,216 clauses (<code>out/tcc/sat facts</code>, run for this book). <code>len=N</code> forces the lines past N to <code>nada</code>, two unit clauses a line, and <code>fix=K:OP</code> fixes line K.</p>
 <h2 id="the-proof-by-propagation">The proof by propagation <a class="section-link" href="#the-proof-by-propagation" aria-label="Link to this section">§</a></h2>
 <p><strong>Theorem 9.</strong> For each of the 16 languages, the satisfying assignments of its formula, read as programs by their first 12 variables, are exactly the programs that decide it. With the lines past N forced to <code>nada</code>, the formula is satisfiable exactly when N is at least the language&#39;s shortest length (Theorem 4).</p>
 <p><em>Proof.</em> <code>tests/test_sat.c</code> proves the encoding by itself. For every puzzle it sets the program bits to each of the 4,096 programs and unit-propagates them through the formula. Each gate&#39;s inputs come before it, so propagation alone decides every Tseitin variable. The assignments that survive are exactly the programs the machine says solve the puzzle, 4,096 over the 16 languages (<code>every_puzzles_models_are_exactly_its_solving_programs</code>), and with a length bound, exactly those that short (<code>a_length_bound_admits_the_solving_programs_that_short</code>).</p>
 <h2 id="rocsat-as-an-oracle">rocsat as an oracle <a class="section-link" href="#rocsat-as-an-oracle" aria-label="Link to this section">§</a></h2>
-<p><code>sat/oracle.shale</code> hands the formulas to <a href="https://github.com/mpizenberg/rocsat">rocsat</a>, Matt Pizenberg&#39;s CDCL SAT solver, written in Roc (<code>f977bcc</code>). For each puzzle it solves the formula and runs the model&#39;s program on the machine. It counts the solutions by adding a clause that blocks each model and solving again until rocsat says UNSAT, and holds that count to the machine&#39;s. Then it proves the shortest length: one line shorter is UNSAT, and the shortest length itself is SAT. That is Theorem 4 again, by Theorem 9, from a solver that searches clauses where <code>tests/test_theorems.c</code> runs programs.</p>
-<p>An UNSAT answer claims that the formula is unsatisfiable, and rocsat backs each one with a DRAT proof, a list of clause additions and deletions that a separate checker can replay. Here an UNSAT at length N - 1 says that every program of N - 1 lines fails the puzzle, and the oracle checks its proof with the repository&#39;s own checker, <code>src/drat.c</code>, as <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a> shows. The oracle starts rocsat 4,143 times, so it takes about a minute and runs as its own script, <code>sat/oracle.shale</code>, beside <code>build.shale</code>&#39;s quicker tiers. Its last run for this book, on 2026-11-25, spent 62.6 s in its programs and ended &quot;rocsat agrees with the machine on all 16 puzzles&quot;: 4,096 models in all, and every shortest length confirmed by an UNSAT one line shorter, with all 15 proofs verified.</p>
+<p><code>sat/oracle.shale</code> hands the formulas to <a href="https://github.com/mpizenberg/rocsat">rocsat</a>, Matt Pizenberg&#39;s CDCL SAT solver, written in Roc (<code>f977bcc</code>). For each puzzle it counts the models by blocking each one and solving again until UNSAT, runs each model&#39;s program on the machine, and proves the shortest length: SAT at it, UNSAT one line shorter, with a DRAT proof the repository&#39;s checker replays. That is Theorem 4 again, by Theorem 9. It starts rocsat 4,143 times, so it runs as its own script; its last run, on 2026-11-25, spent 62.6 s in its programs and ended &quot;rocsat agrees with the machine on all 16 puzzles&quot;, with 4,096 models and all 15 proofs verified.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="the-tableau-filled-in.html"><small>Previous</small>The tableau, filled in</a>
-<a rel="next" href="the-solvers-work-in-full.html"><small>Next</small>The solver&#39;s work, in full</a>
+<a rel="next" href="solved-by-hand.html"><small>Next</small>Solved by hand</a>
 </nav>
 </main>
 </body>

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solved by hand · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="programs-as-languages.html"><span class="number">4</span>Programs as languages</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">5</span>Nibble, the puzzle page</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">6</span>The machine as a circuit</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">7</span>How it got here</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">8</span>P, NP and Cook-Levin</a></li>
+<li><a href="arithmetization.html"><span class="number">9</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">10</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">11</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">12</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">13</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">14</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">15</span>Cook-Levin as SAT</a></li>
+<li class="here"><a href="solved-by-hand.html"><span class="number">16</span>Solved by hand</a><ol class="sections"><li><a href="solved-by-hand.html#0-in-one-line">{0} in one line</a></li><li><a href="solved-by-hand.html#the-other-three-ops">The other three ops</a></li><li><a href="solved-by-hand.html#five-lines-for-0-2-3">Five lines for {0, 2, 3}</a></li></ol></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">17</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">18</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">19</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">20</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">21</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">22</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 16</p>
+<h1 id="solved-by-hand">Solved by hand</h1>
+<p>With the constants folded, the smallest puzzle solves on paper, and the start of the hardest puzzle&#39;s proof reads as plain statements about the program.</p>
+<h2 id="0-in-one-line">{0} in one line <a class="section-link" href="#0-in-one-line" aria-label="Link to this section">§</a></h2>
+<p><code>is_tiny</code> accepts exactly {0} (code 1), and its shortest program has one line (Theorem 4). With lines 2 to 6 forced to <code>nada</code> (<code>sat 1 len=1</code>), the formula opens with ten unit clauses, <code>-3</code> to <code>-12</code>, and ends with four, one an input. Unit propagation repeats one rule: a clause whose literals are all false but one makes that one true. From the formula&#39;s own unit clauses, <code>src/sat_hand_main.c</code> finds that the rule decides every variable:</p>
+<pre><code class="language-text">{0} at length 1: 416 variables, 1226 clauses; unit propagation fixes 416 of the variables in 9 passes, with 0 conflicts
+v65 = 1 by `65`: core 0&#39;s accepted after line 6
+v55 = 1 by `-65 55 62`: core 0&#39;s accepted after line 5
+v45 = 1 by `-55 45 52`: core 0&#39;s accepted after line 4
+v35 = 1 by `-45 35 42`: core 0&#39;s accepted after line 3
+v25 = 1 by `-35 25 32`: core 0&#39;s accepted after line 2
+v14 = 1 by `-25 14 22`: core 0&#39;s accepted after line 1
+v1 = 0 by `-14 -1`: line 1&#39;s hb
+v2 = 1 by `-14 2`: line 1&#39;s lb
+the program: line 1 is `zero`, lines 2 to 6 `nada`
+</code></pre>
+<p>Input 0&#39;s unit clause sets core 0&#39;s final <code>accepted</code>, v65. Each line&#39;s <code>accepted</code> is an OR of the one above and that line&#39;s new accept, which is 0 on a <code>nada</code> line (v62 at line 6, and so on), so each OR&#39;s third clause passes the demand one line up, to v14, line 1&#39;s <code>zero</code> decoder. Its two clauses <code>-14 -1</code> and <code>-14 2</code> then set the program&#39;s bits. rocsat agrees: <code>sat/proofs/1-len1.model</code> records 0 conflicts and 0 decisions.</p>
+<h2 id="the-other-three-ops">The other three ops <a class="section-link" href="#the-other-three-ops" aria-label="Link to this section">§</a></h2>
+<p>Run through the gates, each other op on line 1 leaves core 0&#39;s final <code>accepted</code> at 0 and breaks the unit clause <code>65</code>:</p>
+<table>
+<thead>
+<tr>
+<th>line 1</th>
+<th>accepted after line 6, inputs 0 1 2 3</th>
+<th>{0} asks for</th>
+<th>unit clauses broken</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>nada</code></td>
+<td>0 0 0 0</td>
+<td>1 0 0 0</td>
+<td><code>65</code> (input 0)</td>
+</tr>
+<tr>
+<td><code>zero</code></td>
+<td>1 0 0 0</td>
+<td>1 0 0 0</td>
+<td>all four hold</td>
+</tr>
+<tr>
+<td><code>decr</code></td>
+<td>0 0 0 0</td>
+<td>1 0 0 0</td>
+<td><code>65</code> (input 0)</td>
+</tr>
+<tr>
+<td><code>mod2</code></td>
+<td>0 0 0 0</td>
+<td>1 0 0 0</td>
+<td><code>65</code> (input 0)</td>
+</tr>
+</tbody>
+</table>
+<p><code>nada</code> and <code>mod2</code> keep core 0 at 0 with both flags 0, and <code>decr</code> at 0 halts it.</p>
+<h2 id="five-lines-for-0-2-3">Five lines for {0, 2, 3} <a class="section-link" href="#five-lines-for-0-2-3" aria-label="Link to this section">§</a></h2>
+<p><code>is_not_one</code> accepts {0, 2, 3} (code 13), and its one program uses all six lines (Theorem 5). For the programs of <code>nada</code>, <code>zero</code> and <code>decr</code>, counting lines settles it. Input 0 needs a <code>zero</code> before any <code>decr</code>, since <code>decr</code> at 0 halts. Input 2 reaches 0 after two <code>decr</code>s and input 3 after three, on different lines, and each then needs a <code>zero</code>. Input 1 reaches 0 after the first <code>decr</code>, so the second <code>decr</code> has to come before any later <code>zero</code>, and it halts input 1. That is three <code>zero</code>s and three <code>decr</code>s: six lines. Theorem 3&#39;s search, over all 4,096 programs, settles the ones with <code>mod2</code> too.</p>
+<p>The formula says the same. <code>sat 13 len=5</code> is the full formula plus the unit clauses <code>-11</code> and <code>-12</code>, and rocsat answers UNSAT with a DRAT proof. Such a proof is a list of lemmas, each a clause that follows from the formula and the lemmas before it by unit propagation, with deletions mixed in, ending at the empty clause; a checker replays it, and once the empty clause follows, the formula is unsatisfiable. The first 12 distinct lemmas of this one, each literal named by <code>src/sat_hand_main.c</code> from the encoder&#39;s own record of its wires:</p>
+<pre><code class="language-text">`-11 0`: v11 = 0 (line 6&#39;s hb)
+`-12 0`: v12 = 0 (line 6&#39;s lb)
+`57 0`: v57 = 1 (1 when line 6 is `nada`)
+`-58 0`: v58 = 0 (1 when line 6 is `zero`)
+`-59 0`: v59 = 0 (1 when line 6 is `decr`)
+`-60 0`: v60 = 0 (1 when line 6 is `mod2`)
+`61 0`: v61 = 1 (v56 OR v57)
+`-62 0`: v62 = 0 (-v56 AND v58)
+`-63 0`: v63 = 0 (-v56 AND v59)
+`-64 0`: v64 = 0 (-v56 AND v60)
+`55 -65 0`: v55 = 1 (core 0&#39;s accepted after line 5), or v65 = 0 (core 0&#39;s accepted after line 6)
+`56 -66 0`: v56 = 1 (core 0&#39;s halted after line 5), or v66 = 0 (core 0&#39;s halted after line 6)
+</code></pre>
+<p>The first two restate the length bound, and the next four decode line 6 as <code>nada</code>. v61 to v64 say which op core 0 runs on line 6, v56 being its <code>halted</code> after line 5: it runs <code>nada</code>. The last two say that core 0&#39;s flags after line 6 are those after line 5. <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a> prints the whole proof, 286 lemmas, and checks it.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="cook-levin-as-sat.html"><small>Previous</small>Cook-Levin as SAT</a>
+<a rel="next" href="the-solvers-work-in-full.html"><small>Next</small>The solver&#39;s work, in full</a>
+</nav>
+</main>
+</body>
+</html>
