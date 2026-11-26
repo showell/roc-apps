@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nibble, sized · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="languages-and-machines.html"><span class="number">3</span>Languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-languages.html"><span class="number">5</span>Programs as languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li class="here"><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a><ol class="sections"><li><a href="nibble-sized.html#the-machine-with-a-size">The machine, with a size</a></li><li><a href="nibble-sized.html#two-languages-in-p">Two languages in P</a></li><li><a href="nibble-sized.html#a-language-in-np">A language in NP</a></li></ol></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">22</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">23</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">24</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">25</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">26</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">27</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">28</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">29</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">30</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">31</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">32</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">33</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">34</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">35</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">36</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">37</span>What comes next</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 21</p>
+<h1 id="nibble-sized">Nibble, sized</h1>
+<p>P and NP sort languages by how their cost grows with the input&#39;s length. The toy&#39;s languages are finite, and every finite language is in P for an empty reason: a machine can keep all its answers in a table and look each one up in a fixed number of steps. To ask the question precisely, the machine has to grow.</p>
+<h2 id="the-machine-with-a-size">The machine, with a size <a class="section-link" href="#the-machine-with-a-size" aria-label="Link to this section">§</a></h2>
+<p>Keep the four opcodes and give the machine two sizes. <code>AX</code> holds n bits, so the inputs are 0 to 2^n − 1, and a program has k lines, two bits a line. Each opcode does what it does now: <code>nada</code> leaves everything as it is, <code>decr</code> takes 1 from <code>AX</code> and halts at 0, <code>mod2</code> keeps <code>AX</code>&#39;s low bit and clears the rest, and <code>zero</code> accepts when <code>AX</code> is 0. The toy is the case n = 2, k = 6.</p>
+<h2 id="two-languages-in-p">Two languages in P <a class="section-link" href="#two-languages-in-p" aria-label="Link to this section">§</a></h2>
+<p><strong>ACCEPTS</strong> is the set of pairs (P, x) where program P accepts input x. The pair is 2k + n bits long. Running P takes k steps, and each step is a decrement or a test of n bits, about k·n bit operations in all, so a machine decides ACCEPTS in time linear in the input&#39;s length. ACCEPTS is in P.</p>
+<p><strong>DECIDES</strong> is the set of pairs (P, W) where P decides the set W, W written as its 2^n want bits, one an input, as <a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> writes them. The machine runs P on every input and compares each verdict with its want bit: 2^n runs of about k·n bit operations each. The input is 2k + 2^n bits long, since W alone has 2^n bits, so that cost is polynomial in the input&#39;s length. DECIDES is in P.</p>
+<h2 id="a-language-in-np">A language in NP <a class="section-link" href="#a-language-in-np" aria-label="Link to this section">§</a></h2>
+<p><strong>SOLVABLE</strong> is the set of pairs (W, k) for which some program of k lines decides W, with k written in unary, as k ones, so that a program of k lines is short beside the input. It is in NP. The certificate is the program, 2k bits, and the verifier is the machine that decides DECIDES: it accepts (W, k, P) when P has k lines and decides W. Every member has such a P, and for a non-member every P of k lines fails the check.</p>
+<p>Finding the program is the costly part. Trying every program tries 4^k of them, exponential in k. Whether SOLVABLE is in P is a question this book leaves open. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> answers SOLVABLE&#39;s questions for the toy, n = 2 and k = 6, by Cook and Levin&#39;s route: the verifier becomes a formula, and a SAT solver finds the certificate.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="p-and-np.html"><small>Previous</small>P and NP</a>
+<a rel="next" href="p-np-and-cook-levin.html"><small>Next</small>P, NP and Cook-Levin</a>
+</nav>
+</main>
+</body>
+</html>
