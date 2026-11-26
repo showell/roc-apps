@@ -60,18 +60,18 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <h1 id="from-equations-to-cnf">From equations to CNF</h1>
 <p><a class="chapter-link" href="the-circuit-as-equations.html">“The circuit as equations”</a> writes the decider as 1,439 gates. This chapter turns those equations into CNF with a small Roc library, <code>roc/Cnf.roc</code>, and hands claims about the decider to rocsat, which evaluates them. The encoding is the one <a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a> uses on the 14-bit machine, now applied to the whole decider.</p>
 <h2 id="the-library">The library <a class="section-link" href="#the-library" aria-label="Link to this section">§</a></h2>
-<p><code>roc/Cnf.roc</code> has four parts. An expression, <code>Cnf.Expr</code>, is a variable, a constant, the AND or OR of two expressions, or the complement of one. <code>Cnf.parse</code> reads the equations text into the inputs and one expression a wire. <code>Cnf.encode</code> is Tseitin&#39;s encoding, and <code>Cnf.dimacs</code> writes the result as DIMACS, with a <code>c</code> comment line naming each input&#39;s and each wire&#39;s literal.</p>
+<p><code>roc/Cnf.roc</code> converts any Boolean expression of variables, constants, AND, OR and complement; the circuit&#39;s equations are one such input. It has four parts. An expression, <code>Cnf.Expr</code>, is a variable, a constant, the AND or OR of two expressions, or the complement of one. <code>Cnf.equations_of</code> reads the equations text into the inputs and one expression a wire. <code>Cnf.formula_of</code> is Tseitin&#39;s encoding, and <code>Cnf.dimacs</code> writes the result as DIMACS, with a <code>c</code> comment line naming each input&#39;s and each wire&#39;s literal.</p>
 <p>The encoding numbers the 16 inputs v1 to v16, in the order of the <code>inputs:</code> line, and then reads the wires in order. A complement is a literal&#39;s sign, which is free. An AND or OR with a constant operand folds: x AND 0 is 0 and x AND 1 is x, and OR the same way with the constants swapped. Every other AND or OR gets the next fresh variable and three clauses:</p>
-<figure class="listing"><figcaption>roc/Cnf.roc, the function gate</figcaption><pre><code class="language-roc"><span class="syn-comment">## An AND (`Both`) or an OR (`Either`) of two expressions. A constant operand</span>
+<figure class="listing"><figcaption>roc/Cnf.roc, the function connective</figcaption><pre><code class="language-roc"><span class="syn-comment">## The value of an AND (`And`) or an OR (`Or`) of two expressions. A constant operand</span>
 <span class="syn-comment">## settles the gate or leaves the other operand; otherwise the gate is a new</span>
 <span class="syn-comment">## variable g, and for AND its clauses are (-g a), (-g b), (g -a -b), for OR</span>
 <span class="syn-comment">## (g -a), (g -b), (-g a b).</span>
-<span class="syn-name">gate</span> : [<span class="syn-type">Both</span>, <span class="syn-type">Either</span>], <span class="syn-type">Cnf.Expr</span>, <span class="syn-type">Cnf.Expr</span>, <span class="syn-type">State</span> -&gt; <span class="syn-type">Try</span>({ value : <span class="syn-type">Cnf.Value</span>, state : <span class="syn-type">State</span> }, [<span class="syn-type">Undefined</span>(<span class="syn-type">Str</span>)])
-<span class="syn-name">gate</span> = |kind, a, b, state| {
+<span class="syn-name">connective</span> : [<span class="syn-type">And</span>, <span class="syn-type">Or</span>], <span class="syn-type">Cnf.Expr</span>, <span class="syn-type">Cnf.Expr</span>, <span class="syn-type">State</span> -&gt; <span class="syn-type">Try</span>({ value : <span class="syn-type">Cnf.Value</span>, state : <span class="syn-type">State</span> }, [<span class="syn-type">Undefined</span>(<span class="syn-type">Str</span>)])
+<span class="syn-name">connective</span> = |kind, a, b, state| {
 	left = value_of(a, state)?
 	right = value_of(b, left.state)?
 	after = right.state
-	is_and = kind == <span class="syn-type">Both</span>
+	is_and = kind == <span class="syn-type">And</span>
 	<span class="syn-keyword">match</span> (left.value, right.value) {
 		(<span class="syn-type">Fixed</span>(bit), other) | (other, <span class="syn-type">Fixed</span>(bit)) =&gt;
 			<span class="syn-keyword">if</span> (bit == is_and) <span class="syn-type">Ok</span>({ value: other, state: after }) <span class="syn-keyword">else</span> <span class="syn-type">Ok</span>({ value: <span class="syn-type">Fixed</span>(bit), state: after })
