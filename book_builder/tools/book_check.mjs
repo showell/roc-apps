@@ -127,8 +127,20 @@ const READ_PAGE = `(() => ({
   frames: document.querySelectorAll('iframe.canvas-app').length,
   draftNotes: document.querySelectorAll('.draft-note').length,
   pres: [...document.querySelectorAll('pre')].filter((pre) => pre.scrollWidth > pre.clientWidth + 1).length,
+  // A block runs past the window when its right edge does, unless a box
+  // around it scrolls sideways and itself fits the window: then the block
+  // is that box's to scroll (a drawing kept at its own size), and the page
+  // still never scrolls sideways.
   overflowingBlocks: [...document.querySelectorAll('pre, table, svg.diagram, figure')]
-    .filter((block) => block.getBoundingClientRect().right > document.documentElement.clientWidth).length,
+    .filter((block) => {
+      const width = document.documentElement.clientWidth;
+      if (block.getBoundingClientRect().right <= width) return false;
+      for (let box = block.parentElement; box; box = box.parentElement) {
+        const scrolls = ['auto', 'scroll'].includes(getComputedStyle(box).overflowX);
+        if (scrolls && box.getBoundingClientRect().right <= width) return false;
+      }
+      return true;
+    }).length,
 }))()`;
 
 const SEE_FRAME = (i) => `(async () => {
