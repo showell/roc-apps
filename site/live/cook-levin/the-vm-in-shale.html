@@ -36,28 +36,29 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
 <li><a href="some-history-of-the-approach.html"><span class="number">18</span>Some history of the approach</a></li>
 <li class="part">Part II: Cook-Levin</li><li><a href="how-it-got-here.html"><span class="number">19</span>How it got here</a></li>
-<li><a href="p-np-and-cook-levin.html"><span class="number">20</span>P, NP and Cook-Levin</a></li>
-<li><a href="six-expressions-composed.html"><span class="number">21</span>Six expressions, composed</a></li>
-<li><a href="arithmetization.html"><span class="number">22</span>Arithmetization</a></li>
-<li><a href="why-composing-blew-up.html"><span class="number">23</span>Why composing blew up</a></li>
-<li><a href="six-steps-composed.html"><span class="number">24</span>Six steps composed</a></li>
-<li><a href="the-polynomials-in-full.html"><span class="number">25</span>The polynomials, in full</a></li>
-<li><a href="the-cook-levin-machine.html"><span class="number">26</span>The Cook-Levin machine</a></li>
-<li><a href="the-tableau-filled-in.html"><span class="number">27</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">28</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">29</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">30</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">31</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">32</span>The Roc port</a></li>
-<li><a href="what-is-shale.html"><span class="number">33</span>What is Shale?</a></li>
-<li class="here"><a href="the-vm-in-shale.html"><span class="number">34</span>The VM in Shale</a><ol class="sections"><li><a href="the-vm-in-shale.html#the-machine">The machine</a></li><li><a href="the-vm-in-shale.html#the-search">The search</a></li><li><a href="the-vm-in-shale.html#the-rings-times">The ring&#39;s times</a></li><li><a href="the-vm-in-shale.html#the-step-polynomials">The step polynomials</a></li><li><a href="the-vm-in-shale.html#the-composition">The composition</a></li><li><a href="the-vm-in-shale.html#the-check">The check</a></li><li><a href="the-vm-in-shale.html#what-the-port-cost">What the port cost</a></li></ol></li>
-<li><a href="what-comes-next.html"><span class="number">35</span>What comes next</a></li>
+<li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="p-np-and-cook-levin.html"><span class="number">21</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">22</span>Six expressions, composed</a></li>
+<li><a href="arithmetization.html"><span class="number">23</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">24</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">25</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">26</span>The polynomials, in full</a></li>
+<li><a href="the-cook-levin-machine.html"><span class="number">27</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">28</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">29</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">30</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">31</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">32</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">33</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">34</span>What is Shale?</a></li>
+<li class="here"><a href="the-vm-in-shale.html"><span class="number">35</span>The VM in Shale</a><ol class="sections"><li><a href="the-vm-in-shale.html#the-machine">The machine</a></li><li><a href="the-vm-in-shale.html#the-search">The search</a></li><li><a href="the-vm-in-shale.html#the-rings-times">The ring&#39;s times</a></li><li><a href="the-vm-in-shale.html#the-step-polynomials">The step polynomials</a></li><li><a href="the-vm-in-shale.html#the-composition">The composition</a></li><li><a href="the-vm-in-shale.html#the-check">The check</a></li><li><a href="the-vm-in-shale.html#what-the-port-cost">What the port cost</a></li></ol></li>
+<li><a href="what-comes-next.html"><span class="number">36</span>What comes next</a></li>
 </ol>
 </nav>
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 34</p>
+<p class="chapter-number">Chapter 35</p>
 <h1 id="the-vm-in-shale">The VM in Shale</h1>
 <p><code>shale/cook_levin.shale</code> is the machine, the search over all 4,096 programs, the step polynomials and the six-step composition once more, in Shale (<code>4942a49</code>). It follows <code>js/cook_levin.js</code> closely, and it prints the same two reports, byte for byte: <code>tests/golden/find_solutions.txt</code>, then <code>roc/golden/composition.txt</code>. <code>part=search</code> prints the first alone and <code>part=composition</code> the second.</p>
 <h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
