@@ -3,44 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Handing the machine on · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>Handing the machine on · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li class="here"><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a><ol class="sections"><li><a href="handing-the-machine-on.html#a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on</a></li><li><a href="handing-the-machine-on.html#box-what-is-rarely-written">Box what is rarely written</a></li><li><a href="handing-the-machine-on.html#stay-under-256-bytes">Stay under 256 bytes</a></li></ol></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li class="here"><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a><ol class="sections"><li><a href="handing-the-machine-on.html#a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on</a></li><li><a href="handing-the-machine-on.html#box-what-is-rarely-written">Box what is rarely written</a></li><li><a href="handing-the-machine-on.html#stay-under-256-bytes">Stay under 256 bytes</a></li></ol></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 15</p>
+<p class="chapter-number">Chapter 13</p>
 <h1 id="handing-the-machine-on">Handing the machine on</h1>
 <p>The interpreter&#39;s performance work came down to <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> and three habits that follow from it, each about the machine record of <a class="chapter-link" href="the-interpreter.html">“The interpreter”</a>. They apply to any Roc program that threads one large record through a loop:</p>
 <table>
@@ -126,7 +123,7 @@
 
 <span class="syn-type">Timer</span>(number) =&gt; { ..machine, events: <span class="syn-type">Box</span>.box(<span class="syn-type">Events</span>.without_timer(<span class="syn-type">Box</span>.unbox(machine.events), number)) }
 </code></pre></figure><p>The release build&#39;s fib(22) went from 123 ms to 82, and the loops from 441 ms to 350, with every allocation count as it was (<code>15686d94</code>&#39;s message). Since every write re-boxes, a box suits a part that is rarely written after it is made.</p>
-<p><strong>Finding a field worth boxing.</strong> List each field of the record beside the handlers that write it. A field that only a few rare instructions write is a candidate: the event queue (the timer builtins and the event loop), the turtle (the turtle&#39;s builtins), the collector&#39;s schedule (a collection). A field that most instructions write, such as the program counter or the stack&#39;s top, stays inline, since boxing it would add an allocation to most instructions. Then weigh the record&#39;s size against the line below; <code>tools/machine_size.shale</code> holds the machine&#39;s size exactly, so a change that moves it fails the gate until the commit says why.</p>
+<p>To find a field worth boxing, list each field of the record beside the handlers that write it. A field that only a few rare instructions write is a candidate: the event queue (the timer builtins and the event loop), the turtle (the turtle&#39;s builtins), the collector&#39;s schedule (a collection). A field that most instructions write, such as the program counter or the stack&#39;s top, stays inline, since boxing it would add an allocation to most instructions. Then weigh the record&#39;s size against the line below; <code>tools/machine_size.shale</code> holds the machine&#39;s size exactly, so a change that moves it fails the gate until the commit says why.</p>
 <h2 id="stay-under-256-bytes">Stay under 256 bytes <a class="section-link" href="#stay-under-256-bytes" aria-label="Link to this section">§</a></h2>
 <p>LLVM copies a record of up to 256 bytes with eight vector moves, and calls <code>memcpy</code> for a bigger one. The collector&#39;s fields, the budget and the boxed turtle took the machine from 232 to 312 bytes, so every instruction paid a <code>memcpy</code> call. Boxing the collector&#39;s schedule alone left it at 288 bytes, still past the line, which is why that change left the times as they were. Boxing the builtins, the collector&#39;s schedule and count, and the step and effect budgets brought it to 248 bytes (<code>3aba5cf7</code>):</p>
 <table>
@@ -159,8 +156,8 @@
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="javascripts-rules-for-values.html"><small>Previous</small>JavaScript&#39;s rules for values</a>
-<a rel="next" href="why-a-compiler-suits-roc.html"><small>Next</small>Why a compiler suits Roc</a>
+<a rel="prev" href="the-garbage-collector.html"><small>Previous</small>The garbage collector</a>
+<a rel="next" href="a-canvas-in-the-browser.html"><small>Next</small>A canvas in the browser</a>
 </nav>
 </main>
 </body>

@@ -3,46 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Roc&#39;s copy rule · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>Roc&#39;s copy rule · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li class="here"><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a><ol class="sections"><li><a href="rocs-copy-rule.html#when-a-write-copies">When a write copies</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-every-build">Shapes that copy in every build</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only</a></li><li><a href="rocs-copy-rule.html#records-and-boxes">Records and boxes</a></li></ol></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li class="here"><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a><ol class="sections"><li><a href="rocs-copy-rule.html#what-the-copy-rule-still-asks">What the copy rule still asks</a></li><li><a href="rocs-copy-rule.html#when-a-write-copies">When a write copies</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-every-build">Shapes that copy in every build</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only</a></li><li><a href="rocs-copy-rule.html#records-and-boxes">Records and boxes</a></li></ol></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 5</p>
+<p class="chapter-number">Chapter 8</p>
 <h1 id="rocs-copy-rule">Roc&#39;s copy rule</h1>
-<p>Roc has only values, yet it writes a list in place whenever it safely can. Both programs depend on that. The interpreter keeps a JavaScript program&#39;s heap in one Roc list, which many of its instructions write; the compiler builds an executable&#39;s bytes by appending to one list. Each is fast only while Roc writes its list in place. This chapter states when Roc does, and when it quietly copies the list first. Every later chapter that weighs a cost comes back to it, and <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> gives the three habits the interpreter took from it.</p>
+<p>Roc has only values, yet it writes a list in place whenever it safely can. This chapter states when Roc does, and when it quietly copies the list first. The compiler meets the rule once, mildly, and the interpreter meets it at nearly every instruction. Every later chapter that weighs a cost comes back to it, and <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> gives the three habits the interpreter took from it.</p>
+<h2 id="what-the-copy-rule-still-asks">What the copy rule still asks <a class="section-link" href="#what-the-copy-rule-still-asks" aria-label="Link to this section">§</a></h2>
+<p>The compiler is one pure function, yet the rule still asks something of it. The lowering&#39;s state is the kinds of one function&#39;s slots, made afresh for each function on each pass, and the passes are a plain loop over values that ends when the kinds settle. The one large value that grows is the code itself. <code>Assembly.roc</code> builds the bytes by appending to one list, then patches each jump&#39;s placeholder with <code>set</code>:</p>
+<figure class="listing"><figcaption>x86/roc/Assembly.roc, the function patched_rel32</figcaption><pre><code class="language-roc"><span class="syn-comment">## `bytes` with the rel32 that ends at `end` set to `distance`. A program</span>
+<span class="syn-comment">## is far below the 2 GiB a rel32 reaches, so a distance past it is a bug.</span>
+<span class="syn-name">patched_rel32</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), { end : <span class="syn-type">U64</span>, distance : <span class="syn-type">I64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">patched_rel32</span> = |bytes, { end, distance }| {
+	<span class="syn-keyword">if</span> distance &lt; <span class="syn-number">-2147483648</span> <span class="syn-keyword">or</span> distance &gt; <span class="syn-number">2147483647</span> {
+		<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Assembly.patched_rel32: a jump past the reach of a rel32&quot;</span>
+	}
+	field = <span class="syn-type">X86</span>.append_little_endian([], { value: distance, size: <span class="syn-number">4</span> })
+	<span class="syn-keyword">var</span> $out = bytes
+	<span class="syn-keyword">for</span> i <span class="syn-keyword">in</span> <span class="syn-number">0</span>..&lt;<span class="syn-number">4</span> {
+		byte = field.get(i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Assembly.patched_rel32: a rel32 has four bytes&quot;</span>
+		$out = $out.set(
+			end - <span class="syn-number">4</span> + i,
+			byte,
+		) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Assembly.patched_rel32: the rel32 lies inside the code&quot;</span>
+	}
+	$out
+}
+</code></pre></figure><p><code>$out</code> is the list&#39;s one owner, so each <code>set</code> writes in place (the module&#39;s own comment; unchecked by an allocation count). In the compiler the rule governs that one list in that one place.</p>
+<p>The interpreter is where the rule bites. It keeps a JavaScript program&#39;s whole heap in one Roc list, which many of its instructions write, and the run travels through its loop as one record that holds that list. A second owner of the list at the moment of a write turns that write into a copy of the heap.</p>
 <h2 id="when-a-write-copies">When a write copies <a class="section-link" href="#when-a-write-copies" aria-label="Link to this section">§</a></h2>
 <p>Roc writes a list in place only while the list has a single owner, and a copy is silent. On RC1 every copy is a use after a consume: a write (<code>List.set</code>, <code>append</code>, <code>Dict.insert</code>) takes the value, and something still reads the old one after it. The copy allocates the whole list again on every such write, so its cost grows with the list.</p>
 <p>This book calls that drop the copy cliff. A loop that writes in place pays O(1) a write; the same loop with a second owner pays O(n) a write, and the code reads the same either way.</p>
@@ -168,26 +187,26 @@
 </tbody>
 </table>
 <h2 id="shapes-that-copy-in-every-build">Shapes that copy in every build <a class="section-link" href="#shapes-that-copy-in-every-build" aria-label="Link to this section">§</a></h2>
-<p><strong>The old list read after its write.</strong> The write takes the list only while it is the list&#39;s one reader:</p>
+<p>The first shape reads the old list after its write. The write takes the list only while it is the list&#39;s one reader:</p>
 <figure class="listing"><figcaption>get-after-set: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">ys</span> = xs.set(j, i) ?? xs
 <span class="syn-name">v</span> = xs.get(j) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;get_after_set: in range&quot;</span>
 </code></pre></figure><p>Reading first is free:</p>
 <figure class="listing"><figcaption>set-restored: in place</figcaption><pre><code class="language-roc"><span class="syn-name">v</span> = xs.get(j) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;set_restored: in range&quot;</span>
 <span class="syn-name">ys</span> = xs.set(j, v + <span class="syn-number">1</span>) ?? xs
-</code></pre></figure><p><strong>A closure over the list, called after the write.</strong> The closure holds the old list:</p>
+</code></pre></figure><p>In the second, a closure over the list is called after the write, and the closure holds the old list:</p>
 <figure class="listing"><figcaption>closure-called-after: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">at</span> = |k| xs.get(k) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;closure_called_after: in range&quot;</span>
 <span class="syn-name">ys</span> = xs.set(j, i) ?? xs
 closure_called_after(i + <span class="syn-number">1</span>, steps, size, ys, sum + at(j))
 </code></pre></figure><p>Called inside the write&#39;s own arguments, the same closure is free (<code>closure-called-before</code>): <code>ys = xs.set(j, at(j) + 1) ?? xs</code>.</p>
-<p><strong>An inner list got, written and set back while the outer list still holds it:</strong></p>
+<p>In the third, an inner list is got, written and set back while the outer list still holds it:</p>
 <figure class="listing"><figcaption>nested-get-then-set: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">inner</span> = rows.get(<span class="syn-number">0</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_get_then_set: outer in range&quot;</span>
 <span class="syn-name">written</span> = rows.set(<span class="syn-number">0</span>, inner.set(j, i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_get_then_set: inner in range&quot;</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_get_then_set: outer in range&quot;</span>
 </code></pre></figure><p><code>List.update</code> hands the element over unshared, and is free:</p>
 <figure class="listing"><figcaption>nested-update: in place</figcaption><pre><code class="language-roc"><span class="syn-name">written</span> = rows.update(<span class="syn-number">0</span>, |inner| inner.set(j, i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_update: inner in range&quot;</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_update: outer in range&quot;</span>
-</code></pre></figure><p><strong>The old dict read after an insert, even its length:</strong></p>
+</code></pre></figure><p>A dict copies the same way when the old dict is read after an insert, even for its length:</p>
 <figure class="listing"><figcaption>dict-length-after-insert: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">d2</span> = d.insert(j, i)
 dict_length_after_insert(i + <span class="syn-number">1</span>, steps, size, d2, sum + d.len())
-</code></pre></figure><p><strong>A value got from a dict, written and inserted back while the dict still holds it:</strong></p>
+</code></pre></figure><p>It copies too when a value is got from the dict, written and inserted back while the dict still holds it:</p>
 <figure class="listing"><figcaption>dict-get-then-insert: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">l</span> = d.get(<span class="syn-number">0</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;dict_get_then_insert: key 0 is there&quot;</span>
 dict_get_then_insert(i + <span class="syn-number">1</span>, steps, size, d.insert(<span class="syn-number">0</span>, l.set(j, i) ?? l), sum + j)
 </code></pre></figure><p>Taking the value out of the dict first is free:</p>
@@ -195,28 +214,28 @@ dict_get_then_insert(i + <span class="syn-number">1</span>, steps, size, d.inser
 <span class="syn-name">d0</span> = d.remove(<span class="syn-number">0</span>)
 dict_take_then_insert(i + <span class="syn-number">1</span>, steps, size, d0.insert(<span class="syn-number">0</span>, l.set(j, i) ?? l), sum + j)
 </code></pre></figure><h2 id="shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only <a class="section-link" href="#shapes-that-copy-in-the-dev-build-only" aria-label="Link to this section">§</a></h2>
-<p>In the dev build a helper stays a call that owns its arguments. The release build specializes the helper first, and writes in place. These shapes still matter: a dev-only copy often becomes a release copy once the code around it changes (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>).</p>
-<p><strong>A helper that reads its list after writing it:</strong></p>
+<p>In the dev build a helper stays a call that owns its arguments, where the release build specializes the helper first and writes in place. The shapes are held anyway, since a dev-only copy often becomes a release copy once the code around it changes (<a class="chapter-link" href="rocs-two-builds.html">“Roc&#39;s two builds”</a>).</p>
+<p>The first is a helper that reads its list after writing it:</p>
 <figure class="listing"><figcaption>helper-length-after-set: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">bump_length_after</span> = |xs, j, v| (xs.set(j, v) ?? xs, xs.len())
 </code></pre></figure><p>Reading the length first is free in both builds (<code>helper-length-before-set</code>):</p>
 <figure class="listing"><figcaption>helper-length-before-set: in place</figcaption><pre><code class="language-roc"><span class="syn-name">bump_length_first</span> = |xs, j, v| {
 	length = xs.len()
 	(xs.set(j, v) ?? xs, length)
 }
-</code></pre></figure><p><strong>A helper that reads the whole record inside the write of one of its fields:</strong></p>
+</code></pre></figure><p>The second is a helper that reads the whole record inside the write of one of its fields:</p>
 <figure class="listing"><figcaption>helper-reads-record: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">kept</span> = |d, a| (a + d.base) % d.cells.len()
 helper_reads_record(i + <span class="syn-number">1</span>, steps, size, { ..d, cells: d.cells.set(kept(d, j), i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;helper_reads_record: in range&quot;</span> })
 </code></pre></figure><p>Bound on the line before, the same index is free (<code>index-bound-before</code>): <code>k = kept(d, j)</code>, then <code>d.cells.set(k, i)</code>.</p>
-<p><strong><code>?? xs</code> on a list whose entries hold a reference count,</strong> such as a list of strings:</p>
+<p>The third is <code>?? xs</code> on a list whose entries hold a reference count, such as a list of strings:</p>
 <figure class="listing"><figcaption>str-list-restored: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">ys</span> = xs.set(j, <span class="syn-string">&quot;x&quot;</span>) ?? xs
 </code></pre></figure><p><code>?? crash &quot;...&quot;</code> in its place is free in every build (<code>str-list-or-crash</code>).</p>
 <h2 id="records-and-boxes">Records and boxes <a class="section-link" href="#records-and-boxes" aria-label="Link to this section">§</a></h2>
-<p>A record update copies the record around the field it writes, inline sub-records included. A <code>Box</code> carried untouched is free, but every write re-boxes it, one allocation a write. <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> shows both at work on the interpreter&#39;s machine record.</p>
+<p>A record update copies the record around the field it writes, inline sub-records included. A <code>Box</code> carried untouched is free, but every write re-boxes it, one allocation a write. <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> shows both at work on the record that carries the interpreter&#39;s run.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-front-end.html"><small>Previous</small>The front end</a>
-<a rel="next" href="the-compiler-to-x86-64.html"><small>Next</small>The compiler to x86-64</a>
+<a rel="prev" href="what-the-compiler-leaves-to-an-optimizer.html"><small>Previous</small>What the compiler leaves to an optimizer</a>
+<a rel="next" href="the-interpreter.html"><small>Next</small>The interpreter</a>
 </nav>
 </main>
 </body>

@@ -3,44 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>A canvas in the browser · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>A canvas in the browser · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li><li><a href="a-canvas-in-the-browser.html#the-queue-and-its-clock">The queue and its clock</a></li></ol></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li><li><a href="a-canvas-in-the-browser.html#the-queue-and-its-clock">The queue and its clock</a></li></ol></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 11</p>
+<p class="chapter-number">Chapter 14</p>
 <h1 id="a-canvas-in-the-browser">A canvas in the browser</h1>
 <p>The playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a> runs the interpreter in a browser, where a program draws as it runs. It is also the one place where the VM&#39;s effects reach a screen, so it shows most plainly how a pure Roc program hands effects to a host. This chapter covers what a program may call, how the page runs it, and how each effect travels.</p>
 <h2 id="what-a-program-sees">What a program sees <a class="section-link" href="#what-a-program-sees" aria-label="Link to this section">§</a></h2>
@@ -269,8 +266,8 @@ console.log(&quot;x&quot;);
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-interpreter.html"><small>Previous</small>The interpreter</a>
-<a rel="next" href="memory-strategy.html"><small>Next</small>Memory strategy</a>
+<a rel="prev" href="handing-the-machine-on.html"><small>Previous</small>Handing the machine on</a>
+<a rel="next" href="rocs-two-builds.html"><small>Next</small>Roc&#39;s two builds</a>
 </nav>
 </main>
 </body>

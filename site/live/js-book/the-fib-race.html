@@ -3,44 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The fib race · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>The fib race · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li class="here"><a href="the-fib-race.html"><span class="number">8</span>The fib race</a><ol class="sections"><li><a href="the-fib-race.html#where-it-stood-on-2026-11-26">Where it stood on 2026-11-26</a></li><li><a href="the-fib-race.html#what-the-loop-costs">What the loop costs</a></li><li><a href="the-fib-race.html#what-remains">What remains</a></li></ol></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li class="here"><a href="the-fib-race.html"><span class="number">6</span>The fib race</a><ol class="sections"><li><a href="the-fib-race.html#where-it-stood-on-2026-11-26">Where it stood on 2026-11-26</a></li><li><a href="the-fib-race.html#what-the-loop-costs">What the loop costs</a></li><li><a href="the-fib-race.html#what-remains">What remains</a></li></ol></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 8</p>
+<p class="chapter-number">Chapter 6</p>
 <h1 id="the-fib-race">The fib race</h1>
 <p><code>x86/race/fib_race.js</code> computes F(740000) with the ordinary iterative algorithm. Its numbers are arrays of base-10^7 limbs, added one into the other in place. This race is where the compiler was tuned, so its record shows which changes paid and by how much. Three contestants run it, one after another, each timed from outside as its whole process (<code>shale x86/race.shale</code>):</p>
 <table>
@@ -95,7 +92,7 @@
 </tr>
 </tbody>
 </table>
-<p>Runs on this box move by about a tenth, so the honest reading is that js-x86 and LLVM&#39;s Roc are even, and both beat node by about a quarter. A day earlier, in the race&#39;s first form, node did seven times the compiled program&#39;s work.</p>
+<p>Runs on this box move by about a tenth, so the honest reading is that js-x86 and LLVM&#39;s Roc are even, and both beat node by about a quarter.</p>
 <h2 id="what-the-loop-costs">What the loop costs <a class="section-link" href="#what-the-loop-costs" aria-label="Link to this section">§</a></h2>
 <p>The race lives in one loop, <code>addInto</code>&#39;s, one limb a time round. Counted with <code>objdump</code> on 2026-11-26 (<code>x86/race/README.md</code>):</p>
 <table>

@@ -3,52 +3,61 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Limitations · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>Limitations · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li class="here"><a href="limitations.html"><span class="number">20</span>Limitations</a><ol class="sections"><li><a href="limitations.html#runtime">Runtime</a></li><li><a href="limitations.html#language">Language</a></li><li><a href="limitations.html#the-compiler">The compiler</a></li><li><a href="limitations.html#the-tools">The tools</a></li></ol></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li class="here"><a href="limitations.html"><span class="number">17</span>Limitations</a><ol class="sections"><li><a href="limitations.html#the-compiler">The compiler</a></li><li><a href="limitations.html#runtime">Runtime</a></li><li><a href="limitations.html#language">Language</a></li><li><a href="limitations.html#the-tools">The tools</a></li></ol></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 20</p>
+<p class="chapter-number">Chapter 17</p>
 <h1 id="limitations">Limitations</h1>
 <p>The subset covers a part of JavaScript on purpose, and it will never cover every corner of the language. A program that steps outside it is refused with a message naming what it used; it never gets a wrong answer.</p>
-<p>This chapter is the list a reader starts from before extending either program. The limits fall in four groups: the runtime, small on purpose; the language, fairly complete; the compiler, which runs less of it; and a few that come from the tools.</p>
+<p>This chapter is the list a reader starts from before extending either program. The limits fall in four groups, in the book&#39;s order: the compiler, which runs less of the subset; the runtime, small on purpose; the language, fairly complete; and a few that come from the tools.</p>
+<h2 id="the-compiler">The compiler <a class="section-link" href="#the-compiler" aria-label="Link to this section">§</a></h2>
+<p>The compiler runs less of the subset than the interpreter does, and says where. A program it has yet to compile is refused by name before a byte is written; what only a value can decide stops the executable with a line <code>x86: ... is not compiled yet</code> and exit 1 (<code>x86/README.md</code>). As of 2026-11-27:</p>
+<ul>
+<li>It matches node on 51 of the 63 corpus programs; <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> gives the first reason each of the other 12 meets.</li>
+<li><code>console.log</code> writes a number only when it is an integer of at most 2^53, <code>NaN</code>, an infinity or -0. Fractions wait on milestone 4&#39;s shortest round-trip printing; four corpus programs stop there, three on a fraction and one on an integer past 2^53.</li>
+<li><code>Math.sin</code>, <code>cos</code>, <code>tan</code> and <code>atan</code> are refused, since node&#39;s last digits are those of V8&#39;s port of fdlibm; so are <code>Number</code>, <code>JSON</code>, <code>new Date()</code> and the array methods <code>at</code>, <code>fill</code> and <code>flat</code>.</li>
+<li>A string must be ASCII: a length here counts bytes, where JavaScript counts UTF-16 units.</li>
+<li>An uncaught error stops the executable with exit 1, where node also prints its report of the source line; <code>console.log</code> of an error, or of an array or object of more than 100 items, stops it too.</li>
+<li><code>%</code> of fractions, and <code>**</code> with a fraction, a negative exponent or a power past 2^53, stop the executable.</li>
+<li>A recursion goes deeper than node&#39;s: node throws between 9,000 and 10,000 calls of a one-line recursion, the executable between 80,000 and 90,000, so a program between the two runs here and throws in node.</li>
+<li>The heap is 2 GiB; past it the program stops with a line saying the heap is full.</li>
+</ul>
 <h2 id="runtime">Runtime <a class="section-link" href="#runtime" aria-label="Link to this section">§</a></h2>
 <ul>
-<li><strong>In the browser, a program gets only the playground&#39;s small API:</strong> one 400 by 400 canvas, the mouse and keys, the timers, <code>frame(t)</code>, <code>onCollect</code> and <code>console.log</code> (<a class="chapter-link" href="a-canvas-in-the-browser.html">“A canvas in the browser”</a>). Every statement of the program runs in the Roc VM, compiled to wasm. The page&#39;s own JavaScript paints the lines the VM emits and passes clicks and keys in; the program&#39;s code runs only in the VM.</li>
-<li><strong>At the command line, <code>js-vm</code>&#39;s runtime is as small:</strong> <code>console.log</code>, the timers, and the builtins <code>js/README.md</code> lists under &quot;The subset&quot; (<code>Math</code>, the methods of strings, arrays, Maps and Sets, <code>Object.keys</code> and its kin). Files, processes, <code>require</code>, the network and node&#39;s other modules are out of reach. The compiler to x86-64 in <code>x86/</code> keeps the same small runtime, and adds <code>Date.now()</code>, which the VM refuses (<code>x86/README.md</code>).</li>
-<li><strong>Async is out:</strong> promises, <code>async</code> and <code>await</code> are refused. Timers are the one way to wait, on a virtual clock that runs each callback after the program, in node&#39;s order.</li>
+<li>At the command line, both programs give a program a small runtime: <code>console.log</code>, the timers, and the builtins <code>js/README.md</code> lists under &quot;The subset&quot; (<code>Math</code>, the methods of strings, arrays, Maps and Sets, <code>Object.keys</code> and its kin). Files, processes, <code>require</code>, the network and node&#39;s other modules are out of reach. The compiler&#39;s executables add <code>Date.now()</code>, which <code>js-vm</code> refuses (<code>x86/README.md</code>).</li>
+<li>In the browser, where the interpreter alone runs, a program gets only the playground&#39;s small API: one 400 by 400 canvas, the mouse and keys, the timers, <code>frame(t)</code>, <code>onCollect</code> and <code>console.log</code> (<a class="chapter-link" href="a-canvas-in-the-browser.html">“A canvas in the browser”</a>). Every statement of the program runs in the Roc VM, compiled to wasm. The page&#39;s own JavaScript paints the lines the VM emits and passes clicks and keys in; the program&#39;s code runs only in the VM.</li>
+<li>Promises, <code>async</code> and <code>await</code> are refused, so timers are the one way to wait, on a virtual clock that runs each callback after the program, in node&#39;s order.</li>
 <li>An interval never cleared stops after 100,000 callbacks with a message, where node runs it for good (<code>js/README.md</code>, &quot;The subset&quot;).</li>
 <li>On the page, a program is held to step budgets, 3,000,000 before the first frame and 300,000 a frame (<a class="chapter-link" href="a-canvas-in-the-browser.html">“A canvas in the browser”</a>).</li>
 </ul>
@@ -62,18 +71,6 @@
 <li>A string method that counts positions is refused on non-ASCII text: JavaScript counts UTF-16 units, and these strings are UTF-8 (<code>js/README.md</code>, &quot;The subset&quot;).</li>
 </ul>
 <p>The parser refuses these forms, each with a message that names it: getters and setters, <code>#private</code> names, class fields, static blocks, computed method names, class expressions, <code>this</code> outside a class&#39;s code or in a static method, <code>super</code> misused, a constructor that returns a value, <code>extends</code> of anything but a class declared above, a class&#39;s name declared again or assigned, <code>new</code> on a program&#39;s own function, <code>var</code>, <code>in</code>, <code>eval</code>, regular expressions, async and modules. A run refuses <code>==</code> and the other coercions, and the rest of <code>js/README.md</code>&#39;s list, &quot;The subset&quot;, where only the run can see them.</p>
-<h2 id="the-compiler">The compiler <a class="section-link" href="#the-compiler" aria-label="Link to this section">§</a></h2>
-<p>The compiler runs the same subset less completely, and says where. A program it has yet to compile is refused by name before a byte is written; what only a value can decide stops the executable with a line <code>x86: ... is not compiled yet</code> and exit 1 (<code>x86/README.md</code>). As of 2026-11-27:</p>
-<ul>
-<li>It matches node on 51 of the 63 corpus programs; <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> gives the first reason each of the other 12 meets.</li>
-<li><code>console.log</code> writes a number only when it is an integer of at most 2^53, <code>NaN</code>, an infinity or -0. Fractions wait on milestone 4&#39;s shortest round-trip printing; four corpus programs stop there, three on a fraction and one on an integer past 2^53.</li>
-<li><code>Math.sin</code>, <code>cos</code>, <code>tan</code> and <code>atan</code> are refused, since node&#39;s last digits are those of V8&#39;s port of fdlibm; so are <code>Number</code>, <code>JSON</code>, <code>new Date()</code> and the array methods <code>at</code>, <code>fill</code> and <code>flat</code>.</li>
-<li>A string must be ASCII: a length here counts bytes, where JavaScript counts UTF-16 units.</li>
-<li>An uncaught error stops the executable with exit 1, where node also prints its report of the source line; <code>console.log</code> of an error, or of an array or object of more than 100 items, stops it too.</li>
-<li><code>%</code> of fractions, and <code>**</code> with a fraction, a negative exponent or a power past 2^53, stop the executable.</li>
-<li>A recursion goes deeper than node&#39;s: node throws between 9,000 and 10,000 calls of a one-line recursion, the executable between 80,000 and 90,000, so a program between the two runs here and throws in node.</li>
-<li>The heap is 2 GiB; past it the program stops with a line saying the heap is full.</li>
-</ul>
 <h2 id="the-tools">The tools <a class="section-link" href="#the-tools" aria-label="Link to this section">§</a></h2>
 <ul>
 <li><code>js-vm</code> takes the program as one command-line argument, limited to 128 KiB (<code>js/README.md</code>, &quot;Pitfalls&quot;).</li>

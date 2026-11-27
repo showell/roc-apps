@@ -3,42 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Appendix C: The tools · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>Appendix C: The tools · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li class="here"><a href="appendix-c-the-tools.html">Appendix C: The tools</a><ol class="sections"><li><a href="appendix-c-the-tools.html#llvm-mca-and-the-cost-tier">llvm-mca and the cost tier</a></li></ol></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
 <h1 id="appendix-c-the-tools">Appendix C: The tools</h1>
 <p>The project leans on these outside tools for its builds, its checks, its measurements and this book. Each row names a tool, what the project uses it for, and the files that run it, as of 2026-11-27.</p>
@@ -93,7 +90,7 @@
 </tr>
 <tr>
 <td>roc-alloc-trace</td>
-<td>counts a Roc program&#39;s allocations for the controls of <a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a></td>
+<td>counts a Roc program&#39;s allocations for the controls of <a class="chapter-link" href="rocs-two-builds.html">“Roc&#39;s two builds”</a></td>
 <td><code>tools/alloc_trace.shale</code>, <code>js/controls.shale</code></td>
 </tr>
 <tr>
@@ -104,8 +101,8 @@
 </tbody>
 </table>
 <h2 id="llvm-mca-and-the-cost-tier">llvm-mca and the cost tier <a class="section-link" href="#llvm-mca-and-the-cost-tier" aria-label="Link to this section">§</a></h2>
-<p>The races run on a shared two-core VM, and their timings move with its load. <code>x86/cost.shale</code> measures what the bytes alone decide: it compiles each race, disassembles the executable with objdump, and hands llvm-mca the fast path of a range of bytecode instructions. Run twice, it prints the same tables byte for byte (<code>x86/COST.md</code>, &quot;How to run it&quot;). LLVM stays outside the compiler: llvm-mca reads only the disassembly of the bytes js-x86 writes (<code>07e599b</code>).</p>
-<p>Its first table explained a result the timings left open. Lane 3 of milestone 6 (branch <code>x86-kinds6-l3</code>) cut the SAT race&#39;s watch loop from 353 instructions to 229 on its fast path, and the race ran at about the same speed. Over that fast path, the stores grew from 42 to 67, 65 of them to the frame. Cascade Lake retires one store a cycle, so the store port set lane 3&#39;s block throughput at 67.0 cycles a pass, against master&#39;s 63.8 (<code>x86/COST.md</code>, &quot;What it says about lane 3&quot;, <code>1623197</code>).</p>
+<p>The races run on a shared two-core virtual machine, and their timings move with its load. <code>x86/cost.shale</code> measures what the bytes alone decide: it compiles each race, disassembles the executable with objdump, and hands llvm-mca the fast path of a range of bytecode instructions. Run twice, it prints the same tables byte for byte (<code>x86/COST.md</code>, &quot;How to run it&quot;). LLVM stays outside the compiler: llvm-mca reads only the disassembly of the bytes js-x86 writes (<code>07e599b</code>).</p>
+<p>Its first table explained a result the timings left open. A branch of milestone 6&#39;s work, <code>x86-kinds6-l3</code>, cut the SAT race&#39;s watch loop from 353 instructions to 229 on its fast path, and the race ran at about the same speed. Over that fast path, the stores grew from 42 to 67, 65 of them to the frame. Cascade Lake retires one store a cycle, so the store port set the branch&#39;s block throughput at 67.0 cycles a pass, against master&#39;s 63.8 (<code>x86/COST.md</code>, &quot;What it says about lane 3&quot;, <code>1623197</code>).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

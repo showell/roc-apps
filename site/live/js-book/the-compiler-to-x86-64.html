@@ -3,44 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The compiler to x86-64 · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>The compiler to x86-64 · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27</a></li></ol></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#the-compiled-programs-collector">The compiled programs&#39; collector</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27</a></li></ol></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 6</p>
+<p class="chapter-number">Chapter 3</p>
 <h1 id="the-compiler-to-x86-64">The compiler to x86-64</h1>
 <p><code>js-x86</code>, in <code>x86/</code>, turns a program into a static Linux x86-64 executable, and Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>). So any byte the processor runs traces back to the Roc module that wrote it.</p>
 <h2 id="the-pipeline">The pipeline <a class="section-link" href="#the-pipeline" aria-label="Link to this section">§</a></h2>
@@ -323,7 +320,7 @@
 </tr>
 </tbody>
 </table>
-<p>They live in a mapping of 3 GiB: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>). The allocator pops its size&#39;s free list or bumps through a page, and past a threshold it collects first (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>).</p>
+<p>They live in a mapping of 3 GiB: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>). The allocator pops its size&#39;s free list or bumps through a page, and past a threshold it collects first.</p>
 <p>The runtime dominates a small program&#39;s size:</p>
 <table>
 <thead>
@@ -347,6 +344,35 @@
 </tr>
 </tbody>
 </table>
+<h2 id="the-compiled-programs-collector">The compiled programs&#39; collector <a class="section-link" href="#the-compiled-programs-collector" aria-label="Link to this section">§</a></h2>
+<p>Every executable carries a garbage collector in its runtime, a mark and sweep designed in <code>x86/COLLECTOR.md</code>. It works on raw memory, the pages and block headers above, and a reference to a block is its address:</p>
+<table>
+<thead>
+<tr>
+<th>part</th>
+<th>what it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the roots</td>
+<td>every word of the machine stack and the registers that looks like a heap address, found conservatively, as Boehm and Weiser&#39;s collector for C finds them (1988)</td>
+</tr>
+<tr>
+<td>the mark</td>
+<td>follows each root into the heap, and traces each block by the kind its header names, setting a bit of the header</td>
+</tr>
+<tr>
+<td>the sweep</td>
+<td>clears each marked block&#39;s bit, links each unmarked one onto its size&#39;s free list, and frees each page whose blocks all died</td>
+</tr>
+<tr>
+<td>the trigger</td>
+<td>the heap past twice the bytes the last collection kept, and at least 8 MiB</td>
+</tr>
+</tbody>
+</table>
+<p>A root may be a number that only looks like an address, so the collector leaves every block where it was allocated, and such a root costs at most some garbage kept alive. The headers and pages came first (<code>a328636</code>), then the mark, the sweep and a torture tier that collects at every allocation (<code>460b606</code>). A floor of 8 MiB held big daddy at 8.8 MB, about a twelfth of node&#39;s peak on the same run; floors from 2 to 64 MiB kept its CPU time within 8% (<code>x86/COLLECTOR.md</code>, &quot;Lane 3&quot;).</p>
 <h2 id="what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27 <a class="section-link" href="#what-it-compiles-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
 <p><code>x86/programs.shale</code> compiles each of the 63 corpus programs in <code>js/tests/</code> and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 51 of 63 (<code>x86/README.md</code>, &quot;The corpus&quot;). It also holds the 68 programs of <code>x86/tests/</code> to node and the 48 of <code>x86/tests/refused/</code> to their refusals. The 12 left stop at these, by the first reason each meets:</p>
 <table>
@@ -375,8 +401,8 @@
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="rocs-copy-rule.html"><small>Previous</small>Roc&#39;s copy rule</a>
-<a rel="next" href="the-compiler-against-node.html"><small>Next</small>The compiler against node</a>
+<a rel="prev" href="the-front-end.html"><small>Previous</small>The front end</a>
+<a rel="next" href="the-compiler-is-one-function.html"><small>Next</small>The compiler is one function</a>
 </nav>
 </main>
 </body>

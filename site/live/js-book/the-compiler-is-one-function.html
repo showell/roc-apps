@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The compiler is one function · Compiling JavaScript in Roc</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li class="here"><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a><ol class="sections"><li><a href="the-compiler-is-one-function.html#executable-of">executable_of</a></li><li><a href="the-compiler-is-one-function.html#the-processor-performs-the-effects">The processor performs the effects</a></li><li><a href="the-compiler-is-one-function.html#a-pure-function-is-plain-to-test">A pure function is plain to test</a></li></ol></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+<li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 4</p>
+<h1 id="the-compiler-is-one-function">The compiler is one function</h1>
+<p>In one respect the compiler is the easier of the two programs for Roc. A compiler reads a text and gives back bytes, one transformation from start to end, and the program&#39;s effects wait for the executable to run. The interpreter performs them while it runs, inside the Roc call, so its effects and its whole state travel through every step of its loop.</p>
+<h2 id="executable-of"><code>executable_of</code> <a class="section-link" href="#executable-of" aria-label="Link to this section">§</a></h2>
+<p>The compiler&#39;s whole work is <code>executable_of</code>, from the program&#39;s text to the executable&#39;s bytes, or the reason it refuses:</p>
+<figure class="listing"><figcaption>x86/roc/JsToX86.roc, the function executable_of</figcaption><pre><code class="language-roc"><span class="syn-comment">## The executable a program compiles to, or why it doesn&#39;t.</span>
+<span class="syn-name">executable_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Str</span>)
+<span class="syn-name">executable_of</span> = |src| {
+	lowered = lowering_of(src)?
+	<span class="syn-type">Ok</span>(<span class="syn-type">Elf</span>.executable(code_of(lowered.statements)?))
+}
+</code></pre></figure><p>Its type, <code>Str -&gt; Try(List(U8), Str)</code>, has Roc&#39;s thin arrow: a pure function. Each stage it calls, through <code>lowering_of</code>, is pure too: <code>Parser.program_of</code>, <code>Compile.program</code>, <code>Lowering.program_lowering</code>, <code>Assembly.assemble</code> and <code>Elf.executable</code>. Across the 25,708 lines of <code>x86/roc/</code>, seven definitions carry the <code>!</code> of an effect (counted for this chapter on 2026-11-27):</p>
+<table>
+<thead>
+<tr>
+<th>definitions</th>
+<th>where</th>
+<th>what they print</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>main!</code> and <code>write_program!</code></td>
+<td>each of the two drivers, <code>JsToX86.roc</code> and <code>Hello.roc</code></td>
+<td>the bytes</td>
+</tr>
+<tr>
+<td><code>write_inlined!</code></td>
+<td><code>JsToX86.roc</code></td>
+<td>the count of inlined calls</td>
+</tr>
+<tr>
+<td><code>write_stopped!</code></td>
+<td><code>JsToX86.roc</code></td>
+<td>a compile stopped at one phase, for timing it</td>
+</tr>
+<tr>
+<td><code>write_labels!</code></td>
+<td><code>JsToX86.roc</code></td>
+<td>each label&#39;s offset, for reading the code back</td>
+</tr>
+</tbody>
+</table>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="Who does the program&#39;s effects" width="343pt" height="178pt"
+ viewBox="0.00 0.00 343.00 178.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 174)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-174 339,-174 339,4 -4,4"/>
+<g id="clust1" class="cluster">
+<polygon fill="none" stroke="black" points="8,-8 8,-81 307.5,-81 307.5,-8 8,-8"/>
+<text text-anchor="middle" x="157.75" y="-67.4" font-family="Times,serif" font-size="12.00">js&#45;vm, as the program runs</text>
+</g>
+<g id="clust2" class="cluster">
+<polygon fill="none" stroke="black" points="8,-89 8,-162 327,-162 327,-89 8,-89"/>
+<text text-anchor="middle" x="167.5" y="-148.4" font-family="Times,serif" font-size="12.00">js&#45;x86, before it runs</text>
+</g>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M105,-52C105,-52 28,-52 28,-52 22,-52 16,-46 16,-40 16,-40 16,-28 16,-28 16,-22 22,-16 28,-16 28,-16 105,-16 105,-16 111,-16 117,-22 117,-28 117,-28 117,-40 117,-40 117,-46 111,-52 105,-52"/>
+<text text-anchor="middle" x="66.5" y="-30.9" font-family="Times,serif" font-size="12.00">the VM&#39;s loop</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M287.5,-52C287.5,-52 249.5,-52 249.5,-52 243.5,-52 237.5,-46 237.5,-40 237.5,-40 237.5,-28 237.5,-28 237.5,-22 243.5,-16 249.5,-16 249.5,-16 287.5,-16 287.5,-16 293.5,-16 299.5,-22 299.5,-28 299.5,-28 299.5,-40 299.5,-40 299.5,-46 293.5,-52 287.5,-52"/>
+<text text-anchor="middle" x="268.5" y="-30.9" font-family="Times,serif" font-size="12.00">its host</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M117.2,-34C151.08,-34 195.38,-34 227.1,-34"/>
+<polygon fill="black" stroke="black" points="227.34,-37.5 237.34,-34 227.34,-30.5 227.34,-37.5"/>
+<text text-anchor="middle" x="167.5" y="-37.2" font-family="Times,serif" font-size="11.00">each effect</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M105,-133C105,-133 28,-133 28,-133 22,-133 16,-127 16,-121 16,-121 16,-109 16,-109 16,-103 22,-97 28,-97 28,-97 105,-97 105,-97 111,-97 117,-103 117,-109 117,-109 117,-121 117,-121 117,-127 111,-133 105,-133"/>
+<text text-anchor="middle" x="66.5" y="-111.9" font-family="Times,serif" font-size="12.00">executable_of</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M307,-133C307,-133 230,-133 230,-133 224,-133 218,-127 218,-121 218,-121 218,-109 218,-109 218,-103 224,-97 230,-97 230,-97 307,-97 307,-97 313,-97 319,-103 319,-109 319,-109 319,-121 319,-121 319,-127 313,-133 307,-133"/>
+<text text-anchor="middle" x="268.5" y="-111.9" font-family="Times,serif" font-size="12.00">the processor</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M117.2,-115C144.5,-115 178.57,-115 207.37,-115"/>
+<polygon fill="black" stroke="black" points="207.71,-118.5 217.71,-115 207.71,-111.5 207.71,-118.5"/>
+<text text-anchor="middle" x="167.5" y="-118.2" font-family="Times,serif" font-size="11.00">bytes, later</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="Who does the program&#39;s effects" width="280pt" height="192pt"
+ viewBox="0.00 0.00 280.00 192.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 188)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-188 276,-188 276,4 -4,4"/>
+<g id="clust1" class="cluster">
+<polygon fill="none" stroke="black" points="8,-8 8,-176 148,-176 148,-8 8,-8"/>
+<text text-anchor="middle" x="78" y="-162.4" font-family="Times,serif" font-size="12.00">js&#45;vm,</text>
+<text text-anchor="middle" x="78" y="-149.4" font-family="Times,serif" font-size="12.00">as the program runs</text>
+</g>
+<g id="clust2" class="cluster">
+<polygon fill="none" stroke="black" points="156,-8 156,-176 264,-176 264,-8 156,-8"/>
+<text text-anchor="middle" x="210" y="-162.4" font-family="Times,serif" font-size="12.00">js&#45;x86,</text>
+<text text-anchor="middle" x="210" y="-149.4" font-family="Times,serif" font-size="12.00">before it runs</text>
+</g>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M103.5,-134C103.5,-134 36.5,-134 36.5,-134 30.5,-134 24.5,-128 24.5,-122 24.5,-122 24.5,-110 24.5,-110 24.5,-104 30.5,-98 36.5,-98 36.5,-98 103.5,-98 103.5,-98 109.5,-98 115.5,-104 115.5,-110 115.5,-110 115.5,-122 115.5,-122 115.5,-128 109.5,-134 103.5,-134"/>
+<text text-anchor="middle" x="70" y="-112.9" font-family="Times,serif" font-size="12.00">the VM&#39;s loop</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M85,-52C85,-52 55,-52 55,-52 49,-52 43,-46 43,-40 43,-40 43,-28 43,-28 43,-22 49,-16 55,-16 55,-16 85,-16 85,-16 91,-16 97,-22 97,-28 97,-28 97,-40 97,-40 97,-46 91,-52 85,-52"/>
+<text text-anchor="middle" x="70" y="-30.9" font-family="Times,serif" font-size="12.00">its host</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M70,-97.64C70,-87.3 70,-73.94 70,-62.22"/>
+<polygon fill="black" stroke="black" points="73.5,-62.05 70,-52.05 66.5,-62.05 73.5,-62.05"/>
+<text text-anchor="middle" x="101" y="-72.2" font-family="Times,serif" font-size="11.00">each effect</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M243.5,-134C243.5,-134 176.5,-134 176.5,-134 170.5,-134 164.5,-128 164.5,-122 164.5,-122 164.5,-110 164.5,-110 164.5,-104 170.5,-98 176.5,-98 176.5,-98 243.5,-98 243.5,-98 249.5,-98 255.5,-104 255.5,-110 255.5,-110 255.5,-122 255.5,-122 255.5,-128 249.5,-134 243.5,-134"/>
+<text text-anchor="middle" x="210" y="-112.9" font-family="Times,serif" font-size="12.00">executable_of</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M243.5,-52C243.5,-52 176.5,-52 176.5,-52 170.5,-52 164.5,-46 164.5,-40 164.5,-40 164.5,-28 164.5,-28 164.5,-22 170.5,-16 176.5,-16 176.5,-16 243.5,-16 243.5,-16 249.5,-16 255.5,-22 255.5,-28 255.5,-28 255.5,-40 255.5,-40 255.5,-46 249.5,-52 243.5,-52"/>
+<text text-anchor="middle" x="210" y="-30.9" font-family="Times,serif" font-size="12.00">the processor</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M210,-97.64C210,-87.3 210,-73.94 210,-62.22"/>
+<polygon fill="black" stroke="black" points="213.5,-62.05 210,-52.05 206.5,-62.05 213.5,-62.05"/>
+<text text-anchor="middle" x="227" y="-78.2" font-family="Times,serif" font-size="11.00">bytes,</text>
+<text text-anchor="middle" x="227" y="-66.2" font-family="Times,serif" font-size="11.00">later</text>
+</g>
+</g>
+</svg><figcaption>Who does the program&#39;s effects</figcaption></figure><h2 id="the-processor-performs-the-effects">The processor performs the effects <a class="section-link" href="#the-processor-performs-the-effects" aria-label="Link to this section">§</a></h2>
+<p>The program&#39;s effects still happen, later, and the processor does them. <code>console.log</code> ends in the runtime&#39;s <code>runtime_write</code>, which fills the output buffer, and the buffer goes out by a <code>syscall</code> instruction for <code>write</code>. The timers become <code>runtime_run_timers</code>, a loop in the executable over a virtual clock. The compiler writes each effect down as instructions, and the processor and the kernel perform them when the executable runs.</p>
+<p>Many compilers hand their last step to a C compiler or to LLVM. This one hands it to the metal: the bytes Roc writes are the bytes the processor runs.</p>
+<h2 id="a-pure-function-is-plain-to-test">A pure function is plain to test <a class="section-link" href="#a-pure-function-is-plain-to-test" aria-label="Link to this section">§</a></h2>
+<p>Each of the encoder&#39;s 119 <code>expect</code>s holds one instruction&#39;s bytes, <code>rsp</code> and <code>r12</code> as a base and the displacements at the edges of 8 and 32 bits among them, and each was read back through <code>objdump</code> during development (<code>x86/README.md</code>). An <code>expect</code> of a pure function needs a value in and a value out, and the host stays out of it.</p>
+<p>The work moved, and some of it moved into the runtime. A routine that the interpreter writes as a Roc function, such as <code>console.log</code>&#39;s layout of an array in columns, is in the compiler a list of x86-64 instructions, written one a line in Roc (<code>x86/roc/Inspect.roc</code>, 1,185 lines).</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-compiler-to-x86-64.html"><small>Previous</small>The compiler to x86-64</a>
+<a rel="next" href="the-compiler-against-node.html"><small>Next</small>The compiler against node</a>
+</nav>
+</main>
+</body>
+</html>

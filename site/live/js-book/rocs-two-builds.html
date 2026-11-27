@@ -3,77 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dev and release builds disagree · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>Roc&#39;s two builds · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#a-dev-timing-says-little">A dev timing says little</a></li><li><a href="dev-and-release-builds-disagree.html#some-copies-happen-only-in-dev">Some copies happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#count-on-dev-time-on-release">Count on dev, time on release</a></li></ol></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li class="here"><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a><ol class="sections"><li><a href="rocs-two-builds.html#a-dev-timing-says-little">A dev timing says little</a></li><li><a href="rocs-two-builds.html#some-copies-happen-only-in-dev">Some copies happen only in dev</a></li><li><a href="rocs-two-builds.html#count-on-dev-time-on-release">Count on dev, time on release</a></li><li><a href="rocs-two-builds.html#the-interpreters-release-build">The interpreter&#39;s release build</a></li><li><a href="rocs-two-builds.html#js-x86-building-a-program-preliminary-as-of-2026-11-27">js-x86 building a program, preliminary, as of 2026-11-27</a></li></ol></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 17</p>
-<h1 id="dev-and-release-builds-disagree">Dev and release builds disagree</h1>
+<p class="chapter-number">Chapter 15</p>
+<h1 id="rocs-two-builds">Roc&#39;s two builds</h1>
 <p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, compiles slowly, and runs the VM&#39;s fib(22) about nine times faster: 99 ms of CPU against about 860 (<code>js/README.md</code>, 2026-11-24). Three findings about the pair have lasted, and each tells a reader which build answers which question.</p>
 <h2 id="a-dev-timing-says-little">A dev timing says little <a class="section-link" href="#a-dev-timing-says-little" aria-label="Link to this section">§</a></h2>
-<p>Dev timings fail to predict release timings, even in direction:</p>
-<table>
-<thead>
-<tr>
-<th>change</th>
-<th>dev fib(22)</th>
-<th>release fib(22)</th>
-<th>source</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>walker: variables read by slot</td>
-<td>674 to 435 ms</td>
-<td>83 to 67 ms</td>
-<td><code>920cda0c</code></td>
-</tr>
-<tr>
-<td>walker: the Map control&#39;s branch against master</td>
-<td>676 to 642 ms</td>
-<td>121 to 169 ms</td>
-<td><code>3b4f9bd1</code></td>
-</tr>
-</tbody>
-</table>
-<p>The second row is a branch that was faster than master on dev and 40% slower in release.</p>
+<p>Dev timings fail to predict release timings, even in direction. On 2026-11-23 a branch of the walker, <code>js-run</code>, the project&#39;s first interpreter, which walked the program&#39;s tree and has since been deleted, ran fib(22) in 642 ms on the dev build against master&#39;s 676, and in 169 ms on the release build against master&#39;s 121: faster than master on dev, and 40% slower in release (<code>3b4f9bd1</code>).</p>
 <h2 id="some-copies-happen-only-in-dev">Some copies happen only in dev <a class="section-link" href="#some-copies-happen-only-in-dev" aria-label="Link to this section">§</a></h2>
 <p>At a helper&#39;s boundary the dev build keeps a call that owns its arguments, where the release build specializes the helper first, so the dev build makes copies the release build skips (<a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> lists three such shapes). The project met one in its own code. When <code>ValueRules</code> was split out, its first version took the engine&#39;s whole machine as an open record, and the dev build copied the cells on every write through it: 05-array-push&#39;s dev count rose from 3 to 12.73 allocations a pass (<code>d8d6b7fe</code>). The rules now take a small machine of the cells, which the VM lends them (<a class="chapter-link" href="javascripts-rules-for-values.html">“JavaScript&#39;s rules for values”</a>). A dev-only copy is often a shape that will copy in release once the code around it changes, so the dev counts are held too.</p>
 <h2 id="count-on-dev-time-on-release">Count on dev, time on release <a class="section-link" href="#count-on-dev-time-on-release" aria-label="Link to this section">§</a></h2>
-<p><code>js/controls/</code> holds nine small programs, each a loop that does one kind of write. <code>js/controls.shale</code> runs each at 1,000 and 10,000 passes and holds what one more pass allocates, exactly, in both builds: <code>expected.txt</code> for release and <code>expected-dev.txt</code> for dev, where each line explains its allocation. Counts are deterministic, so a change that moves one shows on the dev ladder in seconds, and most trials end there. Times are taken on the release build, once a round, from one shared build (<code>tools/roc_build.shale</code> keys each build by its inputs), as roc-apps&#39; <code>CLAUDE.md</code> (section 9) and <code>js/README.md</code> say.</p>
+<p><code>js/controls/</code> holds nine small programs, each a loop that does one kind of write. <code>js/controls.shale</code> runs each at 1,000 and 10,000 passes and holds what one more pass allocates, exactly, in both builds: <code>expected.txt</code> for release and <code>expected-dev.txt</code> for dev, where each line explains its allocation. Counts are deterministic, so a change that moves one shows in the dev build&#39;s counts within seconds, and most trials end there. Times are taken on the release build, once a change&#39;s counts hold, from one shared build (<code>tools/roc_build.shale</code> keys each build by its inputs), as roc-apps&#39; <code>CLAUDE.md</code> (section 9) and <code>js/README.md</code> say.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One round of a change" width="641pt" height="44pt"
  viewBox="0.00 0.00 641.00 44.31" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40.31)">
@@ -84,7 +56,7 @@
 </g>
 <g id="node2" class="node">
 <path fill="none" stroke="black" d="M308,-36.31C308,-36.31 203,-36.31 203,-36.31 197,-36.31 191,-30.31 191,-24.31 191,-24.31 191,-12.31 191,-12.31 191,-6.31 197,-0.31 203,-0.31 203,-0.31 308,-0.31 308,-0.31 314,-0.31 320,-6.31 320,-12.31 320,-12.31 320,-24.31 320,-24.31 320,-30.31 314,-36.31 308,-36.31"/>
-<text text-anchor="middle" x="255.5" y="-21.71" font-family="Times,serif" font-size="12.00">the dev ladder</text>
+<text text-anchor="middle" x="255.5" y="-21.71" font-family="Times,serif" font-size="12.00">the dev build&#39;s</text>
 <text text-anchor="middle" x="255.5" y="-8.71" font-family="Times,serif" font-size="12.00">counts, in seconds</text>
 </g>
 <g id="edge1" class="edge">
@@ -125,7 +97,7 @@
 </g>
 <g id="node2" class="node">
 <path fill="none" stroke="black" d="M83,-174C83,-174 12,-174 12,-174 6,-174 0,-168 0,-162 0,-162 0,-141 0,-141 0,-135 6,-129 12,-129 12,-129 83,-129 83,-129 89,-129 95,-135 95,-141 95,-141 95,-162 95,-162 95,-168 89,-174 83,-174"/>
-<text text-anchor="middle" x="47.5" y="-161.4" font-family="Times,serif" font-size="12.00">the dev ladder</text>
+<text text-anchor="middle" x="47.5" y="-161.4" font-family="Times,serif" font-size="12.00">the dev build&#39;s</text>
 <text text-anchor="middle" x="47.5" y="-148.4" font-family="Times,serif" font-size="12.00">counts,</text>
 <text text-anchor="middle" x="47.5" y="-135.4" font-family="Times,serif" font-size="12.00">in seconds</text>
 </g>
@@ -157,11 +129,70 @@
 <polygon fill="black" stroke="black" points="51,-46.09 47.5,-36.09 44,-46.09 51,-46.09"/>
 </g>
 </g>
-</svg><figcaption>One round of a change</figcaption></figure>
+</svg><figcaption>One round of a change</figcaption></figure><h2 id="the-interpreters-release-build">The interpreter&#39;s release build <a class="section-link" href="#the-interpreters-release-build" aria-label="Link to this section">§</a></h2>
+<p>A build&#39;s time sets the pace of every change, and RC1&#39;s release builds were the slowest step in the project&#39;s loop. <code>js-vm</code>&#39;s release build takes 91 s today (<code>js/README.md</code>&#39;s status line). Its first release build took 670 s (<code>29cb46ec</code>), while the VM still imported the walker&#39;s module for the value rules. Once those rules moved into a module of their own and the import went (<code>d8d6b7fe</code>), the build fell to 84 s (<code>15686d94</code>). The commits leave the cause of the drop unstated.</p>
+<p>The interpreter works RC1&#39;s release pipeline harder than most Roc projects do. Jack Scully profiled the compiler on this code at roc-apps&#39; <a href="https://github.com/showell/roc-apps/commit/762c7d3a"><code>762c7d3a</code></a>, where most of a build&#39;s time went to SpecConstr, a pass of RC1&#39;s release pipeline, and he opened three pull requests against that pass. Each is measured alone, on his machine, against the walker&#39;s 271 s release build before them (the pull requests&#39; descriptions):</p>
+<table>
+<thead>
+<tr>
+<th>pull request</th>
+<th>what it changes</th>
+<th><code>js-run</code>&#39;s release build</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/roc-lang/roc/pull/13408">#13408</a></td>
+<td>puts cheap checks ahead of the pass&#39;s inlining queries</td>
+<td>166 s</td>
+</tr>
+<tr>
+<td><a href="https://github.com/roc-lang/roc/pull/13409">#13409</a></td>
+<td>restructures the walk those queries run</td>
+<td>63 s</td>
+</tr>
+<tr>
+<td><a href="https://github.com/roc-lang/roc/pull/13410">#13410</a></td>
+<td>stops a recursive function from unrolling into its own body; <code>fib.js</code> runs 12% faster and <code>loops.js</code> 14%</td>
+<td>83 s</td>
+</tr>
+</tbody>
+</table>
+<p>He put the three together at about 12 times faster for this repository&#39;s code specifically (Zulip, #off topic &gt; LLVM). They are expected to merge after Roc 0.10, so every build time above is RC1&#39;s own.</p>
+<h2 id="js-x86-building-a-program-preliminary-as-of-2026-11-27">js-x86 building a program, preliminary, as of 2026-11-27 <a class="section-link" href="#js-x86-building-a-program-preliminary-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
+<p>The compiler turns the question around: how long from a program&#39;s source to an executable on the disk? <code>x86/buildrace.shale</code> times js-x86 against <code>roc build</code> of the same race written in Roc, at <code>--opt=dev</code> and at <code>--opt=speed</code>, the build that makes the fast executable the races run (<code>x86/buildrace/README.md</code>). These numbers are preliminary: the machine was shared with other work, and a run on a quiet machine will replace them. The headline, from warm runs at a load of 1.0 to 1.3 (<code>x86/buildrace/PROFILE.md</code>, &quot;The build race, before and after&quot;; <code>x86/RC2.md</code> for the executables):</p>
+<table>
+<thead>
+<tr>
+<th>from a race&#39;s source to an executable</th>
+<th>build time</th>
+<th>the executable it makes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>js-x86</td>
+<td>44 to 94 ms</td>
+<td>fast</td>
+</tr>
+<tr>
+<td><code>roc build --opt=dev</code>, warm</td>
+<td>0.02 to 0.03 s</td>
+<td>about 2.3 MB, 10 to 25 times slower than <code>--opt=speed</code>&#39;s</td>
+</tr>
+<tr>
+<td><code>roc build --opt=speed</code>, warm</td>
+<td>0.72 to 3.8 s</td>
+<td>32 to 180 KB, fast</td>
+</tr>
+</tbody>
+</table>
+<p>So js-x86 builds 15 to 50 times faster than the Roc build that makes a fast executable; Roc&#39;s dev build is faster still, and makes a slow one.</p>
+
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="why-a-compiler-suits-roc.html"><small>Previous</small>Why a compiler suits Roc</a>
-<a rel="next" href="build-times.html"><small>Next</small>Build times</a>
+<a rel="prev" href="a-canvas-in-the-browser.html"><small>Previous</small>A canvas in the browser</a>
+<a rel="next" href="how-it-is-tested.html"><small>Next</small>How it is tested</a>
 </nav>
 </main>
 </body>

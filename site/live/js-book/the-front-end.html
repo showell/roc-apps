@@ -3,44 +3,41 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The front end · JavaScript in Roc: A Compiler and an Interpreter</title>
+<title>The front end · Compiling JavaScript in Roc</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<a class="book-name" href="index.html">Compiling JavaScript in Roc</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
-<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li class="part">Part I: Shared machinery</li><li class="here"><a href="the-front-end.html"><span class="number">4</span>The front end</a><ol class="sections"><li><a href="the-front-end.html#four-stages-two-back-ends">Four stages, two back ends</a></li><li><a href="the-front-end.html#classes-are-plain-functions">Classes are plain functions</a></li><li><a href="the-front-end.html#the-frame">The frame</a></li></ol></li>
-<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
-<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
-<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
-<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li class="part">Part I: The compiler</li><li class="here"><a href="the-front-end.html"><span class="number">2</span>The front end</a><ol class="sections"><li><a href="the-front-end.html#four-stages-two-back-ends">Four stages, two back ends</a></li><li><a href="the-front-end.html#classes-are-plain-functions">Classes are plain functions</a></li><li><a href="the-front-end.html#the-frame">The frame</a></li></ol></li>
+<li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
+<li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
+<li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
+<li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">11</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: What Roc taught</li><li><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 <li><a href="appendix-c-the-tools.html">Appendix C: The tools</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">Compiling JavaScript in Roc</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 4</p>
+<p class="chapter-number">Chapter 2</p>
 <h1 id="the-front-end">The front end</h1>
 <p>Both programs start from one front end: four stages, each a module in <code>js/roc/</code>, that turn a program&#39;s text into bytecode. A new piece of the language lands here first, and both programs see it at once. This chapter follows a program through the four stages, to the point where the two programs part.</p>
 <h2 id="four-stages-two-back-ends">Four stages, two back ends <a class="section-link" href="#four-stages-two-back-ends" aria-label="Link to this section">§</a></h2>
@@ -125,7 +122,7 @@
 </tbody>
 </table>
 <p>Each technique is a standard one. Recursive descent is the classic hand-written parser. Resolving names to a scope depth and an index before the run is the lexical addressing of Scheme compilers (Abelson and Sussman, <em>Structure and Interpretation of Computer Programs</em>, second edition, 1996, section 5.5.6). After it, each back end reads a variable by its place, and only <code>Resolve</code> compares variables&#39; names. Every jump in the bytecode is relative to the instruction after it, so a piece of compiled code means the same wherever it lands.</p>
-<p>From there the bytecode goes one of two ways. In <code>js-vm</code>, <code>Vm.roc</code> runs it on a stack machine (<a class="chapter-link" href="the-interpreter.html">“The interpreter”</a>). In <code>js-x86</code>, <code>x86/roc/Lowering.roc</code> turns it into machine code (<a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>).</p>
+<p>From there the bytecode goes one of two ways. In <code>js-x86</code>, <code>x86/roc/Lowering.roc</code> turns it into machine code (<a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>). In <code>js-vm</code>, <code>Vm.roc</code> runs it on a stack machine (<a class="chapter-link" href="the-interpreter.html">“The interpreter”</a>).</p>
 <h2 id="classes-are-plain-functions">Classes are plain functions <a class="section-link" href="#classes-are-plain-functions" aria-label="Link to this section">§</a></h2>
 <p>The parser writes each class declaration as plain functions (<code>ClassDesugaring.roc</code>&#39;s header). <code>class C extends P { ... }</code> becomes, in one declaration:</p>
 <ul>
@@ -135,12 +132,12 @@
 </ul>
 <p>A method is one function for the whole class, made once, and its first parameter is the receiver. An instance holds only its fields; any other property is read from its class&#39;s table. So the stages after the parser see functions and objects, and two instructions, <code>NewInstance</code> and <code>InstanceOf</code>, which make a marked instance and test its mark.</p>
 <h2 id="the-frame">The frame <a class="section-link" href="#the-frame" aria-label="Link to this section">§</a></h2>
-<p><code>Compile.roc</code> lays out each function&#39;s frame as a run of slots: its parameters, the variables its blocks declare, the hidden places of its <code>for ... of</code> loops, then the boxes it captures. An instruction names a slot by its place in the frame, and both back ends keep that layout. The VM&#39;s frame is a run of its operand stack (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>, which also follows one line of JavaScript through its instructions); the compiler gives each slot an address of its own below <code>rbp</code> (<a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>).</p>
+<p><code>Compile.roc</code> lays out each function&#39;s frame as a run of slots: its parameters, the variables its blocks declare, the hidden places of its <code>for ... of</code> loops, then the boxes it captures. An instruction names a slot by its place in the frame, and both back ends keep that layout. The compiler gives each slot an address of its own below <code>rbp</code> (<a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>); the VM&#39;s frame is a run of its operand stack (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>, which also follows one line of JavaScript through its instructions).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="how-it-got-here.html"><small>Previous</small>How it got here</a>
-<a rel="next" href="rocs-copy-rule.html"><small>Next</small>Roc&#39;s copy rule</a>
+<a rel="prev" href="introduction.html"><small>Previous</small>Introduction</a>
+<a rel="next" href="the-compiler-to-x86-64.html"><small>Next</small>The compiler to x86-64</a>
 </nav>
 </main>
 </body>
