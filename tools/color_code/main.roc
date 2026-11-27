@@ -1,6 +1,7 @@
 ## This app colors code for the site's pages with roc-syntax-color, on Roc's
 ## echo platform. site/build_roc_on_shale.shale, site/build_chess_code.shale,
-## site/build_security_idioms.shale and site/build_rc1_article.shale run it:
+## site/build_security_idioms.shale, site/build_rc1_article.shale and
+## site/build_rocco_emitters.shale run it:
 ## its arguments are pairs, a language (`roc`, `shale`, `js`, `zig` or `c`) and
 ## a text, and it prints each text colored whole, in order, each after a line
 ## `<!-- color_code answer -->`. No answer can hold that line, since the

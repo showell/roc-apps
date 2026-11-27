@@ -1,7 +1,8 @@
 -- budget: steps=400000000 arena_bytes=1000000000 reads=20000 read_bytes=400000000 output_bytes=100000
 -- This script quotes code by name for every page of roc-apps that shows
 -- code: the Safari book's pre-step (canvas_apps/safari/tutorial/build.shale),
--- the security idioms page (site/build_security_idioms.shale) and the Roc on
+-- the security idioms page (site/build_security_idioms.shale), the Rocco
+-- Emitters article (site/build_rocco_emitters.shale) and the Roc on
 -- Shale pages (site/build_roc_on_shale.shale). Each asks for its quotes in a
 -- JSON file and reads the answers from another:
 --

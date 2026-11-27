@@ -33,7 +33,12 @@
 -- site/web/release-candidate-compiles/index.html, isn't what
 -- site/build_rc1_article.shale would write from its prose, the stats TSV,
 -- its reduced programs and the commits it quotes, which needs the
--- roc-screensaver checkout beside this one. It runs
+-- roc-screensaver checkout beside this one; and when the Rocco Emitters
+-- article, site/web/rocco-emitters/index.html, isn't what
+-- site/build_rocco_emitters.shale would write, or the safari-walk or
+-- rocco-engine code it quotes has moved since its lock,
+-- site/rocco_emitters.quotes, which needs the safari-walk checkout beside
+-- this one, with its rocco-engine submodule. It runs
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
 -- roc.lynrummy.com.
@@ -183,6 +188,9 @@ function all()
   local rc1 = run({"shale", "--root", ".", "site/build_rc1_article.shale", "check=1"}, {timeout_ms = 300000, tail = 10})
   print(trim(rc1.out))
   if rc1.code ~= 0 then push(failed, "the RC1 article") end
+  local rocco = run({"shale", "--root", ".", "site/build_rocco_emitters.shale", "check=1"}, {timeout_ms = 300000, tail = 10})
+  print(trim(rocco.out))
+  if rocco.code ~= 0 then push(failed, "the Rocco Emitters article") end
   local deploy = run({"shale", "--root", ".", "site/deploy_test.shale"}, {timeout_ms = 300000, tail = 40})
   print(trim(deploy.out))
   if deploy.code ~= 0 then push(failed, "the deploy's refusals") end

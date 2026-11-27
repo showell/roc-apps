@@ -9,6 +9,7 @@
 #   roc-on-shale                site/build_roc_on_shale.shale writes it
 #   security-idioms             site/build_security_idioms.shale writes it
 #   release-candidate-compiles  site/build_rc1_article.shale writes it
+#   rocco-emitters              site/build_rocco_emitters.shale writes it
 #   chess                       the chess toys' index, and the code page site/build_chess_code.shale writes
 shared
 notes
@@ -16,4 +17,5 @@ syntax-color
 roc-on-shale
 security-idioms
 release-candidate-compiles
+rocco-emitters
 chess
