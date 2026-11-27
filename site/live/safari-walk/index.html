@@ -152,14 +152,15 @@ var WALK_ROOST = (function () {
 })();
 // Where each chapter starts, in metres on the walk's line: a copy of
 // game/Chapters.roc's, by the same names, which scripts/build_web.shale
-// checks. The keys B, Z, K, D, A, R, O and P jump there (main.roc), and the chapter key
+// checks. The keys B, Z, K, D, W, A, R, O and P jump there (main.roc), and the chapter key
 // marks the last start the walk has passed.
-var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, dust_devil: 135, approach_tavern: 300, roost_doors: 380, order_drink: 569, prize_fight: 613, roost_sign: 150 };
+var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, dust_devil: 135, campfire: 240, approach_tavern: 300, roost_doors: 380, order_drink: 569, prize_fight: 613, roost_sign: 150 };
 var CHAPTERS = [
 	{ code: "KeyB", letter: "B", name: "Begin", at: CHAPTER_STARTS.begin },
 	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
 	{ code: "KeyK", letter: "K", name: "Kangaroo", at: CHAPTER_STARTS.kangaroo },
 	{ code: "KeyD", letter: "D", name: "Dust devil", at: CHAPTER_STARTS.dust_devil },
+	{ code: "KeyW", letter: "W", name: "Campfire", at: CHAPTER_STARTS.campfire },
 	{ code: "KeyA", letter: "A", name: "Approach tavern", at: WALK_ROOST.on ? CHAPTER_STARTS.approach_tavern : CHAPTER_STARTS.roost_sign },
 	{ code: "KeyR", letter: "R", name: "Roo's Roost", at: WALK_ROOST.on ? CHAPTER_STARTS.roost_doors : CHAPTER_STARTS.roost_sign },
 	{ code: "KeyO", letter: "O", name: "Order drink", at: WALK_ROOST.on ? CHAPTER_STARTS.order_drink : CHAPTER_STARTS.roost_sign },
@@ -363,7 +364,7 @@ var walkView = (function () {
 	window.addEventListener("walk:paused", function () { walk.paused = true; });
 	window.addEventListener("walk:walking", function () { walk.paused = false; walk.skipNext = true; });
 	// 5, 6 and 7 still jump as Z, K and R do.
-	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[5].at };
+	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[6].at };
 	CHAPTERS.forEach(function (chapter) { JUMPS[chapter.code] = chapter.at; });
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
@@ -385,6 +386,7 @@ var walkView = (function () {
 		if (walked > 15 && walked < 85) notes.push("the duck pond ahead on the right");
 		if (walked > 80 && walked < 125) notes.push("the kangaroo crossing ahead");
 		if (walked > 120 && walked < 220) notes.push("the dust devil's particles");
+		if (walked > 126 && walked < 298) notes.push("the robots' campfire on the left, its particles and its light");
 		if (walked > 150 && walked <= WALK_ROOST.road) notes.push("the tavern's neon sign ahead");
 		if (walked > 150 && walked < 210) notes.push("zebra 2 crossing ahead");
 		if (walked > 47 && walked < 202) notes.push("sky blend re-blending (sunset)");
