@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>What the toy taught us · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="roc-is-our-lingua-franca.html"><span class="number">3</span>Roc is our lingua franca</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">4</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">5</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">6</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">7</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">8</span>Nibble, the puzzle page</a></li>
+<li class="part">Part II: P, NP and Cook-Levin</li>
+<li class="category">The classes</li><li><a href="p-and-np.html"><span class="number">9</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">10</span>Nibble, sized</a></li>
+<li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
+<li class="part">Part III: Cook-Levin on the toy</li>
+<li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-steps-encodings.html"><span class="number">14</span>The step&#39;s encodings</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">15</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">16</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">17</span>Checking a claim</a></li>
+<li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">18</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">19</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">20</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">21</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">22</span>From equations to CNF</a></li>
+<li class="category">Naming: the tableau and SAT</li><li><a href="the-cook-levin-machine.html"><span class="number">23</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">24</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">25</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">26</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">27</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part IV: expanding, the polynomials</li><li><a href="the-program-left-unknown.html"><span class="number">28</span>The program left unknown</a></li>
+<li><a href="arithmetization.html"><span class="number">29</span>Arithmetization</a></li>
+<li><a href="six-steps-composed.html"><span class="number">30</span>Six steps composed</a></li>
+<li><a href="the-delightful-monstrosity.html"><span class="number">31</span>The delightful monstrosity</a></li>
+<li class="part">Part V: Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">32</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">33</span>Two theorems about Nibble++</a></li>
+<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">34</span>Shortest programs with mod2 and half</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">35</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">36</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">37</span>Guided search</a></li>
+<li class="part">Part VI: the cross-checks, and the history</li><li><a href="the-oracles.html"><span class="number">38</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">39</span>The Roc port</a></li>
+<li><a href="how-it-got-here.html"><span class="number">40</span>How it got here</a></li>
+<li class="category">Closing</li><li class="here"><a href="what-the-toy-taught-us.html"><span class="number">41</span>What the toy taught us</a></li>
+<li><a href="what-comes-next.html"><span class="number">42</span>What comes next</a></li>
+<li><a href="appendix-two-drat-proofs.html">Appendix: two DRAT proofs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 41</p>
+<h1 id="what-the-toy-taught-us">What the toy taught us</h1>
+<p><strong>Every frame. A review; it stands alone.</strong> Here is what Cook-Levin looks like from inside a machine with a two-bit register, in one page, each paragraph pointing back to the chapters it gathers.</p>
+<p><strong>A checker is a circuit unrolled in time.</strong> The toy&#39;s checker runs a program on four inputs and compares the verdicts with a problem. Wired as hardware it is 24 copies of one 59-gate stepper and four comparators (<a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a>); drawn as Cook&#39;s tableau it is seven rows by four cores (<a class="chapter-link" href="the-tableau-filled-in.html">“The tableau, filled in”</a>). The size of the grid is the running time times the width, which is why a fast checker gives a small formula.</p>
+<p><strong>Leave the certificate free and the checker becomes a question.</strong> Fix the problem, leave the program&#39;s twelve bits unknown, and require the output: the circuit now asks which programs fit (<a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>). As clauses that is 416 variables and 1,216 clauses a puzzle, and its satisfying assignments are exactly the programs that decide it, by propagation alone (Theorem 10). That is the theorem, at the size of a puzzle page.</p>
+<p><strong>Naming beats expanding.</strong> Tseitin&#39;s encoding gives each gate a variable and grows one stepper&#39;s clauses a step. Multiplying the same logic out grows by a factor a step: 3,869 clauses for the decider by distribution (<a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a>), 10,324 terms for <code>accepted</code> as a polynomial even with x² = x (<a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a>), and about 10^54 terms in the general ring, where x² stays x² (<a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>). Cook and Levin&#39;s formula stays polynomial because it names.</p>
+<p><strong>A yes is short; a refutation can be long.</strong> A yes comes with a certificate you check by running it: twelve bits for {0, 2, 3}, 56 bits for is_not_14 at 28 lines. A refutation takes 9,012 bytes to show that five lines are too few for {0, 2, 3}, and 17,192,870 bytes that 27 lines are too few for is_not_14 (<a class="chapter-link" href="is-not-14-needs-28-lines.html">“is_not_14 needs 28 lines”</a>). That asymmetry is the one NP is built on (<a class="chapter-link" href="p-and-np.html">“P and NP”</a>).</p>
+<p><strong>Brute force first, and it wins while everything fits in a list.</strong> Running all 4,096 programs settles the toy, and one search of 374,003 states settles all 65,536 problems of Nibble++ in 0.67 s, where rocsat took 17.0 s to refute one length of one of them (<a class="chapter-link" href="guided-search.html">“Guided search”</a>). SAT earns its keep when the states outgrow any list and the circuit stays small; a theorem, where one exists, beats both.</p>
+<p><strong>Complexity lives in growth.</strong> For a fixed machine every question is a table lookup. P and NP have something to say only once the register and the program are given sizes that grow (<a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a>), and that is where the open questions are (<a class="chapter-link" href="what-comes-next.html">“What comes next”</a>).</p>
+<p><strong>And every road agrees.</strong> The interpreter, the gates, the circuit, the clauses, the solver and the polynomials give the same answer at every point they share: the book&#39;s thesis, checked at all 16,384 points (<a class="chapter-link" href="the-oracles.html">“The oracles”</a>).</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="how-it-got-here.html"><small>Previous</small>How it got here</a>
+<a rel="next" href="what-comes-next.html"><small>Next</small>What comes next</a>
+</nav>
+</main>
+</body>
+</html>
