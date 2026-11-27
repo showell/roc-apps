@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The step&#39;s encodings · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li>
+<li class="category">The machine and its problems</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">3</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">5</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">6</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">7</span>Nibble, the puzzle page</a></li>
+<li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">8</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">9</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">10</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">11</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">12</span>Checking a claim</a></li>
+<li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">13</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">14</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">15</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">16</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">17</span>From equations to CNF</a></li>
+<li class="here"><a href="the-steps-encodings.html"><span class="number">18</span>The step&#39;s encodings</a><ol class="sections"><li><a href="the-steps-encodings.html#the-table">The table</a></li><li><a href="the-steps-encodings.html#one-numbering">One numbering</a></li><li><a href="the-steps-encodings.html#why-174-gates-become-146">Why 174 gates become 146</a></li><li><a href="the-steps-encodings.html#why-the-two-steppers-differ">Why the two steppers differ</a></li><li><a href="the-steps-encodings.html#why-the-whole-is-smaller-than-its-parts">Why the whole is smaller than its parts</a></li></ol></li>
+<li class="category">History</li><li><a href="some-history-of-the-approach.html"><span class="number">19</span>Some history of the approach</a></li>
+<li class="part">Part II: Cook-Levin</li>
+<li class="category">History and the classes</li><li><a href="how-it-got-here.html"><span class="number">20</span>How it got here</a></li>
+<li><a href="p-and-np.html"><span class="number">21</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">22</span>Nibble, sized</a></li>
+<li class="category">Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">23</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">24</span>Two theorems about Nibble++</a></li>
+<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">25</span>Shortest programs with mod2 and half</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">26</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">27</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">28</span>Guided search</a></li>
+<li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">29</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">30</span>Six expressions, composed</a></li>
+<li class="category">Expanding: the polynomials</li><li><a href="arithmetization.html"><span class="number">31</span>Arithmetization</a></li>
+<li><a href="why-composing-blew-up.html"><span class="number">32</span>Why composing blew up</a></li>
+<li><a href="six-steps-composed.html"><span class="number">33</span>Six steps composed</a></li>
+<li><a href="the-polynomials-in-full.html"><span class="number">34</span>The polynomials, in full</a></li>
+<li class="category">Naming: the tableau and SAT</li><li><a href="the-cook-levin-machine.html"><span class="number">35</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">36</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">37</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">38</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">39</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks</li><li><a href="the-oracles.html"><span class="number">40</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">41</span>The Roc port</a></li>
+<li><a href="what-is-shale.html"><span class="number">42</span>What is Shale?</a></li>
+<li><a href="the-vm-in-shale.html"><span class="number">43</span>The VM in Shale</a></li>
+<li><a href="what-comes-next.html"><span class="number">44</span>What comes next</a></li>
+<li><a href="appendix-two-drat-proofs.html">Appendix: two DRAT proofs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 18</p>
+<h1 id="the-steps-encodings">The step&#39;s encodings</h1>
+<p><strong>A reference table; read it whenever the counts blur.</strong> We put every version of the machine&#39;s step side by side, from Python to polynomials, with its gate count and its variables, so each 34 or 174 in this book has one home.</p>
+<p>The machine&#39;s step appears in this book in seven forms, each built for a different job, and each counts its parts its own way. This chapter is the one place they sit side by side. The chapters that introduce them point here.</p>
+<h2 id="the-table">The table <a class="section-link" href="#the-table" aria-label="Link to this section">§</a></h2>
+<table>
+<thead>
+<tr>
+<th>the step as</th>
+<th>where</th>
+<th>one step</th>
+<th>the whole question</th>
+<th>variables</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Python on bits</td>
+<td><code>python/steps.py</code>, <a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a></td>
+<td>complement, AND and OR on known bits</td>
+<td>a run of six steps</td>
+<td>named: <code>hb</code>, <code>lb</code>, <code>halted</code>, <code>accepted</code>, <code>op_hb</code>, <code>op_lb</code></td>
+</tr>
+<tr>
+<td>a fold on integers</td>
+<td><code>roc/Fourteen.roc</code>, <a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a></td>
+<td>a <code>match</code> on the opcode</td>
+<td>f of one 14-bit number</td>
+<td>the number is program · 4 + input</td>
+</tr>
+<tr>
+<td>a formula graph</td>
+<td><code>python/steps.py</code>&#39;s <code>F</code>, <a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a></td>
+<td>35 gates: 21 AND, 9 OR, 5 NOT</td>
+<td>f: 174 gates, 146 of them AND and OR</td>
+<td>v1 to v12 the program, v13 and v14 the input, gates from v15</td>
+</tr>
+<tr>
+<td>the mux circuit</td>
+<td><code>src/circuit.c</code>, <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a></td>
+<td>59 gates: 27 AND, 16 OR, 16 NOT</td>
+<td>the decider: 1,439 gates, 461 AND and OR once constants fold</td>
+<td>wires by name; as CNF, v1 to v12 the program, v13 to v16 the want bits, wires from v17</td>
+</tr>
+<tr>
+<td><code>sat_step</code></td>
+<td><code>src/sat.c</code>, <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a></td>
+<td>34 AND and OR gates</td>
+<td>a puzzle: 404 gates, 416 variables, 1,216 clauses</td>
+<td>v1 to v12 the program, gates from v13</td>
+</tr>
+<tr>
+<td>polynomials</td>
+<td><code>src/stepper.c</code>, <code>roc/Stepper.roc</code>, <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a></td>
+<td>786, 2,979, 25 and 33 terms; with x² = x, 7, 13, 17 and 33</td>
+<td>composed: 319, 2,185, 2,732 and 10,324 terms</td>
+<td>named: the six above; composed, <code>h0</code>, <code>l0</code>, <code>op1_hb</code> to <code>op6_lb</code></td>
+</tr>
+<tr>
+<td>Nibble++&#39;s step</td>
+<td><code>src/plus_sat.c</code>, <a class="chapter-link" href="nibble-meets-rocsat.html">“Nibble++ meets rocsat”</a></td>
+<td>a 4-bit <code>AX</code>, four muxes</td>
+<td>one run at 28 lines: 1,340 gates</td>
+<td>v1 to v56 the program, then the input&#39;s four bits</td>
+</tr>
+</tbody>
+</table>
+<p>The formula graph&#39;s counts by kind were made by <code>python/steps.py</code> while this chapter was written; every other number is held in the chapter the row names.</p>
+<h2 id="one-numbering">One numbering <a class="section-link" href="#one-numbering" aria-label="Link to this section">§</a></h2>
+<p>Wherever a form numbers its variables, v1 to v12 are the program&#39;s bits, line k&#39;s high bit v(2k − 1) and its low bit v(2k), so a model&#39;s first 12 values read as the program&#39;s number. What else is free comes next, the input or the want bits, and the gates after that. The polynomials name their variables instead of numbering them, since they are printed as text.</p>
+<h2 id="why-174-gates-become-146">Why 174 gates become 146 <a class="section-link" href="#why-174-gates-become-146" aria-label="Link to this section">§</a></h2>
+<p>The formula graph counts every node, and 28 of its 174 are complements. Tseitin&#39;s encoding gives a variable only to an AND or an OR and writes a complement as a literal&#39;s minus sign, so f&#39;s CNF has 146 gate variables, v15 to v160, three clauses each, and one clause more for f = 1: 439.</p>
+<h2 id="why-the-two-steppers-differ">Why the two steppers differ <a class="section-link" href="#why-the-two-steppers-differ" aria-label="Link to this section">§</a></h2>
+<p>The mux circuit is hardware: it keeps <code>AX</code> as two bits, chooses each output with a multiplexer, and feeds the flag multiplexers their constant 0s, since a chip has wires there. Its AND and OR gates alone number 43, and the two flag multiplexers spend 18 of them. <code>sat_step</code> is written for a formula: it decodes the line and <code>AX</code> into one-hot wires, gates each opcode&#39;s wires with an enable, folds away every constant and spends one AND on each flag, 34 in all.</p>
+<h2 id="why-the-whole-is-smaller-than-its-parts">Why the whole is smaller than its parts <a class="section-link" href="#why-the-whole-is-smaller-than-its-parts" aria-label="Link to this section">§</a></h2>
+<p>Twenty-four steppers of 34 gates would be 816. The top row&#39;s constants fold many away, since each core starts with <code>AX</code> known and both flags 0, and a gate built once from the same two inputs is reused across cores, so a puzzle&#39;s formula has 404. The decider&#39;s 1,439 gates shrink the same way under <code>roc/Cnf.roc</code>: 392 complements become signs, 8 copies become names, and 586 of the 1,047 AND and OR gates fold against a constant, leaving 461.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="from-equations-to-cnf.html"><small>Previous</small>From equations to CNF</a>
+<a rel="next" href="some-history-of-the-approach.html"><small>Next</small>Some history of the approach</a>
+</nav>
+</main>
+</body>
+</html>
