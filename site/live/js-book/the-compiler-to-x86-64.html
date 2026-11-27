@@ -150,15 +150,20 @@
 <p>Every executable carries the runtime, about 21 KB of machine code (<code>let x = 1;</code> compiles to 21,611 bytes, 2026-11-27): the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>. Here is the allocator, from <code>Heap.roc</code>:</p>
 <figure class="listing"><figcaption>x86/roc/Heap.roc, the function allocate_items</figcaption><pre><code class="language-roc"><span class="syn-comment">## The allocator: `rdi` rounded up to 8, the header that and the kind in</span>
 <span class="syn-comment">## `rax` make, and the class whose block holds them both (the highest bit</span>
-<span class="syn-comment">## of `rdi + 7`, at least 3). A class&#39;s next block is taken unless it lies</span>
-<span class="syn-comment">## at a page&#39;s start, which says its page is full or it has none: then a</span>
-<span class="syn-comment">## page is taken first. A block past the most a page of blocks holds takes</span>
-<span class="syn-comment">## pages of its own. It keeps every register but `rax` and `rdi`.</span>
+<span class="syn-comment">## of `rdi + 7`, at least 3). The block&#39;s bytes are counted as taken, and</span>
+<span class="syn-comment">## past the threshold the heap is collected first. The class&#39;s free list&#39;s</span>
+<span class="syn-comment">## first block is taken, else its next block, unless that lies at a page&#39;s</span>
+<span class="syn-comment">## start, which says its page is full or it has none: then a page is taken</span>
+<span class="syn-comment">## first. A block past the most a page of blocks holds takes pages of its</span>
+<span class="syn-comment">## own. It keeps every register but `rax` and `rdi`.</span>
 <span class="syn-name">allocate_items</span> : <span class="syn-type">List</span>(<span class="syn-type">Assembly.Statement</span>)
 <span class="syn-name">allocate_items</span> = [
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_kind&quot;</span>),
 	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, <span class="syn-type">Heap</span>.allocations_place),
+	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rdx</span>, <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.store(<span class="syn-type">Heap</span>.allocations_place, <span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rdi</span>, <span class="syn-number">7</span>),
 	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rdi</span>, <span class="syn-number">-8</span>),
 	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rcx</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rdi</span>, <span class="syn-number">7</span>)),
@@ -170,16 +175,27 @@
 		}),
 	),
 	<span class="syn-type">Instruction</span>(<span class="syn-type">Bsr</span>({ to: <span class="syn-type">Rcx</span>, from: <span class="syn-type">Rcx</span> })),
-	<span class="syn-type">Instruction</span>(
-		<span class="syn-type">Alu</span>({
-			operation: <span class="syn-type">Or</span>,
-			to: <span class="syn-type">Rdi</span>,
-			from: <span class="syn-type">Rax</span>,
-		}),
-	),
+	or_item(<span class="syn-type">Rdi</span>, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.cmp_imm(<span class="syn-type">Rcx</span>, most_class),
 	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-string">&quot;runtime_allocate_large&quot;</span>),
-	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rcx</span>, <span class="syn-number">4</span>),
+	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rcx</span>, class_shift),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, in_use_place),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">8</span> })),
+	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.store(in_use_place, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, threshold_place),
+	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-string">&quot;runtime_allocate_collect&quot;</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_small&quot;</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">16</span> })),
+	<span class="syn-type">Emit</span>.test(<span class="syn-type">Rax</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_bump&quot;</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>)),
+	<span class="syn-type">Emit</span>.store(class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">16</span> }), <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.zero(<span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>), <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_header&quot;</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_bump&quot;</span>),
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">0</span> })),
 	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rdx</span>, page_size - <span class="syn-number">1</span>),
@@ -188,49 +204,55 @@
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">8</span> })),
 	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rdx</span>, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.store(class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">0</span> }), <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_header&quot;</span>),
 	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
 	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.ret,
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_collect&quot;</span>),
+	<span class="syn-type">Emit</span>.call(<span class="syn-type">Heap</span>.collect),
+	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_small&quot;</span>),
 	<span class="syn-comment"># A page for the class whose offset is in `rcx`, marked in the table</span>
 	<span class="syn-comment"># with the class&#39;s bit.</span>
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_page&quot;</span>),
-	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, next_page_place),
-	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rdx</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, page_size)),
-	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rdx</span>, <span class="syn-type">R14</span>),
-	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-type">Heap</span>.out_of_memory),
-	<span class="syn-type">Emit</span>.store(next_page_place, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.imm(<span class="syn-type">Rax</span>, <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.call(<span class="syn-string">&quot;runtime_take_pages&quot;</span>),
 	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rsi</span>),
 	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rsi</span>, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, first_page_place),
 	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rsi</span>, <span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rsi</span>, page_bits),
 	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rcx</span>),
-	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rdx</span>, <span class="syn-number">4</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rdx</span>, class_shift),
 	<span class="syn-type">Emit</span>.byte_store(table_entry(<span class="syn-type">Rsi</span>), <span class="syn-type">Dl</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rsi</span>),
 	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_block&quot;</span>),
-	<span class="syn-comment"># A large block: the pages its header and its bytes fill, the first</span>
-	<span class="syn-comment"># marked `large_first` and the rest `large_rest`.</span>
+	<span class="syn-comment"># A large block: the pages its header and its bytes fill, counted as</span>
+	<span class="syn-comment"># taken, the first marked `large_first` and the rest `large_rest`; `rsi`</span>
+	<span class="syn-comment"># holds their bytes, then the block.</span>
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large&quot;</span>),
-	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rax</span>, <span class="syn-type">Rdi</span>),
-	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rax</span>, <span class="syn-number">16</span>),
-	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rax</span>, <span class="syn-number">16</span>),
-	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">8</span> + page_size - <span class="syn-number">1</span>),
-	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rax</span>, <span class="syn-number">0</span> - page_size),
-	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, next_page_place),
-	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
-	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rax</span>, <span class="syn-type">R14</span>),
-	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-type">Heap</span>.out_of_memory),
-	<span class="syn-type">Emit</span>.store(next_page_place, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rsi</span>),
-	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rsi</span>, <span class="syn-type">Rdx</span>),
-	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rsi</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
-	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rcx</span>, <span class="syn-type">Rax</span>),
-	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rcx</span>, <span class="syn-type">Rsi</span>),
-	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rcx</span>, page_bits),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rsi</span>, <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rsi</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rsi</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rsi</span>, <span class="syn-number">8</span> + page_size - <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rsi</span>, <span class="syn-number">0</span> - page_size),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, in_use_place),
+	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rax</span>, <span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.store(in_use_place, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, threshold_place),
+	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">Be</span>, <span class="syn-string">&quot;runtime_allocate_large_go&quot;</span>),
+	<span class="syn-type">Emit</span>.call(<span class="syn-type">Heap</span>.collect),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large_go&quot;</span>),
 	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rax</span>, <span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rax</span>, page_bits),
+	<span class="syn-type">Emit</span>.call(<span class="syn-string">&quot;runtime_take_pages&quot;</span>),
+	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rcx</span>, <span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rcx</span>, page_bits),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rsi</span>, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, first_page_place),
 	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rax</span>, page_bits),
@@ -250,7 +272,7 @@
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.ret,
 ]
-</code></pre></figure><p>Four registers belong to the runtime for the whole run: <code>r12</code> the stack&#39;s limit, <code>r13</code> the runtime&#39;s state, <code>r14</code> the heap&#39;s end and <code>r15</code> the heap&#39;s state, in a heap of 2 GiB. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>), and the allocator only bumps through them, so every allocation lasts until the program exits, and a program that fills the heap stops with a message saying the collector is still to come (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a> says what is being built).</p>
+</code></pre></figure><p>Four registers belong to the runtime for the whole run: <code>r12</code> the stack&#39;s limit, <code>r13</code> the runtime&#39;s state, <code>r14</code> the heap&#39;s end and <code>r15</code> the heap&#39;s state, in a mapping of 3 GiB: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>). The allocator pops its size&#39;s free list or bumps through a page, and past a threshold it collects first (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>).</p>
 <p><code>x86/fib.js</code>&#39;s executable is 22,041 bytes (<code>x86/fib.shale</code>, 2026-11-27); milestone 2&#39;s fib(22), before the runtime, was 1,010 bytes (<code>0c5ea7e</code>).</p>
 <h2 id="what-it-compiles">What it compiles <a class="section-link" href="#what-it-compiles" aria-label="Link to this section">§</a></h2>
 <p><code>x86/programs.shale</code> compiles each of the 63 corpus programs in <code>js/tests/</code> and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 51 of 63 (<code>x86/README.md</code>, &quot;The corpus&quot;). It also holds the 67 programs of <code>x86/tests/</code> to node and the 48 of <code>x86/tests/refused/</code> to their refusals (2026-11-27). The 12 left stop at these, by the first reason each meets:</p>
