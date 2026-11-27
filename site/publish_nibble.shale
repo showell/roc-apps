@@ -18,9 +18,10 @@
 --
 -- The built folder is copied over site/live/nibble/ whole, with a
 -- PROVENANCE: the cook-levin-riff commit and a hash of each wasm. Then it
--- checks what it copied: exactly the four pages, index.html (the puzzles),
--- sandbox.html, plus.html (the Nibble++ sandbox) and cube.html (the cube toy's
--- playground), and the files web/build.shale names by their bytes, and no
+-- checks what it copied: exactly the five pages, index.html (the puzzles),
+-- sandbox.html, plus.html (the Nibble++ sandbox), cube.html (the cube toy's
+-- playground) and cube_help.html, and the files web/build.shale names by
+-- their bytes, and no
 -- `src`, `href`, `fetch` or
 -- `url()` URL starting with `/` or naming a network scheme. A failed check
 -- stops before git, leaving site/live/ changed and uncommitted. The folder is
@@ -43,7 +44,7 @@ const BUILT = CL .. "/out/web/site"
 const STAGING = "http://localhost:9200/"
 -- The three pages, named as they are, and the files web/build.shale names by
 -- their bytes, `<name>.<16 hex digits>.<ext>`.
-const PAGES = {"index.html", "sandbox.html", "plus.html", "cube.html"}
+const PAGES = {"index.html", "sandbox.html", "plus.html", "cube.html", "cube_help.html"}
 const PAGE_HASHED = {"nibble.js", "sandbox.js", "plus.js", "machine.js", "nibble.css", "nibble.wasm", "plus.wasm", "plus_names.bin", "puzzles.json", "cube.js", "cube.wasm", "cube_pars.bin"}
 
 -- Stops the publish when cook-levin-riff has a change of any kind.
