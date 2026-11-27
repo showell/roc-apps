@@ -193,6 +193,17 @@ function check_book_files(book)
   return nil
 end
 
+-- The essay surface adds its book review widget to a staged book's pages as
+-- it sends them (essay-surface's books.go), each part marked with
+-- REVIEW_MARK. No published file may hold the mark.
+const REVIEW_MARK = "data-essay-book-review"
+function check_no_review_widget(dir)
+  local hits = grep_tree(dir, REVIEW_MARK, {}).hits
+  for h in hits do print("  " .. h.path .. ":" .. h.line) end
+  check_line("no review widget", #hits == 0, dir .. ": " .. #hits .. " lines hold " .. REVIEW_MARK)
+  return nil
+end
+
 -- No resource of the text files below `dir` is rooted at `/`, and none but
 -- an `<a>`'s href names a network scheme (`<scheme>://`).
 function check_relative(dir)
@@ -282,6 +293,7 @@ function main()
   check_book_files(book)
   check_relative(page)
   check_relative(book)
+  check_no_review_widget(book)
 
   if DRY then
     compare("js", page, LIVE .. "/js")
