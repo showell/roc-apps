@@ -76,8 +76,8 @@ that describes a source as it is <em>now</em>: where it is, how many particles a
 how they grow, change colour, drift and spin. Rocco's host simulates every particle from that description.</p>
 <p>Two consequences shape everything below. When a source's settings change from one frame to the next, the
 particles already in the air follow the new settings. When a source leaves the list, it stops emitting, and its
-particles drain away with their last settings. So a whole dust devil can be a pure function from "where are we on the
-walk" to a short list of records. The record's doc comment is the engine's whole contract for it:</p>
+particles drain away with their last settings. So a whole dust devil can be a pure function from how far the walk has
+come to a short list of records. The record's doc comment is the engine's whole contract for it:</p>
 <!-- snippet emitter-type -->
 <p>Rocco also gives <code>Emitter.default</code>, a stationary, soft, round source whose doc says to set an
 <code>id</code> and a <code>rate</code> before use. Every builder below starts from it.</p>
