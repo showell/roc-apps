@@ -21,11 +21,11 @@
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
 <li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
-<li class="here"><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li><li><a href="the-garbage-collector.html#garbage-you-can-watch">Garbage you can watch</a></li><li><a href="the-garbage-collector.html#two-collectors-two-worlds">Two collectors, two worlds</a></li></ol></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
+<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
+<li class="here"><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li><li><a href="the-garbage-collector.html#garbage-you-can-watch">Garbage you can watch</a></li><li><a href="the-garbage-collector.html#two-collectors-two-worlds">Two collectors, two worlds</a></li></ol></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a></li>
 <li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
 <li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
@@ -39,7 +39,7 @@
 <main>
 <p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 12</p>
+<p class="chapter-number">Chapter 13</p>
 <h1 id="the-garbage-collector">The garbage collector</h1>
 <h2 id="what-it-does">What it does <a class="section-link" href="#what-it-does" aria-label="Link to this section">§</a></h2>
 <p><code>Collector.roc</code> is the VM&#39;s garbage collector, a precise mark and sweep. The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell on the free list. A live cell keeps its index, so every reference stays valid across a collection.</p>

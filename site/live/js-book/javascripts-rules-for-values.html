@@ -21,11 +21,11 @@
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
 <li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
-<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
-<li class="here"><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a><ol class="sections"><li><a href="javascripts-rules-for-values.html#the-common-cases-and-the-rest">The common cases, and the rest</a></li><li><a href="javascripts-rules-for-values.html#a-1">&quot;a&quot; + 1</a></li><li><a href="javascripts-rules-for-values.html#a-missing-property">A missing property</a></li><li><a href="javascripts-rules-for-values.html#the-cells-are-lent">The cells are lent</a></li><li><a href="javascripts-rules-for-values.html#the-four-modules-on-it">The four modules on it</a></li></ol></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
+<li><a href="memory-strategy.html"><span class="number">12</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">13</span>The garbage collector</a></li>
+<li class="here"><a href="javascripts-rules-for-values.html"><span class="number">14</span>JavaScript&#39;s rules for values</a><ol class="sections"><li><a href="javascripts-rules-for-values.html#the-common-cases-and-the-rest">The common cases, and the rest</a></li><li><a href="javascripts-rules-for-values.html#a-1">&quot;a&quot; + 1</a></li><li><a href="javascripts-rules-for-values.html#a-missing-property">A missing property</a></li><li><a href="javascripts-rules-for-values.html#the-cells-are-lent">The cells are lent</a></li><li><a href="javascripts-rules-for-values.html#the-four-modules-on-it">The four modules on it</a></li></ol></li>
 <li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
 <li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
@@ -39,7 +39,7 @@
 <main>
 <p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 13</p>
+<p class="chapter-number">Chapter 14</p>
 <h1 id="javascripts-rules-for-values">JavaScript&#39;s rules for values</h1>
 <p>The compiler&#39;s runtime gives values their JavaScript meanings in machine code (<code>runtime_add</code> and its kin, <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>). This chapter is about the interpreter, which gives them the same meanings in Roc.</p>
 <p>In JavaScript, one operator means different things for different values. <code>1 + 2</code> adds, and gives <code>3</code>. <code>&quot;a&quot; + 1</code> turns the number into text, and gives <code>&quot;a1&quot;</code>. <code>&quot;5&quot; * 2</code> asks for a string to become a number. A property read varies too: with <code>o</code> holding <code>{ x: 1 }</code>, <code>o.x</code> gives <code>1</code>, <code>o.y</code> gives <code>undefined</code>, and <code>[1, 2].length</code> reads a property every array has.</p>
@@ -156,7 +156,7 @@
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="the-garbage-collector.html"><small>Previous</small>The garbage collector</a>
-<a rel="next" href="a-canvas-in-the-browser.html"><small>Next</small>A canvas in the browser</a>
+<a rel="next" href="handing-the-machine-on.html"><small>Next</small>Handing the machine on</a>
 </nav>
 </main>
 </body>
