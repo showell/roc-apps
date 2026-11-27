@@ -16,7 +16,7 @@
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
 <li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
-<li class="here"><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a><ol class="sections"><li><a href="rocs-copy-rule.html#when-a-write-copies">When a write copies</a></li></ol></li>
+<li class="here"><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a><ol class="sections"><li><a href="rocs-copy-rule.html#when-a-write-copies">When a write copies</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-every-build">Shapes that copy in every build</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only</a></li><li><a href="rocs-copy-rule.html#records-and-boxes">Records and boxes</a></li></ol></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
 <li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
@@ -43,22 +43,53 @@
 <h1 id="rocs-copy-rule">Roc&#39;s copy rule</h1>
 <p>Both programs lean on one rule of Roc&#39;s. The interpreter keeps a JavaScript program&#39;s heap in one Roc list, which many of its instructions write; the compiler builds an executable&#39;s bytes by appending to one list. Each is fast only while Roc writes its list in place, and this chapter states when Roc does. <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> gives the three habits the interpreter took from it.</p>
 <h2 id="when-a-write-copies">When a write copies <a class="section-link" href="#when-a-write-copies" aria-label="Link to this section">§</a></h2>
-<p>Roc writes a list in place only while the list has a single owner, and a copy is silent. On RC1 every copy is a use after a consume: a write (<code>List.set</code>, <code>append</code>, <code>Dict.insert</code>) takes the value, and something still reads the old one after it. The copy allocates the whole list again on every such write, so its cost grows with the list. roc-apps holds each shape below as a loop in its <code>tools/copy_shapes/</code>, checked in the release and dev builds.</p>
-<p>Shapes that copy in every build:</p>
-<ol>
-<li>The old list read after its write: <code>ys = xs.set(j, v) ?? xs</code>, then <code>xs.get(j)</code>. Reading first is free.</li>
-<li>A closure over the list called after the write.</li>
-<li>An inner list got, written and set back while the outer list still holds it. <code>List.update</code> hands the element over unshared and is free.</li>
-<li>The old dict read after an insert, even its length.</li>
-<li>A value got from a dict, written and inserted back while the dict still holds it.</li>
-</ol>
-<p>Shapes that copy in the dev build only, where a helper stays a call that owns its arguments and the release build specializes it first:</p>
-<ol start="6">
-<li>A helper that reads its list after writing it.</li>
-<li>A helper that reads the whole record inside the write of one of its fields.</li>
-<li><code>?? xs</code> on a list whose entries hold a reference count, such as a list of strings. <code>?? crash</code> is free.</li>
-</ol>
-<p>A record update copies the record around the field it writes, inline sub-records included. A <code>Box</code> carried untouched is free, but every write re-boxes it, one allocation a write.</p>
+<p>Roc writes a list in place only while the list has a single owner, and a copy is silent. On RC1 every copy is a use after a consume: a write (<code>List.set</code>, <code>append</code>, <code>Dict.insert</code>) takes the value, and something still reads the old one after it. The copy allocates the whole list again on every such write, so its cost grows with the list.</p>
+<p>Each shape below is a loop in roc-apps&#39; <code>tools/copy_shapes/CopyShapes.roc</code>, held to its count of allocations a write in the release and dev builds (<code>expected.txt</code> and <code>expected-dev.txt</code> beside it, measured on RC1). The listings are lines of those loops, each loop&#39;s call of itself written on one line; each copying shape sits beside its twin that writes in place.</p>
+<h2 id="shapes-that-copy-in-every-build">Shapes that copy in every build <a class="section-link" href="#shapes-that-copy-in-every-build" aria-label="Link to this section">§</a></h2>
+<p><strong>The old list read after its write.</strong> The write takes the list only while it is the list&#39;s one reader:</p>
+<figure class="listing"><figcaption>get-after-set: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">ys</span> = xs.set(j, i) ?? xs
+<span class="syn-name">v</span> = xs.get(j) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;get_after_set: in range&quot;</span>
+</code></pre></figure><p>Reading first is free:</p>
+<figure class="listing"><figcaption>set-restored: in place</figcaption><pre><code class="language-roc"><span class="syn-name">v</span> = xs.get(j) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;set_restored: in range&quot;</span>
+<span class="syn-name">ys</span> = xs.set(j, v + <span class="syn-number">1</span>) ?? xs
+</code></pre></figure><p><strong>A closure over the list, called after the write.</strong> The closure holds the old list:</p>
+<figure class="listing"><figcaption>closure-called-after: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">at</span> = |k| xs.get(k) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;closure_called_after: in range&quot;</span>
+<span class="syn-name">ys</span> = xs.set(j, i) ?? xs
+closure_called_after(i + <span class="syn-number">1</span>, steps, size, ys, sum + at(j))
+</code></pre></figure><p>Called inside the write&#39;s own arguments, the same closure is free (<code>closure-called-before</code>): <code>ys = xs.set(j, at(j) + 1) ?? xs</code>.</p>
+<p><strong>An inner list got, written and set back while the outer list still holds it:</strong></p>
+<figure class="listing"><figcaption>nested-get-then-set: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">inner</span> = rows.get(<span class="syn-number">0</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_get_then_set: outer in range&quot;</span>
+<span class="syn-name">written</span> = rows.set(<span class="syn-number">0</span>, inner.set(j, i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_get_then_set: inner in range&quot;</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_get_then_set: outer in range&quot;</span>
+</code></pre></figure><p><code>List.update</code> hands the element over unshared, and is free:</p>
+<figure class="listing"><figcaption>nested-update: in place</figcaption><pre><code class="language-roc"><span class="syn-name">written</span> = rows.update(<span class="syn-number">0</span>, |inner| inner.set(j, i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_update: inner in range&quot;</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;nested_update: outer in range&quot;</span>
+</code></pre></figure><p><strong>The old dict read after an insert, even its length:</strong></p>
+<figure class="listing"><figcaption>dict-length-after-insert: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">d2</span> = d.insert(j, i)
+dict_length_after_insert(i + <span class="syn-number">1</span>, steps, size, d2, sum + d.len())
+</code></pre></figure><p><strong>A value got from a dict, written and inserted back while the dict still holds it:</strong></p>
+<figure class="listing"><figcaption>dict-get-then-insert: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">l</span> = d.get(<span class="syn-number">0</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;dict_get_then_insert: key 0 is there&quot;</span>
+dict_get_then_insert(i + <span class="syn-number">1</span>, steps, size, d.insert(<span class="syn-number">0</span>, l.set(j, i) ?? l), sum + j)
+</code></pre></figure><p>Taking the value out of the dict first is free:</p>
+<figure class="listing"><figcaption>dict-take-then-insert: in place</figcaption><pre><code class="language-roc"><span class="syn-name">l</span> = d.get(<span class="syn-number">0</span>) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;dict_take_then_insert: key 0 is there&quot;</span>
+<span class="syn-name">d0</span> = d.remove(<span class="syn-number">0</span>)
+dict_take_then_insert(i + <span class="syn-number">1</span>, steps, size, d0.insert(<span class="syn-number">0</span>, l.set(j, i) ?? l), sum + j)
+</code></pre></figure><h2 id="shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only <a class="section-link" href="#shapes-that-copy-in-the-dev-build-only" aria-label="Link to this section">§</a></h2>
+<p>In the dev build a helper stays a call that owns its arguments; the release build specializes it first, and writes in place.</p>
+<p><strong>A helper that reads its list after writing it:</strong></p>
+<figure class="listing"><figcaption>helper-length-after-set: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">bump_length_after</span> = |xs, j, v| (xs.set(j, v) ?? xs, xs.len())
+</code></pre></figure><p>Reading the length first is free in both builds (<code>helper-length-before-set</code>):</p>
+<figure class="listing"><figcaption>helper-length-before-set: in place</figcaption><pre><code class="language-roc"><span class="syn-name">bump_length_first</span> = |xs, j, v| {
+	length = xs.len()
+	(xs.set(j, v) ?? xs, length)
+}
+</code></pre></figure><p><strong>A helper that reads the whole record inside the write of one of its fields:</strong></p>
+<figure class="listing"><figcaption>helper-reads-record: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">kept</span> = |d, a| (a + d.base) % d.cells.len()
+helper_reads_record(i + <span class="syn-number">1</span>, steps, size, { ..d, cells: d.cells.set(kept(d, j), i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;helper_reads_record: in range&quot;</span> })
+</code></pre></figure><p>Bound on the line before, the same index is free (<code>index-bound-before</code>): <code>k = kept(d, j)</code>, then <code>d.cells.set(k, i)</code>.</p>
+<p><strong><code>?? xs</code> on a list whose entries hold a reference count,</strong> such as a list of strings:</p>
+<figure class="listing"><figcaption>str-list-restored: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">ys</span> = xs.set(j, <span class="syn-string">&quot;x&quot;</span>) ?? xs
+</code></pre></figure><p><code>?? crash &quot;...&quot;</code> in its place is free in every build (<code>str-list-or-crash</code>).</p>
+<h2 id="records-and-boxes">Records and boxes <a class="section-link" href="#records-and-boxes" aria-label="Link to this section">§</a></h2>
+<p>A record update copies the record around the field it writes, inline sub-records included. A <code>Box</code> carried untouched is free, but every write re-boxes it, one allocation a write. <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> shows both at work on the interpreter&#39;s machine record.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

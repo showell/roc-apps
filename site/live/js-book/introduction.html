@@ -47,7 +47,110 @@
 <p>The subset is real JavaScript: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps and Sets, and the timers. Classes run too, as syntax sugar the parser writes as plain functions (<code>0b6d8deb</code>). <code>this</code> outside a class&#39;s code, <code>new</code> on a program&#39;s own function and prototypes stay outside it, and <code>js/README.md</code> says why: each would make every call carry a receiver or every property read walk a prototype chain.</p>
 <p>The interpreter runs all 63 programs of the corpus in <code>js/tests/</code>, and the compiler 51 of them (<code>x86/README.md</code>, &quot;The corpus&quot;, 2026-11-27).</p>
 <h2 id="who-judges-it">Who judges it <a class="section-link" href="#who-judges-it" aria-label="Link to this section">§</a></h2>
-<p>Every program in the subset is real JavaScript, so node is a free oracle, and it judges both programs. <code>js/oracle.shale</code> runs each program in <code>js/tests/</code> through node 22 and through <code>js-vm</code>, and the two transcripts, exit codes included, must match byte for byte; <code>x86/programs.shale</code> holds each executable&#39;s output and exit code to node&#39;s the same way. A program outside the subset gets an error that names what it used: each program in <code>js/tests/refused/</code> names, on its first line, the message <code>js-vm</code> must end with. The corpus grew from 32 programs and 25 refusals on the first day (<code>278631d8</code>) to 61 and 76 (<code>js/README.md</code>, its status of 2026-11-24). Program 54, <code>54-big-daddy.js</code>, is a day in a small city that uses every feature of the subset, and it is also the playground&#39;s &quot;all features&quot; sample (<code>7d6a472f</code>, <code>cc904c2a</code>).</p>
+<p>Every program in the subset is real JavaScript, so node is a free oracle, and it judges both programs.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="Node judges both programs" width="406pt" height="152pt"
+ viewBox="0.00 0.00 406.00 152.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 148)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-148 402,-148 402,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M116,-90C116,-90 12,-90 12,-90 6,-90 0,-84 0,-78 0,-78 0,-66 0,-66 0,-60 6,-54 12,-54 12,-54 116,-54 116,-54 122,-54 128,-60 128,-66 128,-66 128,-78 128,-78 128,-84 122,-90 116,-90"/>
+<text text-anchor="middle" x="64" y="-68.9" font-family="Times,serif" font-size="12.00">a corpus program</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M227,-144C227,-144 184,-144 184,-144 178,-144 172,-138 172,-132 172,-132 172,-120 172,-120 172,-114 178,-108 184,-108 184,-108 227,-108 227,-108 233,-108 239,-114 239,-120 239,-120 239,-132 239,-132 239,-138 233,-144 227,-144"/>
+<text text-anchor="middle" x="205.5" y="-122.9" font-family="Times,serif" font-size="12.00">node 22</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M111.84,-90.13C128.1,-96.42 146.22,-103.44 162.1,-109.59"/>
+<polygon fill="black" stroke="black" points="161.07,-112.94 171.66,-113.29 163.59,-106.41 161.07,-112.94"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M220.5,-90C220.5,-90 190.5,-90 190.5,-90 184.5,-90 178.5,-84 178.5,-78 178.5,-78 178.5,-66 178.5,-66 178.5,-60 184.5,-54 190.5,-54 190.5,-54 220.5,-54 220.5,-54 226.5,-54 232.5,-60 232.5,-66 232.5,-66 232.5,-78 232.5,-78 232.5,-84 226.5,-90 220.5,-90"/>
+<text text-anchor="middle" x="205.5" y="-68.9" font-family="Times,serif" font-size="12.00">js&#45;vm</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M128.22,-72C141.94,-72 155.99,-72 168.24,-72"/>
+<polygon fill="black" stroke="black" points="168.49,-75.5 178.49,-72 168.49,-68.5 168.49,-75.5"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M235,-36C235,-36 176,-36 176,-36 170,-36 164,-30 164,-24 164,-24 164,-12 164,-12 164,-6 170,0 176,0 176,0 235,0 235,0 241,0 247,-6 247,-12 247,-12 247,-24 247,-24 247,-30 241,-36 235,-36"/>
+<text text-anchor="middle" x="205.5" y="-21.4" font-family="Times,serif" font-size="12.00">js&#45;x86&#39;s</text>
+<text text-anchor="middle" x="205.5" y="-8.4" font-family="Times,serif" font-size="12.00">executable</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M111.84,-53.87C125.47,-48.59 140.42,-42.8 154.26,-37.45"/>
+<polygon fill="black" stroke="black" points="155.56,-40.7 163.63,-33.82 153.04,-34.17 155.56,-40.7"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M386,-90C386,-90 295,-90 295,-90 289,-90 283,-84 283,-78 283,-78 283,-66 283,-66 283,-60 289,-54 295,-54 295,-54 386,-54 386,-54 392,-54 398,-60 398,-66 398,-66 398,-78 398,-78 398,-84 392,-90 386,-90"/>
+<text text-anchor="middle" x="340.5" y="-75.4" font-family="Times,serif" font-size="12.00">the same output</text>
+<text text-anchor="middle" x="340.5" y="-62.4" font-family="Times,serif" font-size="12.00">and exit code?</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M239.04,-112.79C252.98,-107.13 269.65,-100.36 285.37,-93.98"/>
+<polygon fill="black" stroke="black" points="287.05,-97.07 295,-90.07 284.42,-90.59 287.05,-97.07"/>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M232.78,-72C244.29,-72 258.38,-72 272.5,-72"/>
+<polygon fill="black" stroke="black" points="272.75,-75.5 282.75,-72 272.75,-68.5 272.75,-75.5"/>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M247.13,-34.5C259.18,-39.39 272.58,-44.83 285.34,-50.01"/>
+<polygon fill="black" stroke="black" points="284.37,-53.39 294.95,-53.91 287,-46.91 284.37,-53.39"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="Node judges both programs" width="211pt" height="160pt"
+ viewBox="0.00 0.00 211.00 160.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 156)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-156 207,-156 207,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M140.5,-152C140.5,-152 46.5,-152 46.5,-152 40.5,-152 34.5,-146 34.5,-140 34.5,-140 34.5,-128 34.5,-128 34.5,-122 40.5,-116 46.5,-116 46.5,-116 140.5,-116 140.5,-116 146.5,-116 152.5,-122 152.5,-128 152.5,-128 152.5,-140 152.5,-140 152.5,-146 146.5,-152 140.5,-152"/>
+<text text-anchor="middle" x="93.5" y="-130.9" font-family="Times,serif" font-size="12.00">a corpus program</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M45,-94C45,-94 12,-94 12,-94 6,-94 0,-88 0,-82 0,-82 0,-70 0,-70 0,-64 6,-58 12,-58 12,-58 45,-58 45,-58 51,-58 57,-64 57,-70 57,-70 57,-82 57,-82 57,-88 51,-94 45,-94"/>
+<text text-anchor="middle" x="28.5" y="-72.9" font-family="Times,serif" font-size="12.00">node 22</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M73.64,-115.89C68.1,-111.12 61.97,-105.84 56.07,-100.75"/>
+<polygon fill="black" stroke="black" points="58.09,-97.88 48.23,-94 53.53,-103.18 58.09,-97.88"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M108.5,-94C108.5,-94 78.5,-94 78.5,-94 72.5,-94 66.5,-88 66.5,-82 66.5,-82 66.5,-70 66.5,-70 66.5,-64 72.5,-58 78.5,-58 78.5,-58 108.5,-58 108.5,-58 114.5,-58 120.5,-64 120.5,-70 120.5,-70 120.5,-82 120.5,-82 120.5,-88 114.5,-94 108.5,-94"/>
+<text text-anchor="middle" x="93.5" y="-72.9" font-family="Times,serif" font-size="12.00">js&#45;vm</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M93.5,-115.89C93.5,-112.2 93.5,-108.21 93.5,-104.24"/>
+<polygon fill="black" stroke="black" points="97,-104 93.5,-94 90,-104 97,-104"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M191,-94C191,-94 142,-94 142,-94 136,-94 130,-88 130,-82 130,-82 130,-70 130,-70 130,-64 136,-58 142,-58 142,-58 191,-58 191,-58 197,-58 203,-64 203,-70 203,-70 203,-82 203,-82 203,-88 197,-94 191,-94"/>
+<text text-anchor="middle" x="166.5" y="-79.4" font-family="Times,serif" font-size="12.00">js&#45;x86&#39;s</text>
+<text text-anchor="middle" x="166.5" y="-66.4" font-family="Times,serif" font-size="12.00">executable</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M115.8,-115.89C122.17,-111.01 129.22,-105.6 135.99,-100.41"/>
+<polygon fill="black" stroke="black" points="138.53,-102.87 144.34,-94 134.27,-97.31 138.53,-102.87"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M134,-36C134,-36 53,-36 53,-36 47,-36 41,-30 41,-24 41,-24 41,-12 41,-12 41,-6 47,0 53,0 53,0 134,0 134,0 140,0 146,-6 146,-12 146,-12 146,-24 146,-24 146,-30 140,-36 134,-36"/>
+<text text-anchor="middle" x="93.5" y="-21.4" font-family="Times,serif" font-size="12.00">the same output</text>
+<text text-anchor="middle" x="93.5" y="-8.4" font-family="Times,serif" font-size="12.00">and exit code?</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M48.36,-57.89C53.9,-53.12 60.03,-47.84 65.93,-42.75"/>
+<polygon fill="black" stroke="black" points="68.47,-45.18 73.77,-36 63.91,-39.88 68.47,-45.18"/>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M93.5,-57.89C93.5,-54.2 93.5,-50.21 93.5,-46.24"/>
+<polygon fill="black" stroke="black" points="97,-46 93.5,-36 90,-46 97,-46"/>
+</g>
+<g id="edge6" class="edge">
+<path fill="none" stroke="black" d="M144.2,-57.89C137.83,-53.01 130.78,-47.6 124.01,-42.41"/>
+<polygon fill="black" stroke="black" points="125.73,-39.31 115.66,-36 121.47,-44.87 125.73,-39.31"/>
+</g>
+</g>
+</svg><figcaption>Node judges both programs</figcaption></figure><p><code>js/oracle.shale</code> runs each program in <code>js/tests/</code> through node 22 and through <code>js-vm</code>, and the two transcripts, exit codes included, must match byte for byte; <code>x86/programs.shale</code> holds each executable&#39;s output and exit code to node&#39;s the same way. A program outside the subset gets an error that names what it used: each program in <code>js/tests/refused/</code> names, on its first line, the message <code>js-vm</code> must end with. The corpus grew from 32 programs and 25 refusals on the first day (<code>278631d8</code>) to 63 and 79 by 2026-11-27 (<code>js/README.md</code>, its status line). Program 54, <code>54-big-daddy.js</code>, is a day in a small city that uses every feature of the subset, and it is also the playground&#39;s &quot;all features&quot; sample (<code>7d6a472f</code>, <code>cc904c2a</code>).</p>
 <h2 id="the-playground">The playground <a class="section-link" href="#the-playground" aria-label="Link to this section">§</a></h2>
 <p>The interpreter also runs in a browser playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a>, where a program draws on a canvas as it runs and a memory view shows its heap over time. Here is one of the playground&#39;s samples, a turtle drawing a spiral:</p>
 <figure class="listing"><figcaption>js/canvas/2-turtle-spiral.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A turtle spiral</span>
@@ -64,7 +167,7 @@ background(<span class="syn-string">&quot;white&quot;</span>);
   turn(TURN);
 }
 console.log(<span class="syn-string">&quot;the turtle ends at heading&quot;</span>, (STEPS * TURN) % <span class="syn-number">360</span>);
-</code></pre></figure><h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
+</code></pre></figure><figure class="shot"><img src="shots/turtle-spiral.png" alt="The turtle spiral on the playground&#39;s canvas, once it has drawn (js-book/canvas_shots.mjs, 2026-11-27)." style="display: block; max-width: 100%; height: auto; margin: 0 auto;"><figcaption>The turtle spiral on the playground&#39;s canvas, once it has drawn (js-book/canvas_shots.mjs, 2026-11-27).</figcaption></figure><h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
 <p>The project began as a folder of <a href="https://github.com/showell/roc-apps">roc-apps</a> and moved to its own repository with its history on 2026-11-24, so a commit from before then may name a file that only roc-apps holds. Each number in this book comes from a commit message, cited by its short hash (a commit of roc-js-interpreter, or one of roc-apps&#39; linked there), from <code>js/README.md</code>, or from another file of the repository, named where it is used. Code is quoted from the repository as it stands when the book is built.</p>
 <h2 id="the-order-of-the-book">The order of the book <a class="section-link" href="#the-order-of-the-book" aria-label="Link to this section">§</a></h2>
 <p><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a> is the project&#39;s short history. Part I is the machinery the two programs share: <a class="chapter-link" href="the-front-end.html">“The front end”</a>, and <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a>, which both lean on. Part II is the compiler, from <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> on. For Roc it is the simpler program, one pure function from a program&#39;s text to an executable&#39;s bytes, so it comes first. Part III is the interpreter, from <a class="chapter-link" href="the-interpreter.html">“The interpreter”</a> on, which carries what the compiler hands to the processor: the program&#39;s effects, a heap, a collector and a page. Part IV, from <a class="chapter-link" href="why-a-compiler-suits-roc.html">“Why a compiler suits Roc”</a> on, is what building the two taught about Roc.</p>

@@ -40,7 +40,7 @@
 <p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
 <h1 id="appendix-a-the-playgrounds-samples">Appendix A: The playground&#39;s samples</h1>
-<p>Each of these runs in <a href="https://roc.lynrummy.com/js/">the playground</a>, where it can be changed and run again.</p>
+<p>Each of these runs in <a href="https://roc.lynrummy.com/js/">the playground</a>, where it can be changed and run again. Each console sample is followed by what js-vm prints for it, made when the book is built.</p>
 <h2 id="a-bouncing-ball">A bouncing ball <a class="section-link" href="#a-bouncing-ball" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/canvas/1-bouncing-ball.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A bouncing ball</span>
 <span class="syn-comment">// Try changing these, then press Run:</span>
@@ -903,6 +903,8 @@ console.log(<span class="syn-string">&quot;count:&quot;</span>, c.get());
 <span class="syn-keyword">const</span> fs = [];
 <span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">4</span>; i++) fs.push(() =&gt; i * i);
 console.log(fs.map((f) =&gt; f()));
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints</figcaption><pre><code class="language-text">count: 3
+[ 0, 1, 4, 9 ]
 </code></pre></figure><h2 id="fibonacci">Fibonacci <a class="section-link" href="#fibonacci" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/console/2-fibonacci.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Fibonacci</span>
 <span class="syn-keyword">const</span> UP_TO = <span class="syn-number">15</span>; <span class="syn-comment">// the last Fibonacci number printed</span>
@@ -924,6 +926,16 @@ console.log(<span class="syn-string">&quot;recursive:&quot;</span>, out);
   [a, b] = [a + b, a + <span class="syn-number">2</span> * b];
 }
 console.log(<span class="syn-string">&quot;iterative:&quot;</span>, pairs.slice(<span class="syn-number">0</span>, UP_TO + <span class="syn-number">1</span>));
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints</figcaption><pre><code class="language-text">recursive: [
+    0,   1,   1,   2,  3,  5,
+    8,  13,  21,  34, 55, 89,
+  144, 233, 377, 610
+]
+iterative: [
+    0,   1,   1,   2,  3,  5,
+    8,  13,  21,  34, 55, 89,
+  144, 233, 377, 610
+]
 </code></pre></figure><h2 id="word-count">Word count <a class="section-link" href="#word-count" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/console/3-word-count.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Word count</span>
 <span class="syn-keyword">const</span> TEXT = <span class="syn-string">&quot;the quick brown fox jumps over the lazy dog the fox&quot;</span>; <span class="syn-comment">// the words counted</span>
@@ -934,6 +946,17 @@ console.log(<span class="syn-string">&quot;iterative:&quot;</span>, pairs.slice(
 console.log(counts);
 <span class="syn-keyword">const</span> top = Object.entries(counts).sort((a, b) =&gt; b[<span class="syn-number">1</span>] - a[<span class="syn-number">1</span>]);
 console.log(top.slice(<span class="syn-number">0</span>, TOP));
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints</figcaption><pre><code class="language-text">{
+  the: 3,
+  quick: 1,
+  brown: 1,
+  fox: 2,
+  jumps: 1,
+  over: 1,
+  lazy: 1,
+  dog: 1
+}
+[ [ &#39;the&#39;, 3 ], [ &#39;fox&#39;, 2 ], [ &#39;quick&#39;, 1 ] ]
 </code></pre></figure><h2 id="quicksort">Quicksort <a class="section-link" href="#quicksort" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/console/4-quicksort.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Quicksort</span>
 <span class="syn-keyword">const</span> NUMBERS = [<span class="syn-number">5</span>, <span class="syn-number">3</span>, <span class="syn-number">9</span>, <span class="syn-number">1</span>, <span class="syn-number">7</span>, <span class="syn-number">2</span>, <span class="syn-number">8</span>, <span class="syn-number">6</span>, <span class="syn-number">4</span>, <span class="syn-number">0</span>]; <span class="syn-comment">// the numbers sorted</span>
@@ -946,6 +969,10 @@ console.log(top.slice(<span class="syn-number">0</span>, TOP));
     .concat([pivot], quicksort(rest.filter((x) =&gt; x &gt;= pivot)));
 }
 console.log(quicksort(NUMBERS));
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints</figcaption><pre><code class="language-text">[
+  0, 1, 2, 3, 4,
+  5, 6, 7, 8, 9
+]
 </code></pre></figure><h2 id="timers">Timers <a class="section-link" href="#timers" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/console/5-timers.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Timers</span>
 <span class="syn-comment">// Each callback runs when its time comes, on the page&#39;s frames.</span>
@@ -961,6 +988,12 @@ setTimeout(() =&gt; console.log(<span class="syn-string">&quot;a tenth of a seco
   <span class="syn-keyword">if</span> (n === TICKS) clearInterval(every);
 }, TICK_MS);
 console.log(<span class="syn-string">&quot;the program&#39;s end comes first&quot;</span>);
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints</figcaption><pre><code class="language-text">the program&#39;s end comes first
+a tenth of a second
+tick 1
+half a second
+tick 2
+tick 3
 </code></pre></figure><h2 id="maps-patterns-and-errors">Maps, patterns and errors <a class="section-link" href="#maps-patterns-and-errors" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/console/6-maps-patterns-and-errors.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Maps, patterns and errors</span>
 <span class="syn-keyword">const</span> scores = <span class="syn-keyword">new</span> Map([[<span class="syn-string">&quot;ann&quot;</span>, <span class="syn-number">3</span>], [<span class="syn-string">&quot;bob&quot;</span>, <span class="syn-number">5</span>]]);
@@ -982,6 +1015,13 @@ console.log(best([...scores], ([, score]) =&gt; score));
   console.log(<span class="syn-string">`caught </span>${e.name}<span class="syn-string">: </span>${e.message}<span class="syn-string">`</span>);
 }
 console.log(<span class="syn-keyword">new</span> Set(<span class="syn-string">&quot;mississippi&quot;</span>), scores.get(<span class="syn-string">&quot;dee&quot;</span>)?.length ?? <span class="syn-string">&quot;no dee&quot;</span>);
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints</figcaption><pre><code class="language-text">ann 3
+bob 5
+cy 4
+3 0 { bob: 5, cy: 4 }
+[ &#39;bob&#39;, 5 ]
+caught TypeError: Cannot read properties of null (reading &#39;name&#39;)
+Set(4) { &#39;m&#39;, &#39;i&#39;, &#39;s&#39;, &#39;p&#39; } no dee
 </code></pre></figure><h2 id="outside-the-subset">Outside the subset <a class="section-link" href="#outside-the-subset" aria-label="Link to this section">§</a></h2>
 <figure class="listing"><figcaption>js/console/7-outside-the-subset.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Outside the subset</span>
 <span class="syn-keyword">class</span> <span class="syn-name">Point</span> {
@@ -989,6 +1029,7 @@ console.log(<span class="syn-keyword">new</span> Set(<span class="syn-string">&q
   get norm() { <span class="syn-keyword">return</span> Math.sqrt(<span class="syn-keyword">this</span>.x * <span class="syn-keyword">this</span>.x + <span class="syn-keyword">this</span>.y * <span class="syn-keyword">this</span>.y); }
 }
 console.log(<span class="syn-keyword">new</span> Point(<span class="syn-number">3</span>, <span class="syn-number">4</span>).norm);
+</code></pre></figure><figure class="listing"><figcaption>What js-vm prints, then exits 1</figcaption><pre><code class="language-text">js: unsupported: getters, setters and async methods (line 4, column 3)
 </code></pre></figure>
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

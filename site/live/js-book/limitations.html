@@ -31,7 +31,7 @@
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
 <li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
-<li class="here"><a href="limitations.html"><span class="number">20</span>Limitations</a><ol class="sections"><li><a href="limitations.html#runtime">Runtime</a></li><li><a href="limitations.html#language">Language</a></li><li><a href="limitations.html#other">Other</a></li></ol></li>
+<li class="here"><a href="limitations.html"><span class="number">20</span>Limitations</a><ol class="sections"><li><a href="limitations.html#runtime">Runtime</a></li><li><a href="limitations.html#language">Language</a></li><li><a href="limitations.html#the-compiler">The compiler</a></li><li><a href="limitations.html#other">Other</a></li></ol></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
@@ -49,7 +49,7 @@
 <li><strong>At the command line, <code>js-vm</code>&#39;s runtime is as small:</strong> <code>console.log</code>, the timers, and the builtins <code>js/README.md</code> lists under &quot;The subset&quot; (<code>Math</code>, the methods of strings, arrays, Maps and Sets, <code>Object.keys</code> and its kin). Files, processes, <code>require</code>, the network and node&#39;s other modules are out of reach. The compiler to x86-64 in <code>x86/</code> keeps the same small runtime, and adds <code>Date.now()</code>, which the VM refuses (<code>x86/README.md</code>).</li>
 <li><strong>Async is out:</strong> promises, <code>async</code> and <code>await</code> are refused. Timers are the one way to wait, on a virtual clock that runs each callback after the program, in node&#39;s order.</li>
 <li>An interval never cleared stops after 100,000 callbacks with a message, where node runs it for good (<code>js/README.md</code>, &quot;The subset&quot;).</li>
-<li>On the page, a program is held to step budgets, 3,000,000 before the first frame and 300,000 a frame (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>).</li>
+<li>On the page, a program is held to step budgets, 3,000,000 before the first frame and 300,000 a frame (<a class="chapter-link" href="a-canvas-in-the-browser.html">“A canvas in the browser”</a>).</li>
 </ul>
 <h2 id="language">Language <a class="section-link" href="#language" aria-label="Link to this section">§</a></h2>
 <p>The language itself is fairly complete: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps, Sets and classes (<a class="chapter-link" href="introduction.html">“Introduction”</a>). These are its known differences from node:</p>
@@ -61,6 +61,18 @@
 <li>A string method that counts positions is refused on non-ASCII text: JavaScript counts UTF-16 units, and these strings are UTF-8 (<code>js/README.md</code>, &quot;The subset&quot;).</li>
 </ul>
 <p>The parser refuses these forms, each with a message that names it: getters and setters, <code>#private</code> names, class fields, static blocks, computed method names, class expressions, <code>this</code> outside a class&#39;s code or in a static method, <code>super</code> misused, a constructor that returns a value, <code>extends</code> of anything but a class declared above, a class&#39;s name declared again or assigned, <code>new</code> on a program&#39;s own function, <code>var</code>, <code>in</code>, <code>eval</code>, regular expressions, async and modules. A run refuses <code>==</code> and the other coercions, and the rest of <code>js/README.md</code>&#39;s list, &quot;The subset&quot;, where only the run can see them.</p>
+<h2 id="the-compiler">The compiler <a class="section-link" href="#the-compiler" aria-label="Link to this section">§</a></h2>
+<p>The compiler runs the same subset less completely, and says where. A program it has yet to compile is refused by name before a byte is written; what only a value can decide stops the executable with a line <code>x86: ... is not compiled yet</code> and exit 1 (<code>x86/README.md</code>). As of 2026-11-27:</p>
+<ul>
+<li>It matches node on 51 of the 63 corpus programs; <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> gives the first reason each of the other 12 meets.</li>
+<li><code>console.log</code> writes a number only when it is an integer of at most 2^53, <code>NaN</code>, an infinity or -0. Fractions wait on milestone 4&#39;s shortest round-trip printing; four corpus programs stop there, three on a fraction and one on an integer past 2^53.</li>
+<li><code>Math.sin</code>, <code>cos</code>, <code>tan</code> and <code>atan</code> are refused, since node&#39;s last digits are those of V8&#39;s port of fdlibm; so are <code>Number</code>, <code>JSON</code>, <code>new Date()</code> and the array methods <code>at</code>, <code>fill</code> and <code>flat</code>.</li>
+<li>A string must be ASCII: a length here counts bytes, where JavaScript counts UTF-16 units.</li>
+<li>An uncaught error stops the executable with exit 1, where node also prints its report of the source line; <code>console.log</code> of an error, or of an array or object of more than 100 items, stops it too.</li>
+<li><code>%</code> of fractions, and <code>**</code> with a fraction, a negative exponent or a power past 2^53, stop the executable.</li>
+<li>A recursion goes deeper than node&#39;s: node throws between 9,000 and 10,000 calls of a one-line recursion, the executable between 80,000 and 90,000, so a program between the two runs here and throws in node.</li>
+<li>The heap is 2 GiB; past it the program stops with a line saying the heap is full.</li>
+</ul>
 <h2 id="other">Other <a class="section-link" href="#other" aria-label="Link to this section">§</a></h2>
 <ul>
 <li><code>js-vm</code> takes the program as one command-line argument, limited to 128 KiB (<code>js/README.md</code>, &quot;Pitfalls&quot;).</li>

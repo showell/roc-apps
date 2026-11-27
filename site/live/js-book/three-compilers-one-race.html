@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li class="here"><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a><ol class="sections"><li><a href="three-compilers-one-race.html#where-it-stands">Where it stands</a></li><li><a href="three-compilers-one-race.html#what-the-loop-costs">What the loop costs</a></li><li><a href="three-compilers-one-race.html#what-remains">What remains</a></li></ol></li>
+<li class="here"><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a><ol class="sections"><li><a href="three-compilers-one-race.html#where-it-stood-on-2026-11-26">Where it stood on 2026-11-26</a></li><li><a href="three-compilers-one-race.html#what-the-loop-costs">What the loop costs</a></li><li><a href="three-compilers-one-race.html#what-remains">What remains</a></li></ol></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -48,7 +48,8 @@
 <li><strong>Roc</strong>, on <code>x86/race/fibonacci_race.roc</code>, the same algorithm line for line, with <code>U64</code> limbs, built with <code>--opt=speed</code>, which hands the code to LLVM.</li>
 </ul>
 <p>Each one&#39;s whole output, more than 150,000 digits, is held to a stored sha256 of the answer. The rules are fixed: the algorithm stays the ordinary one, node runs the same source, and any trick in the compiler has to be one that would help other programs too.</p>
-<h2 id="where-it-stands">Where it stands <a class="section-link" href="#where-it-stands" aria-label="Link to this section">§</a></h2>
+<p>The ordinary algorithm is the slow one on purpose. Fast doubling, which takes F(2k) and F(2k + 1) from F(k) and F(k + 1), reaches F(740000) in about 20 steps of a few big multiplications each, where the race makes 740,000 big additions, and with a good multiplication it finishes in a fraction of a second. The race keeps the additions because its subject is the compiler: one hot loop of array reads, additions, a carry and array writes, the shape of code every program here leans on, run long enough to time well.</p>
+<h2 id="where-it-stood-on-2026-11-26">Where it stood on 2026-11-26 <a class="section-link" href="#where-it-stood-on-2026-11-26" aria-label="Link to this section">§</a></h2>
 <p>One run each on 2026-11-26, at load 0.88 (<code>x86/race/README.md</code>, after <code>8989013</code>):</p>
 <table>
 <thead>
@@ -78,10 +79,69 @@
 </table>
 <p>Runs on this box move by about a tenth, so the honest reading is that js-x86 and LLVM&#39;s Roc are even, and both beat node by about a quarter. A day earlier, in the race&#39;s first form, node did seven times the compiled program&#39;s work.</p>
 <h2 id="what-the-loop-costs">What the loop costs <a class="section-link" href="#what-the-loop-costs" aria-label="Link to this section">§</a></h2>
-<p>The race lives in one loop, <code>addInto</code>&#39;s, one limb a time round. Counted with <code>objdump</code> on 2026-11-26 (<code>x86/race/README.md</code>), Roc&#39;s loop runs 46 to 51 instructions a limb and js-x86&#39;s 71, and 64 since the integer counter below. About 25 of the 76 js-x86 ran before fixes 18 and 19 come from the numbers being JavaScript doubles: moves between the general and the floating-point registers, conversions to whole numbers for indexing, and unboxing an array&#39;s address. Roc pays for its own representation in turn: its <code>U64</code> arithmetic is checked, three overflow branches a limb, and each list write tests the list&#39;s reference count first.</p>
+<p>The race lives in one loop, <code>addInto</code>&#39;s, one limb a time round. Counted with <code>objdump</code> on 2026-11-26 (<code>x86/race/README.md</code>):</p>
+<table>
+<thead>
+<tr>
+<th>one limb of <code>addInto</code>&#39;s loop</th>
+<th>instructions</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Roc, LLVM</td>
+<td>46 to 51</td>
+</tr>
+<tr>
+<td>js-x86 at <code>c990f68</code></td>
+<td>76</td>
+</tr>
+<tr>
+<td>js-x86 after the race&#39;s fixes 18 and 19</td>
+<td>71</td>
+</tr>
+<tr>
+<td>js-x86 with the integer counter</td>
+<td>64</td>
+</tr>
+</tbody>
+</table>
+<p>Of js-x86&#39;s 76, about 25 came from the numbers being JavaScript doubles: moves between the general and the floating-point registers, conversions to whole numbers for indexing, and unboxing an array&#39;s address. Roc pays for its own representation in turn: its <code>U64</code> arithmetic is checked, three overflow branches a limb, and each list write tests the list&#39;s reference count first.</p>
 <p>What closed the gap were the fixes that <code>x86/race/README.md</code> numbers 1 to 19, every one a general rule with its own test. Among them: an array&#39;s length and items read in line, a comparison fused with its jump, a select of two numbers made with a conditional move, which ended the carry&#39;s mispredicted branch, and a loop&#39;s carried values kept in registers first.</p>
 <h2 id="what-remains">What remains <a class="section-link" href="#what-remains" aria-label="Link to this section">§</a></h2>
-<p>The largest lead the race&#39;s README ranked, an integer loop counter, is in: <code>i</code> and <code>aLength</code> are integers, and the loop went from 71 instructions a limb to 64 (<code>x86/race/README.md</code>, &quot;What is left&quot;, 1). Its other leads, constants kept for the loop and an array&#39;s address reused, are open. The bank ledger and fourteen races are where node still leads: in their last full-size runs it took 2.84 and 2.60 times less time than the compiled program (<code>x86/bank/README.md</code> and <code>x86/fourteen/README.md</code>, &quot;Against Roc&quot;, 2026-11-26). Both are object and call heavy, where node&#39;s hidden classes and inlining pay. A fourth race, big daddy, is a fork of the corpus&#39;s program 54 (<code>x86/bigdaddy/README.md</code>); since the collector it runs at its full size, 10,000 rounds. The races and their numbers keep moving, so each race&#39;s README is the place to read where it stands.</p>
+<p>The largest lead the race&#39;s README ranked, an integer loop counter, is in: it is the 64 above. Its other leads, constants kept for the loop and an array&#39;s address reused, are open. The other races stood so against node, as of 2026-11-27:</p>
+<table>
+<thead>
+<tr>
+<th>race</th>
+<th>js-x86&#39;s time over node&#39;s</th>
+<th>source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fib</td>
+<td>0.74</td>
+<td>above</td>
+</tr>
+<tr>
+<td>bank ledger</td>
+<td>2.84</td>
+<td><code>x86/bank/README.md</code>, &quot;Against Roc&quot;</td>
+</tr>
+<tr>
+<td>fourteen</td>
+<td>2.60</td>
+<td><code>x86/fourteen/README.md</code>, &quot;Against Roc&quot;</td>
+</tr>
+<tr>
+<td>SAT, preliminary</td>
+<td>1.81</td>
+<td><code>x86/satrace/README.md</code></td>
+</tr>
+</tbody>
+</table>
+<p>The bank and fourteen races are object and call heavy, where node&#39;s hidden classes and inlining pay. The SAT race is rocsat&#39;s CDCL solver written in the subset, and its one run was on a busy box. A fifth race, big daddy, is a fork of the corpus&#39;s program 54 (<code>x86/bigdaddy/README.md</code>), which runs at its full size, 10,000 rounds, since the collector. Each race&#39;s README adds the runs made since.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

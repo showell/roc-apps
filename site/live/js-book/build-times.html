@@ -29,7 +29,7 @@
 <li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
 <li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
-<li class="here"><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li class="here"><a href="build-times.html"><span class="number">18</span>Build times</a><ol class="sections"><li><a href="build-times.html#roc-building-the-interpreter">Roc building the interpreter</a></li><li><a href="build-times.html#js-x86-building-a-program-preliminary-as-of-2026-11-27">js-x86 building a program, preliminary, as of 2026-11-27</a></li></ol></li>
 <li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
 <li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
@@ -41,6 +41,8 @@
 <article>
 <p class="chapter-number">Chapter 18</p>
 <h1 id="build-times">Build times</h1>
+<p>This chapter is about two kinds of build: Roc building the two programs, and js-x86 building a JavaScript program.</p>
+<h2 id="roc-building-the-interpreter">Roc building the interpreter <a class="section-link" href="#roc-building-the-interpreter" aria-label="Link to this section">§</a></h2>
 <p>RC1&#39;s release builds were the project&#39;s slowest loop, against under a second for a dev build of the same code (the message of roc-apps&#39; tag <code>rc1-slow-release-build</code>). The walker&#39;s release build grew with the language:</p>
 <table>
 <thead>
@@ -133,6 +135,35 @@
 </tbody>
 </table>
 <p>He put the three together at about 12 times faster for this repository&#39;s code specifically (Zulip, #off topic &gt; LLVM). They are expected to merge after Roc 0.10, so every build time above is RC1&#39;s own.</p>
+<h2 id="js-x86-building-a-program-preliminary-as-of-2026-11-27">js-x86 building a program, preliminary, as of 2026-11-27 <a class="section-link" href="#js-x86-building-a-program-preliminary-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
+<p>The compiler turns the question around: how long from a program&#39;s source to an executable on the disk? <code>x86/buildrace.shale</code> times js-x86 against <code>roc build</code> of the same race written in Roc, at <code>--opt=dev</code> and at <code>--opt=speed</code>, the build that makes the fast executable the races run (<code>x86/buildrace/README.md</code>). These numbers are preliminary: the box was shared with other lanes, and a run on a quiet box will replace them. The headline, from warm runs at a load of 1.0 to 1.3 (<code>x86/buildrace/PROFILE.md</code>, &quot;The build race, before and after&quot;; <code>x86/RC2.md</code> for the executables):</p>
+<table>
+<thead>
+<tr>
+<th>from a race&#39;s source to an executable</th>
+<th>build time</th>
+<th>the executable it makes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>js-x86</td>
+<td>44 to 94 ms</td>
+<td>fast</td>
+</tr>
+<tr>
+<td><code>roc build --opt=dev</code>, warm</td>
+<td>0.02 to 0.03 s</td>
+<td>about 2.3 MB, 10 to 25 times slower than <code>--opt=speed</code>&#39;s</td>
+</tr>
+<tr>
+<td><code>roc build --opt=speed</code>, warm</td>
+<td>0.72 to 3.8 s</td>
+<td>32 to 180 KB, fast</td>
+</tr>
+</tbody>
+</table>
+<p>So js-x86 builds 15 to 50 times faster than the Roc build that makes a fast executable; Roc&#39;s dev build is faster still, and makes a slow one.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
