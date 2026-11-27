@@ -29,7 +29,7 @@ The book builder (`book_builder/`) builds the Safari tutorial
 which says how to build a book this way. A new book starts from the books
 book.
 
-It also builds *A JavaScript Interpreter in Roc*, the book of
+It also builds *JavaScript in Roc: A Compiler and an Interpreter*, the book of
 [roc-js-interpreter](https://github.com/showell/roc-js-interpreter), from a
 checkout of that repo beside this one. roc-js-interpreter holds a subset of
 JavaScript run by a bytecode VM in Roc, graded against node, and a web page
