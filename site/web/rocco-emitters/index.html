@@ -1,0 +1,433 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="How Safari Walk's dust devil is built on Rocco's Emitters: the game's own state, one small builder per particle source, and the Scene that hands them to Rocco's host. Real Roc from the walk, and the steps to build a source of your own.">
+<title>Building with Rocco's Emitters</title>
+<script src="../shared/home.js"></script>
+<!-- site/build_rocco_emitters.shale writes this page from this file and the
+     code it quotes from safari-walk and rocco-engine; edit
+     site/rocco_emitters.html and run it again rather than editing the page.
+     The code is colored by roc-syntax-color. -->
+<style>
+  :root { color-scheme: light dark; --bg: #f7f5f0; --fg: #1d1d1b; --muted: #6b6860; --edge: #d9d4c8; --pane: #ffffff; --link: #1f5fa8; --accent: #5b3ea8; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #1b1b1a; --fg: #e8e6e0; --muted: #9a968c; --edge: #3a3934; --pane: #242422; --link: #8ab4f0; --accent: #a68cf0; }
+  }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 36px 16px 48px; }
+  @media (max-width: 640px) { main { padding: 24px 12px 36px; } }
+  h1 { font-size: 28px; margin: 0 0 6px; }
+  .lede { color: var(--muted); margin: 0 0 8px; max-width: 66ch; }
+  h2 { font-size: 21px; margin: 44px 0 8px; padding-top: 14px; border-top: 2px solid var(--accent); }
+  p, ul, ol { max-width: 66ch; }
+  li { margin: 0 0 6px; }
+  a { color: var(--link); }
+  code { font: 13px ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  pre code { overflow-wrap: normal; }
+  /* A line wider than its block scrolls sideways inside it, so the code
+     keeps its indentation. */
+  pre { margin: 4px 0 14px; padding: 10px 12px; border-radius: 5px; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace; overflow-x: auto; tab-size: 4; }
+  pre code { font: inherit; }
+  pre.roc { background: #2b2733; color: #e8e6e0; }
+  .syn-keyword { color: #c792ea; }
+  .syn-type { color: #82aaff; }
+  .syn-string { color: #c3e88d; }
+  .syn-number { color: #f78c6c; }
+  .syn-comment { color: #8a8494; font-style: italic; }
+  .syn-name { color: #ffcb6b; }
+  .file { font-size: 13px; color: var(--muted); margin: 16px 0 0; overflow-wrap: anywhere; }
+  /* A table wider than the column scrolls sideways inside its block. */
+  .table { overflow-x: auto; margin: 6px 0 16px; }
+  table { border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 4px 10px; border-bottom: 1px solid var(--edge); text-align: left; vertical-align: top; }
+  th { font-weight: 600; color: var(--muted); }
+  td code { white-space: nowrap; }
+  /* The drawing is Graphviz's SVG, inline, so its lines and words take the
+     page's colors in either theme. */
+  .diagram { margin: 14px 0 18px; }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram text { fill: var(--fg); }
+  .diagram path, .diagram polygon { stroke: var(--fg); }
+  .diagram .edge polygon { fill: var(--fg); }
+  footer { margin-top: 36px; color: var(--muted); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+<h1>A dust devil in Rocco: building with Emitters</h1>
+<p class="lede">Steve has used Claude to build a small app with <a href="https://github.com/Pixelsprout/rocco-engine">Rocco</a>,
+Braeden Foster's 3D engine for games written in Roc. The app is <a href="https://roc.lynrummy.com/safari-walk/">Safari
+Walk</a>, a ride down a savanna road at sunset (<a href="https://github.com/showell/safari-walk">its source</a>). Steve is
+happy to report that the package provides lots of functionality with almost no pitfalls. He mostly directs Claude to
+build things out, and wears the "movie director" hat more than the "quality assurance" hat. The code on this page
+shows a typical module that exploits a key feature of Rocco, the Emitter paradigm.</p>
+<p class="lede">The module is <code>game/DustDevil.roc</code>. As the ride goes on, a whirl of dust rises on the verge,
+wanders across the road in the low sun, flinging bits of grass round in it, and falls apart behind the jeep. Every
+snippet below is quoted from safari-walk at commit ba237da, or from Rocco at commit
+565ec02, the engine that commit builds on, with a link to its lines.</p>
+
+<h2>The Emitter paradigm</h2>
+<p>A Rocco game is a Roc app: a model and a few pure functions. Each frame, its <code>view</code> returns a
+<code>Scene</code>, a plain value that lists the camera, the lights, the meshes and, in a field called
+<code>emitters</code>, the particle sources. The game never moves a particle. An <code>Emitter</code> is a record
+that describes a source as it is <em>now</em>: where it is, how many particles a second it emits, how long they live,
+how they grow, change colour, drift and spin. Rocco's host simulates every particle from that description.</p>
+<p>Two consequences shape everything below. When a source's settings change from one frame to the next, the
+particles already in the air follow the new settings. When a source leaves the list, it stops emitting, and its
+particles drain away with their last settings. So a whole dust devil can be a pure function from "where are we on the
+walk" to a short list of records. The record's doc comment is the engine's whole contract for it:</p>
+<p class="file"><a href="https://github.com/showell/rocco-engine/blob/565ec02477beeb105c9c57beb8fd2a4c97a8cdd0/platform/Vocabulary.roc#L464-L500"><code>platform/Vocabulary.roc</code></a>, lines 464-500, trimmed</p>
+<pre class="roc"><code><span class="syn-comment">## A host-simulated billboard source. Start from `Emitter.default`.</span>
+<span class="syn-comment">## `id` identifies a source independently of Draw ids. The first duplicate wins.</span>
+<span class="syn-comment">## Removal stops emission; existing particles drain with the last settings.</span>
+...
+<span class="syn-comment">## Size and colour interpolate across each particle&#39;s lifetime, in world units</span>
+<span class="syn-comment">## and linear HDR colour. Rate is particles per second; drag is per second.</span>
+...
+<span class="syn-comment">## The outdoor fields, each 0 for none:</span>
+<span class="syn-comment">## - `acceleration` is added to every particle&#39;s velocity each second, before</span>
+<span class="syn-comment">##   drag: gravity for falling dust or spray, a lift for rising smoke.</span>
+<span class="syn-comment">## - `spawn_radius` starts each new particle at an even random place on a</span>
+<span class="syn-comment">##   level disc of that radius round `position`, not at `position` itself.</span>
+<span class="syn-comment">## - `swirl` turns every particle about the upright line through the</span>
+<span class="syn-comment">##   source&#39;s current `position`, in radians a second, counter-clockwise</span>
+<span class="syn-comment">##   seen from above: a dust devil, a whirlpool, leaves in an eddy.</span>
+<span class="syn-comment">## - `outward` moves every particle straight away from that line, in metres</span>
+<span class="syn-comment">##   a second (negative: in toward it), never past it.</span>
+<span class="syn-comment">## `time_scale` is the source&#39;s own clock against the host&#39;s step: 1 runs</span>
+<span class="syn-comment">## at the host&#39;s pace, 0 holds its particles still and emits none, so a game</span>
+<span class="syn-comment">## with its own pause or tempo keeps its particles on its clock.</span>
+<span class="syn-comment">## Acceleration and outward clamp to +/-1000000, spawn radius to</span>
+<span class="syn-comment">## 0..1000000, swirl to +/-1000 and time scale to 0..100.</span>
+<span class="syn-type">Emitter</span> : { id : <span class="syn-type">U64</span>, position : <span class="syn-type">Vec3</span>, rate : <span class="syn-type">F32</span>, lifetime : <span class="syn-type">F32</span>, start_size : <span class="syn-type">F32</span>, end_size : <span class="syn-type">F32</span>, start_colour : <span class="syn-type">Rgba</span>, end_colour : <span class="syn-type">Rgba</span>, velocity : <span class="syn-type">Vec3</span>, velocity_spread : <span class="syn-type">Vec3</span>, drag : <span class="syn-type">F32</span>, acceleration : <span class="syn-type">Vec3</span>, spawn_radius : <span class="syn-type">F32</span>, swirl : <span class="syn-type">F32</span>, outward : <span class="syn-type">F32</span>, time_scale : <span class="syn-type">F32</span>, seed : <span class="syn-type">U64</span>, image : <span class="syn-type">U32</span>, blend : [<span class="syn-type">Alpha</span>, <span class="syn-type">Add</span>] }</code></pre>
+<p>Rocco also gives <code>Emitter.default</code>, a stationary, soft, round source whose doc says to set an
+<code>id</code> and a <code>rate</code> before use. Every builder below starts from it.</p>
+
+<h2>Two halves: the game's state, then the Emitters</h2>
+<p>The module splits in two, and the seam between the game and Rocco runs between the halves. This drawing is the
+whole flow, from the walk to the host:</p>
+<div class="diagram">
+<svg width="227pt" height="335pt"
+ viewBox="0.00 0.00 227.00 335.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 331)">
+<title>flow</title>
+<!-- watcher -->
+<g id="node1" class="node">
+<title>watcher</title>
+<path fill="none" stroke="black" d="M138,-327C138,-327 91,-327 91,-327 85,-327 79,-321 79,-315 79,-315 79,-301 79,-301 79,-295 85,-289 91,-289 91,-289 138,-289 138,-289 144,-289 150,-295 150,-301 150,-301 150,-315 150,-315 150,-321 144,-327 138,-327"/>
+<text text-anchor="middle" x="114.5" y="-311.4" font-family="sans-serif" font-size="12.00">the walk</text>
+<text text-anchor="middle" x="114.5" y="-298.4" font-family="sans-serif" font-size="12.00">Watcher</text>
+</g>
+<!-- state -->
+<g id="node2" class="node">
+<title>state</title>
+<path fill="none" stroke="black" d="M192,-251C192,-251 37,-251 37,-251 31,-251 25,-245 25,-239 25,-239 25,-225 25,-225 25,-219 31,-213 37,-213 37,-213 192,-213 192,-213 198,-213 204,-219 204,-225 204,-225 204,-239 204,-239 204,-245 198,-251 192,-251"/>
+<text text-anchor="middle" x="114.5" y="-235.4" font-family="sans-serif" font-size="12.00">state</text>
+<text text-anchor="middle" x="114.5" y="-222.4" font-family="sans-serif" font-size="12.00">State: foot, strength, clock</text>
+</g>
+<!-- watcher&#45;&gt;state -->
+<g id="edge1" class="edge">
+<title>watcher&#45;&gt;state</title>
+<path fill="none" stroke="black" d="M114.5,-288.71C114.5,-279.48 114.5,-268.14 114.5,-258.11"/>
+<polygon fill="black" stroke="black" points="116.95,-258.08 114.5,-251.08 112.05,-258.08 116.95,-258.08"/>
+<text text-anchor="middle" x="145" y="-267.2" font-family="sans-serif" font-size="11.00">game code</text>
+</g>
+<!-- column -->
+<g id="node3" class="node">
+<title>column</title>
+<path fill="none" stroke="black" d="M53,-186C53,-186 12,-186 12,-186 6,-186 0,-180 0,-174 0,-174 0,-162 0,-162 0,-156 6,-150 12,-150 12,-150 53,-150 53,-150 59,-150 65,-156 65,-162 65,-162 65,-174 65,-174 65,-180 59,-186 53,-186"/>
+<text text-anchor="middle" x="32.5" y="-164.9" font-family="sans-serif" font-size="12.00">column</text>
+</g>
+<!-- state&#45;&gt;column -->
+<g id="edge2" class="edge">
+<title>state&#45;&gt;column</title>
+<path fill="none" stroke="black" d="M90.34,-212.73C81.11,-205.75 70.5,-197.73 60.9,-190.48"/>
+<polygon fill="black" stroke="black" points="62.14,-188.34 55.08,-186.08 59.19,-192.25 62.14,-188.34"/>
+</g>
+<!-- skirt -->
+<g id="node4" class="node">
+<title>skirt</title>
+<path fill="none" stroke="black" d="M129.5,-186C129.5,-186 99.5,-186 99.5,-186 93.5,-186 87.5,-180 87.5,-174 87.5,-174 87.5,-162 87.5,-162 87.5,-156 93.5,-150 99.5,-150 99.5,-150 129.5,-150 129.5,-150 135.5,-150 141.5,-156 141.5,-162 141.5,-162 141.5,-174 141.5,-174 141.5,-180 135.5,-186 129.5,-186"/>
+<text text-anchor="middle" x="114.5" y="-164.9" font-family="sans-serif" font-size="12.00">skirt</text>
+</g>
+<!-- state&#45;&gt;skirt -->
+<g id="edge3" class="edge">
+<title>state&#45;&gt;skirt</title>
+<path fill="none" stroke="black" d="M114.5,-212.73C114.5,-206.67 114.5,-199.83 114.5,-193.39"/>
+<polygon fill="black" stroke="black" points="116.95,-193.08 114.5,-186.08 112.05,-193.08 116.95,-193.08"/>
+</g>
+<!-- flecks -->
+<g id="node5" class="node">
+<title>flecks</title>
+<path fill="none" stroke="black" d="M207,-186C207,-186 176,-186 176,-186 170,-186 164,-180 164,-174 164,-174 164,-162 164,-162 164,-156 170,-150 176,-150 176,-150 207,-150 207,-150 213,-150 219,-156 219,-162 219,-162 219,-174 219,-174 219,-180 213,-186 207,-186"/>
+<text text-anchor="middle" x="191.5" y="-164.9" font-family="sans-serif" font-size="12.00">flecks</text>
+</g>
+<!-- state&#45;&gt;flecks -->
+<g id="edge4" class="edge">
+<title>state&#45;&gt;flecks</title>
+<path fill="none" stroke="black" d="M137.19,-212.73C145.86,-205.75 155.82,-197.73 164.83,-190.48"/>
+<polygon fill="black" stroke="black" points="166.38,-192.37 170.29,-186.08 163.31,-188.56 166.38,-192.37"/>
+</g>
+<!-- scene -->
+<g id="node6" class="node">
+<title>scene</title>
+<path fill="none" stroke="black" d="M175,-112C175,-112 54,-112 54,-112 48,-112 42,-106 42,-100 42,-100 42,-88 42,-88 42,-82 48,-76 54,-76 54,-76 175,-76 175,-76 181,-76 187,-82 187,-88 187,-88 187,-100 187,-100 187,-106 181,-112 175,-112"/>
+<text text-anchor="middle" x="114.5" y="-90.9" font-family="sans-serif" font-size="12.00">view: Scene.emitters</text>
+</g>
+<!-- column&#45;&gt;scene -->
+<g id="edge5" class="edge">
+<title>column&#45;&gt;scene</title>
+<path fill="none" stroke="black" d="M45.51,-149.65C51.95,-141.66 60.12,-132.35 68.5,-125 71.89,-122.03 75.59,-119.13 79.38,-116.39"/>
+<polygon fill="black" stroke="black" points="81.03,-118.22 85.37,-112.2 78.23,-114.2 81.03,-118.22"/>
+<text text-anchor="middle" x="89" y="-128.2" font-family="sans-serif" font-size="11.00">Emitter</text>
+</g>
+<!-- skirt&#45;&gt;scene -->
+<g id="edge6" class="edge">
+<title>skirt&#45;&gt;scene</title>
+<path fill="none" stroke="black" d="M114.5,-149.94C114.5,-140.84 114.5,-129.48 114.5,-119.45"/>
+<polygon fill="black" stroke="black" points="116.95,-119.44 114.5,-112.44 112.05,-119.44 116.95,-119.44"/>
+<text text-anchor="middle" x="135" y="-128.2" font-family="sans-serif" font-size="11.00">Emitter</text>
+</g>
+<!-- flecks&#45;&gt;scene -->
+<g id="edge7" class="edge">
+<title>flecks&#45;&gt;scene</title>
+<path fill="none" stroke="black" d="M180.97,-149.94C175.47,-141.84 168.28,-132.34 160.5,-125 157.31,-121.99 153.79,-119.1 150.15,-116.38"/>
+<polygon fill="black" stroke="black" points="151.49,-114.32 144.38,-112.24 148.64,-118.31 151.49,-114.32"/>
+<text text-anchor="middle" x="192" y="-128.2" font-family="sans-serif" font-size="11.00">Emitter</text>
+</g>
+<!-- host -->
+<g id="node7" class="node">
+<title>host</title>
+<path fill="none" stroke="black" stroke-width="2" d="M184.5,-38C184.5,-38 44.5,-38 44.5,-38 38.5,-38 32.5,-32 32.5,-26 32.5,-26 32.5,-12 32.5,-12 32.5,-6 38.5,0 44.5,0 44.5,0 184.5,0 184.5,0 190.5,0 196.5,-6 196.5,-12 196.5,-12 196.5,-26 196.5,-26 196.5,-32 190.5,-38 184.5,-38"/>
+<text text-anchor="middle" x="114.5" y="-22.4" font-family="sans-serif" font-size="12.00">Rocco&#39;s host</text>
+<text text-anchor="middle" x="114.5" y="-9.4" font-family="sans-serif" font-size="12.00">simulates every particle</text>
+</g>
+<!-- scene&#45;&gt;host -->
+<g id="edge8" class="edge">
+<title>scene&#45;&gt;host</title>
+<path fill="none" stroke="black" d="M114.5,-75.7C114.5,-66.61 114.5,-55.29 114.5,-45.24"/>
+<polygon fill="black" stroke="black" points="116.95,-45.19 114.5,-38.19 112.05,-45.19 116.95,-45.19"/>
+<text text-anchor="middle" x="146" y="-54.2" font-family="sans-serif" font-size="11.00">each frame</text>
+</g>
+</g>
+</svg>
+</div>
+<p><strong>The game's half</strong> works out the devil from the walk. A <code>Watcher</code> is the walk as the devil
+is seen from it, and <code>state</code> turns it into a <code>State</code>: where the foot is, how fast it travels, how
+strong it is, the colour the sun and the haze give its dust, and the clock its particles run on. This is plain game
+code. Of Rocco it uses only the vector and colour types, and it knows nothing about particles:</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L36-L60"><code>game/DustDevil.roc</code></a>, lines 36-60</p>
+<pre class="roc"><code><span class="syn-comment">## The walk as the devil is seen from it: `walked` metres down the road,</span>
+<span class="syn-comment">## `walking` or paused, the walker&#39;s `eye`, and the light of `moment`.</span>
+<span class="syn-type">Watcher</span> : {
+	walked : <span class="syn-type">F32</span>,
+	walking : <span class="syn-type">Bool</span>,
+	eye : <span class="syn-type">Vocabulary.Vec3</span>,
+	moment : <span class="syn-type">Daylight.Moment</span>,
+}
+
+<span class="syn-comment">## The devil at one moment, all of it ours: its `foot` on the ground and</span>
+<span class="syn-comment">## its `travel` across the road (in metres a walk second), its `strength`</span>
+<span class="syn-comment">## from 0 as it rises to 1 and back to 0 as it falls apart, the colour</span>
+<span class="syn-comment">## `lit` its dust takes from the sun and the haze, and the `clock` its</span>
+<span class="syn-comment">## particles run on (the walk&#39;s tempo, or 0 while paused).</span>
+<span class="syn-type">State</span> : {
+	foot : <span class="syn-type">Vocabulary.Vec3</span>,
+	travel : <span class="syn-type">Vocabulary.Vec3</span>,
+	strength : <span class="syn-type">F32</span>,
+	lit : <span class="syn-type">Vocabulary.Rgb</span>,
+	clock : <span class="syn-type">F32</span>,
+}
+
+<span class="syn-comment">## The devil as `watcher` sees it: `Up` while it whirls, `Down` before</span>
+<span class="syn-comment">## it rises and after it falls apart.</span>
+<span class="syn-name">state</span> : <span class="syn-type">Watcher</span> -&gt; [<span class="syn-type">Up</span>(<span class="syn-type">State</span>), <span class="syn-type">Down</span>]</code></pre>
+<p><code>Down</code> covers the time before the devil rises and after it falls apart. Everything about the devil's
+path, its rise and fall, and its light lives in small functions below <code>state</code>, and none of them builds an
+Emitter.</p>
+<p><strong>The half that crosses to Rocco</strong> is three builders, <code>column</code>, <code>skirt</code> and
+<code>flecks</code>. Each takes the <code>State</code> and returns one Emitter. They are the only code in the module
+that builds Emitters, and the module's whole output is a match on the state:</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L82-L92"><code>game/DustDevil.roc</code></a>, lines 82-92</p>
+<pre class="roc"><code><span class="syn-comment">## The particle sources while the devil is up: its state, handed to</span>
+<span class="syn-comment">## Rocco as three Emitters.</span>
+<span class="syn-name">emitters</span> : <span class="syn-type">Watcher</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Vocabulary.Emitter</span>)
+<span class="syn-name">emitters</span> = |watcher| <span class="syn-keyword">match</span> state(watcher) {
+	<span class="syn-type">Up</span>(devil) =&gt; [
+		column(devil),
+		skirt(devil),
+		flecks(devil),
+	]
+	<span class="syn-type">Down</span> =&gt; []
+}</code></pre>
+
+<h2>One builder, whole</h2>
+<p>The column is the main body of the devil: dust rising from a disc round the foot, spinning, lifting and flaring
+into a funnel as it climbs.</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L236-L261"><code>game/DustDevil.roc</code></a>, lines 236-261</p>
+<pre class="roc"><code><span class="syn-name">column_id</span> : <span class="syn-type">U64</span>
+<span class="syn-name">column_id</span> = <span class="syn-number">1</span>
+
+<span class="syn-comment">## The column: dust rising from a disc round the foot, carried along with</span>
+<span class="syn-comment">## the devil, spinning, lifting and flaring into a funnel as it climbs, all</span>
+<span class="syn-comment">## the more the stronger the devil is.</span>
+<span class="syn-name">column</span> : <span class="syn-type">DustDevil.State</span> -&gt; <span class="syn-type">Vocabulary.Emitter</span>
+<span class="syn-name">column</span> = |{ foot, travel, strength, lit, clock }| {
+	..<span class="syn-type">Emitter</span>.default,
+	id: column_id,
+	seed: <span class="syn-number">41</span>,
+	position: { ..foot, y: <span class="syn-number">0.15</span> },
+	rate: <span class="syn-number">190.0</span> * strength,
+	lifetime: <span class="syn-number">3.0</span>,
+	start_size: <span class="syn-number">0.4</span>,
+	end_size: <span class="syn-number">1.6</span>,
+	start_colour: tint(lit, { shade: <span class="syn-number">1.0</span>, alpha: <span class="syn-number">0.38</span> }),
+	end_colour: tint(lit, { shade: <span class="syn-number">0.8</span>, alpha: <span class="syn-number">0.0</span> }),
+	velocity: { ..travel, y: <span class="syn-number">2.2</span> * strength + <span class="syn-number">0.4</span> },
+	velocity_spread: spread({ across: <span class="syn-number">0.2</span>, up: <span class="syn-number">0.6</span> }),
+	acceleration: upward(<span class="syn-number">0.5</span> * strength),
+	spawn_radius: <span class="syn-number">0.45</span>,
+	swirl: <span class="syn-number">1.0</span> + <span class="syn-number">3.5</span> * strength,
+	outward: <span class="syn-number">0.25</span> + <span class="syn-number">0.55</span> * strength,
+	time_scale: clock,
+}</code></pre>
+<p>Read it from the top:</p>
+<ul>
+<li><code>..Emitter.default</code> is Roc's record update. The builder starts from Rocco's defaults and sets only
+what this source needs; a field it leaves out, such as <code>drag</code> or <code>blend</code>, keeps its default.</li>
+<li>The literal numbers are the source's look: a three-second life, particles growing from 0.4 to 1.6 metres, fading
+to clear.</li>
+<li>The <code>State</code>'s values are the motion. As <code>strength</code> rises and falls, the column emits more
+dust, lifts harder, spins faster and flares wider. <code>travel</code> carries every particle along with the devil, so
+the dust stays round it as it wanders.</li>
+<li><code>time_scale: clock</code> is how the game's pause reaches Rocco's simulation. At 0 the whole whirl hangs
+still in the air, mid-spin.</li>
+<li><code>id</code> and <code>seed</code> let Rocco recognize the same source from one frame to the next, and keep its
+random sequence steady while it lives. The id is a named constant beside the builder, so the module's ids are easy to
+keep apart.</li>
+</ul>
+<p>Every field the column sets, what it controls, and whether its value is a fixed part of the look or driven by the
+<code>State</code>:</p>
+<div class="table"><table>
+<thead><tr><th>field</th><th>what it controls</th><th>the column's value</th><th>set by</th></tr></thead>
+<tbody>
+<tr><td><code>id</code></td><td>which source this is, frame to frame</td><td><code>column_id</code>, 1</td><td>fixed</td></tr>
+<tr><td><code>seed</code></td><td>the source's random sequence</td><td>41</td><td>fixed</td></tr>
+<tr><td><code>position</code></td><td>where particles start</td><td>the foot, raised to 0.15 m</td><td>state: <code>foot</code></td></tr>
+<tr><td><code>rate</code></td><td>particles a second</td><td>190 × strength</td><td>state: <code>strength</code></td></tr>
+<tr><td><code>lifetime</code></td><td>seconds each particle lives</td><td>3</td><td>fixed look</td></tr>
+<tr><td><code>start_size</code>, <code>end_size</code></td><td>size at birth and at death, in metres</td><td>0.4, then 1.6</td><td>fixed look</td></tr>
+<tr><td><code>start_colour</code>, <code>end_colour</code></td><td>colour and opacity at birth and at death</td><td>the lit dust at 0.38 opacity, then darker and clear</td><td>state: <code>lit</code></td></tr>
+<tr><td><code>velocity</code></td><td>each particle's starting speed and direction</td><td>the devil's travel, rising at 2.2 × strength + 0.4</td><td>state: <code>travel</code>, <code>strength</code></td></tr>
+<tr><td><code>velocity_spread</code></td><td>the random offset on that velocity, each axis</td><td>0.2 across, 0.6 up</td><td>fixed look</td></tr>
+<tr><td><code>acceleration</code></td><td>a steady push each second, before drag</td><td>a lift of 0.5 × strength</td><td>state: <code>strength</code></td></tr>
+<tr><td><code>spawn_radius</code></td><td>the disc new particles start on</td><td>0.45 m</td><td>fixed look</td></tr>
+<tr><td><code>swirl</code></td><td>the spin about the source's upright line, radians a second</td><td>1 + 3.5 × strength</td><td>state: <code>strength</code></td></tr>
+<tr><td><code>outward</code></td><td>drift away from that line, metres a second</td><td>0.25 + 0.55 × strength</td><td>state: <code>strength</code></td></tr>
+<tr><td><code>time_scale</code></td><td>the source's clock against the host's</td><td>the walk's clock, 0 while paused</td><td>state: <code>clock</code></td></tr>
+</tbody>
+</table></div>
+<p>The skirt and the flecks are built the same way, with their own numbers: the skirt is big, faint puffs kicked out
+over a wide disc and slowed by <code>drag</code>; the flecks are small dark bits of grass flung up fast and falling
+back under a negative <code>acceleration</code>. <code>tint</code>, <code>spread</code> and <code>upward</code> are
+three small helpers in the module, so each colour and vector in a builder reads in one line:</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L205-L229"><code>game/DustDevil.roc</code></a>, lines 205-229</p>
+<pre class="roc"><code><span class="syn-comment">## The dust&#39;s colour `lit`, each channel darkened by `shade` (1 leaves it</span>
+<span class="syn-comment">## as lit), at opacity `alpha`.</span>
+<span class="syn-name">tint</span> : <span class="syn-type">Vocabulary.Rgb</span>, { shade : <span class="syn-type">F32</span>, alpha : <span class="syn-type">F32</span> } -&gt; <span class="syn-type">Vocabulary.Rgba</span>
+<span class="syn-name">tint</span> = |lit, { shade, alpha }| {
+	r: lit.r * shade,
+	g: lit.g * shade,
+	b: lit.b * shade,
+	a: alpha,
+}
+
+<span class="syn-comment">## A velocity spread as wide each way `across` the ground and `up` and down.</span>
+<span class="syn-name">spread</span> : { across : <span class="syn-type">F32</span>, up : <span class="syn-type">F32</span> } -&gt; <span class="syn-type">Vocabulary.Vec3</span>
+<span class="syn-name">spread</span> = |{ across, up }| {
+	x: across,
+	y: up,
+	z: across,
+}
+
+<span class="syn-comment">## An acceleration straight up by `lift` (a fall when it is negative).</span>
+<span class="syn-name">upward</span> : <span class="syn-type">F32</span> -&gt; <span class="syn-type">Vocabulary.Vec3</span>
+<span class="syn-name">upward</span> = |lift| {
+	x: <span class="syn-number">0.0</span>,
+	y: lift,
+	z: <span class="syn-number">0.0</span>,
+}</code></pre>
+
+<h2>How the Scene picks them up</h2>
+<p>The game's <code>view</code> in <code>main.roc</code> builds the Scene, and its <code>emitters</code> field joins
+every module's sources into one list. The devil's line hands it the walk as a <code>Watcher</code>. Its
+<code>walking</code> is false while the ride is paused or held, which is what sets the devil's clock to 0:</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/main.roc#L153-L204"><code>game/main.roc</code></a>, lines 153-204, trimmed</p>
+<pre class="roc"><code><span class="syn-name">view</span> : <span class="syn-type">Model</span> -&gt; <span class="syn-type">Vocabulary.Scene</span>
+<span class="syn-name">view</span> = |model| {
+		...
+		<span class="syn-comment"># The dust devil&#39;s dust runs on the walk&#39;s clock: still while paused or</span>
+		<span class="syn-comment"># held. The Roost&#39;s smoke runs while held too, so a start inside (or</span>
+		<span class="syn-comment"># the loading screen&#39;s hold) shows it already risen; it starts as the</span>
+		<span class="syn-comment"># jeep turns into the lot, so it has risen by the doors.</span>
+		emitters: <span class="syn-keyword">if</span> (!model.switches.particles) []
+		<span class="syn-keyword">else</span> <span class="syn-type">List</span>.join([
+			<span class="syn-keyword">if</span> (outside) <span class="syn-type">DustDevil</span>.emitters({ walked: along, walking: model.walking == <span class="syn-type">Walking</span> <span class="syn-keyword">and</span> !model.held, eye: camera.eye, moment }) <span class="syn-keyword">else</span> [],
+			<span class="syn-keyword">if</span> (interior <span class="syn-keyword">and</span> hall_shown <span class="syn-keyword">and</span> since_cut &gt; smoke_lead) <span class="syn-type">Roost</span>.emitters({ smoke: model.ids.smoke, puff: model.ids.puff, clock: smoke_clock, seconds: model.seconds }) <span class="syn-keyword">else</span> [],
+			<span class="syn-keyword">if</span> (interior <span class="syn-keyword">and</span> since_cut &gt; smoke_lead) <span class="syn-type">BackRoom</span>.emitters({ smoke: model.ids.smoke, puff: model.ids.puff, clock: smoke_clock, seconds: model.seconds, since_cut, eye: camera.eye }) <span class="syn-keyword">else</span> [],
+			<span class="syn-keyword">if</span> (<span class="syn-type">Warm</span>.warming(model.seconds, model.held)) [<span class="syn-type">DustDevil</span>.warm(camera.eye)] <span class="syn-keyword">else</span> [],</code></pre>
+<p>Each module that has particles adds one line here, and an empty list when it has nothing to show. The devil is only
+asked for its sources while the view is outside; the tavern's smoke has its own lines.</p>
+
+<h2>A source of your own</h2>
+<p>A campfire, a fountain or a chimney follows the same steps as the devil. Taking a campfire:</p>
+<ol>
+<li><strong>Write the state first.</strong> Decide what your game knows that the fire depends on, and put it in a
+record of your own: where the fire stands, how high it burns, and the clock its particles run on. A function from
+your model to <code>[Lit(Fire), Out]</code> keeps the "nothing to show" case explicit, as <code>Down</code> does for
+the devil. None of this needs to mention Emitters.</li>
+<li><strong>Write one builder per source.</strong> Start from <code>..Emitter.default</code> and set only what the
+source needs. Put the look in literal numbers: flames that live half a second, grow and fade from orange to clear.
+Put the motion in the state's values: a <code>rate</code> and a rising <code>velocity</code> that follow how high the
+fire burns. Smoke above it is a second builder, with a longer life, a slow lift in <code>acceleration</code> and a
+little <code>outward</code> drift.</li>
+<li><strong>Give each source an <code>id</code> and a <code>seed</code>.</strong> The id has to be unique among all
+the sources in the Scene: when two share one, the first wins. Named constants beside the builders, as
+<code>column_id</code> is, keep them in one place.</li>
+<li><strong>Tie <code>time_scale</code> to your pause.</strong> Pass your game's clock through the state, 1 while
+running and 0 while paused, and every builder sets <code>time_scale</code> from it. A paused game then holds its
+particles still with no other code.</li>
+<li><strong>Add the sources to the Scene's <code>emitters</code>.</strong> One line in <code>view</code>, joined with
+the rest, and an empty list when the fire is out. Once it leaves the list, its last particles drain away with their
+last settings.</li>
+</ol>
+<p>Because the sources are values, the module can be tested with ordinary <code>expect</code>s, with no renderer.
+The devil's tests check that it has no sources before it rises and three while it whirls, and that every source's
+<code>time_scale</code> is 0 when the walk is paused. When the module was split into its two halves, the new
+<code>emitters</code> was checked against the old at 3,400 moments along the walk, value for value, with
+<code>==</code> in a plain <code>expect</code>.</p>
+
+<h2>What made this pleasant</h2>
+<ul>
+<li><strong>The engine's contract is one record type, documented where it is declared.</strong> The Emitter's doc
+comment says what every field means, its units and its limits. That was everything this module needed to know.</li>
+<li><strong>The pure-function style suits particles.</strong> The game holds no particle state at all, so there is
+nothing to keep in sync, save or reset. A pause is one field.</li>
+<li><strong>Testing is ordinary Roc,</strong> as above.</li>
+</ul>
+
+<h2>A note on the fields</h2>
+<p>Five of the fields used here (<code>acceleration</code>, <code>spawn_radius</code>, <code>swirl</code>,
+<code>outward</code> and <code>time_scale</code>) come from Steve's fork of Rocco,
+<a href="https://github.com/showell/rocco-engine">github.com/showell/rocco-engine</a>, which added them for outdoor
+effects like this one. The rest is Rocco as Braeden wrote it. Steve likes to hold his own forks of projects sometimes
+while sending work upstream. That workflow works for him because of agent assistance; it may not work for you.</p>
+
+<p><em>This writeup and the code were written by Claude, an AI coding agent, under Steve Howell's direction.</em></p>
+
+<footer><a href="../" target="_self">Steve's Roc Work</a></footer>
+</main>
+</body>
+</html>

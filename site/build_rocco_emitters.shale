@@ -1,0 +1,358 @@
+-- This script writes the Rocco Emitters article, site/web/rocco-emitters/index.html:
+-- how Safari Walk's dust devil is built on Rocco's Emitters, as a walkthrough
+-- a reader can follow to build a particle source of their own. The prose is
+-- site/rocco_emitters.html, and each `<!-- snippet NAME -->` line in it
+-- becomes that snippet: code quoted by name through tools/quote_code.shale,
+-- from safari-walk's `main`, or from rocco-engine at the commit safari-walk's
+-- `main` records for its rocco-engine submodule, with a link to its lines on
+-- GitHub. A snippet is one or more parts, each a Roc definition cut to the
+-- pieces it keeps; the pieces are shown in order, with the blank lines
+-- between two of them when only blank lines stand between them in the file,
+-- and else a `...` line, and the leading tabs every shown line shares taken
+-- off. The prose's `<!-- safari-walk commit -->` and `<!-- rocco commit -->`
+-- become the short commits quoted. The Roc is colored by tools/color_code
+-- (roc-syntax-color), built here with the pinned Roc. Each
+-- `<!-- diagram NAME -->` line becomes Graphviz's SVG of that diagram's .dot
+-- file, inline, so the page's CSS colors it in either theme.
+--
+--   cd <roc-apps checkout> && shale site/build_rocco_emitters.shale            # writes the page and the lock
+--   cd <roc-apps checkout> && shale site/build_rocco_emitters.shale check=1    # fails if the page is stale
+--
+-- A build quotes at those commits and writes the lock,
+-- site/rocco_emitters.quotes: each quote's commit and its text's hash. The
+-- check quotes again and fails, naming each quote whose code has moved
+-- since; the page is then stale until it is built again and the prose around
+-- each moved quote is read again. When none moved, the check builds the page
+-- from the lock's commits and holds it to the page written.
+--
+-- `walk=` names the safari-walk checkout (`repos:safari-walk` unset), through
+-- a mount; its rocco-engine submodule must hold the commit `main` records. A
+-- snippet or a diagram the prose doesn't name, or a name the prose holds and
+-- SNIPPETS or DIAGRAMS lacks, stops the run. Then site/build.sh copies the
+-- page into the dev channel. site/build_security_idioms.shale is this
+-- script's model, for one repository.
+--
+-- budget: steps=50000000 arena_bytes=500000000 output_bytes=100000
+
+const PROSE = "site/rocco_emitters.html"
+const PAGE_DIR = "site/web/rocco-emitters"
+const PAGE = "site/web/rocco-emitters/index.html"
+const LOCK = "site/rocco_emitters.quotes"
+const QUOTE_CODE = "tools/quote_code.shale"
+const MAIN = "main"
+const MARK = "<!-- color_code answer -->\n"
+const WANT_ROC = "roc-pin: roc-apps' pinned nightly"
+const WANT_TOOL = "color-code: tools/color_code, roc-apps' own coloring app, built by this run"
+
+const WALK = arg("walk", "repos:safari-walk")
+const CHECK = arg("check", "0") == "1"
+
+-- The two repositories quoted: each its checkout, its GitHub blob URL and
+-- the prose's marker for its short commit. rocco-engine is quoted at the
+-- commit safari-walk's `main` records for its submodule, so the article shows
+-- the engine the walk is built on.
+function sources()
+  local rocco = trim(must(run({"git", "rev-parse", MAIN .. ":rocco-engine"}, {cwd = WALK, timeout_ms = 30000, tail = 3})).out)
+  return {
+    walk = {repo = WALK, rev = MAIN, github = "https://github.com/showell/safari-walk/blob/", mark = "<!-- safari-walk commit -->"},
+    rocco = {repo = WALK .. "/rocco-engine", rev = rocco, github = "https://github.com/showell/rocco-engine/blob/", mark = "<!-- rocco commit -->"},
+  }
+end
+
+-- Each snippet: its name in the prose, its source (`walk` or `rocco`), its
+-- file there and its parts, in order, each a quote of tools/quote_code.shale
+-- less its file (a definition `name`, in the block of `module` when that is
+-- not the file's own name, with the `pieces` it keeps).
+const SNIPPETS = {
+  {name = "emitter-type", source = "rocco", path = "platform/Vocabulary.roc", parts = {{name = "Emitter", pieces = {
+    {from = "## A host-simulated billboard source.", to = "## Removal stops emission;"},
+    {from = "## Size and colour interpolate", to = "## and linear HDR colour."},
+    {from = "## The outdoor fields, each 0 for none:", to = "Emitter : {"},
+  }}}},
+  {name = "state", source = "walk", path = "game/DustDevil.roc", parts = {{name = "Watcher"}, {name = "State"}, {name = "state", pieces = {{to = "state : Watcher"}}}}},
+  {name = "emitters", source = "walk", path = "game/DustDevil.roc", parts = {{name = "emitters"}}},
+  {name = "column", source = "walk", path = "game/DustDevil.roc", parts = {{name = "column_id"}, {name = "column"}}},
+  {name = "helpers", source = "walk", path = "game/DustDevil.roc", parts = {{name = "tint"}, {name = "spread"}, {name = "upward"}}},
+  {name = "scene", source = "walk", path = "game/main.roc", parts = {{name = "view", pieces = {
+    {to = "view = |model| {"},
+    {from = "# The dust devil's dust runs on the walk's clock", to = "if (Warm.warming(model.seconds, model.held)) [DustDevil.warm"},
+  }}}},
+}
+
+-- Each diagram: its name in the prose and its Graphviz source.
+const DIAGRAMS = {
+  {name = "flow", path = "site/rocco_emitters_flow.dot"},
+}
+
+function escaped(s)
+  local t = join(split(s, "&"), "&amp;")
+  t = join(split(t, "<"), "&lt;")
+  return join(split(t, ">"), "&gt;")
+end
+
+-- Nothing, or a stop naming the sibling checkout this page needs and lacks.
+-- A commit a checkout lacks, tools/quote_code.shale names.
+function require_siblings()
+  if not exists(WALK) then fail("build_rocco_emitters: no safari-walk checkout at " .. WALK .. ": clone github.com/showell/safari-walk beside roc-apps, with its submodule (or name one with walk=)") end
+  if not exists(WALK .. "/rocco-engine/platform") then fail("build_rocco_emitters: " .. WALK .. " has no rocco-engine submodule checked out: `git submodule update --init` there") end
+  local colorer = dirname(real(".")) .. "/roc-syntax-color"
+  local r = run({"git", "-C", colorer, "rev-parse", "--show-toplevel"}, {timeout_ms = 30000, tail = 3})
+  if r.code ~= 0 then fail("build_rocco_emitters: no roc-syntax-color checkout beside roc-apps: clone github.com/showell/roc-syntax-color there; tools/color_code imports it") end
+  return nil
+end
+
+-- The leading tabs of a line, as a count.
+function tabs_of(l)
+  local n = 0
+  while n < #l and sub(l, n + 1, n + 1) == "\t" do n = n + 1 end
+  return n
+end
+
+-- `s` written `n` times.
+function string_rep(s, n)
+  local out = ""
+  local i = 0
+  while i < n do
+    out = out .. s
+    i = i + 1
+  end
+  return out
+end
+
+-- Every snippet's quotes for tools/quote_code.shale, in order, each part's
+-- id `<snippet>/<part number>`.
+function quotes_of(src)
+  local quotes = {}
+  for s in SNIPPETS do
+    for n = 1, #s.parts do
+      local q = {}
+      for k in keys(s.parts[n]) do q[k] = s.parts[n][k] end
+      q.id = s.name .. "/" .. n
+      q.repo = src[s.source].repo
+      q.path = s.path
+      q.rev = src[s.source].rev
+      push(quotes, q)
+    end
+  end
+  return quotes
+end
+
+-- A child run's output less the runner's own report (its budget, step and
+-- time lines and the calls that led to a stop), its stop line kept, so the
+-- stop's why is what is left.
+function stop_of(out)
+  local kept = {}
+  for l in lines(out) do
+    local report = starts_with(l, "── ") and not starts_with(l, "── stopped at ")
+    if not report and not starts_with(trim(l), "called from ") then push(kept, l) end
+  end
+  return trim(join(kept, "\n"))
+end
+
+-- Every quote's answer, from one run of tools/quote_code.shale: a build
+-- quotes and writes the lock; a check holds the quotes to it.
+function quoted(quotes)
+  local work = fresh_dir("build:roc-apps", "rocco-emitters-quotes")
+  replace(work .. "/quotes.json", json_write(quotes))
+  local mode = "write"
+  if CHECK then mode = "check" end
+  local r = run({"shale", "--root", ".", QUOTE_CODE, "quotes=" .. work .. "/quotes.json", "answers=" .. work .. "/answers.json", "lock=" .. LOCK, "mode=" .. mode}, {timeout_ms = 300000, tail = 40})
+  if r.ended ~= "exit" or r.code ~= 0 then
+    remove_tree(work)
+    fail("build_rocco_emitters: " .. QUOTE_CODE .. " mode=" .. mode .. " failed: " .. stop_of(r.out))
+  end
+  local answers = json_read(read(work .. "/answers.json"))
+  remove_tree(work)
+  return answers
+end
+
+-- A snippet's pieces, in the file's order, each its lines `{at, text}`,
+-- from its parts' answers; and the commit they were quoted at.
+function snippet_pieces(s, answers)
+  local pieces = {}
+  local rev = ""
+  for a in answers do
+    if rev ~= "" and a.rev ~= rev then fail("build_rocco_emitters: " .. s.name .. "'s parts were quoted at two commits") end
+    rev = a.rev
+    if not has_key(a, "lines") then fail("build_rocco_emitters: " .. a.id .. " quotes a whole file; a snippet keeps pieces of it") end
+    for p in a.pieces do
+      local kept = {}
+      for i = p.first, p.last do push(kept, a.lines[i]) end
+      if #pieces > 0 then
+        local before = pieces[#pieces]
+        if kept[1].at <= before[#before].at then fail("build_rocco_emitters: " .. a.id .. " keeps line " .. kept[1].at .. ", which is not below the piece before it, line " .. before[#before].at) end
+      end
+      push(pieces, kept)
+    end
+  end
+  return {rev = rev, pieces = pieces}
+end
+
+-- A snippet's text: its pieces in order, joined by the blank lines between
+-- them in the file when only blank lines stand there, else by a `...` line at
+-- the next piece's indent, and the tabs every shown line shares taken off.
+-- `cut` says whether any `...` was put in.
+function snippet_text(s, repo, quote)
+  local source = lines(git_show(repo, quote.rev .. ":" .. s.path))
+  local shown = {}
+  local cut = false
+  for i = 1, #quote.pieces do
+    local piece = quote.pieces[i]
+    if i > 1 then
+      local gap = {}
+      local blank = true
+      local previous = quote.pieces[i - 1]
+      for n = previous[#previous].at + 1, piece[1].at - 1 do
+        if trim(source[n]) ~= "" then blank = false end
+        push(gap, {text = ""})
+      end
+      if blank then
+        for g in gap do push(shown, g) end
+      else
+        push(shown, {gap = true, indent = tabs_of(piece[1].text)})
+        cut = true
+      end
+    end
+    for l in piece do push(shown, {text = l.text}) end
+  end
+  local shared = 1000
+  for q in shown do
+    if not has_key(q, "gap") and trim(q.text) ~= "" and tabs_of(q.text) < shared then shared = tabs_of(q.text) end
+  end
+  local out = {}
+  for q in shown do
+    if has_key(q, "gap") then
+      push(out, string_rep("\t", q.indent - shared) .. "...")
+    elseif trim(q.text) == "" then
+      push(out, "")
+    else
+      push(out, sub(q.text, shared + 1))
+    end
+  end
+  return {text = join(out, "\n"), cut = cut}
+end
+
+-- The colored HTML of each Roc text, in order, from one run of
+-- tools/color_code.
+function colored(texts)
+  local roc = pinned_roc("build_rocco_emitters")
+  local work = fresh_dir("build:roc-apps", "rocco-emitters")
+  local tool = real(work) .. "/color_code"
+  must(run({roc, "build", "--opt=dev", "main.roc", "--output=" .. tool}, {cwd = "tools/color_code", timeout_ms = 300000, tail = 20, nice = 19, want = WANT_ROC}))
+  local argv = {tool}
+  for t in texts do
+    push(argv, "roc")
+    push(argv, t)
+  end
+  local r = must(run(argv, {timeout_ms = 60000, whole = 20000000, want = WANT_TOOL}))
+  remove_tree(work)
+  local pieces = split(r.out, MARK)
+  if pieces[1] ~= "" then fail("build_rocco_emitters: color_code printed something before its first answer") end
+  if #pieces - 1 ~= #texts then fail("build_rocco_emitters: " .. #texts .. " texts got " .. (#pieces - 1) .. " answers") end
+  return drop(pieces, 1)
+end
+
+-- A snippet's link: its file and lines on GitHub, at the commit quoted; one
+-- with a `...` says it is trimmed.
+function snippet_link(s, github, quote, cut)
+  local pieces = quote.pieces
+  local first = pieces[1][1].at
+  local tail = pieces[#pieces]
+  local last = tail[#tail].at
+  local where = "#L" .. first .. "-L" .. last
+  local what = "lines " .. first .. "-" .. last
+  if first == last then
+    where = "#L" .. first
+    what = "line " .. first
+  end
+  local trimmed = ""
+  if cut then trimmed = ", trimmed" end
+  return "<p class=\"file\"><a href=\"" .. github .. quote.rev .. "/" .. s.path .. where .. "\"><code>" .. escaped(s.path) .. "</code></a>, " .. what .. trimmed .. "</p>"
+end
+
+-- A diagram as the page shows it: Graphviz's SVG of its source, from its
+-- `<svg` on, in a `diagram` block.
+function diagram_html(d)
+  local svg = must(run({"dot", "-Tsvg", d.path}, {timeout_ms = 30000, whole = 1000000})).out
+  local start = find(svg, "<svg")
+  if not start then fail("build_rocco_emitters: dot gave no <svg> for " .. d.path) end
+  return "<div class=\"diagram\">\n" .. trim(sub(svg, start, #svg)) .. "\n</div>"
+end
+
+-- The prose with each source's one commit marker filled with its commit,
+-- short.
+function prose_at(src, revs)
+  local prose = read(PROSE)
+  for name in {"walk", "rocco"} do
+    local parts = split(prose, src[name].mark)
+    if #parts ~= 2 then fail("build_rocco_emitters: " .. PROSE .. " holds " .. (#parts - 1) .. " `" .. src[name].mark .. "` markers, not one") end
+    prose = join(parts, sub(revs[name], 1, 7))
+  end
+  return prose
+end
+
+function page()
+  local src = sources()
+  local answers = quoted(quotes_of(src))
+  local by_snippet = {}
+  for a in answers do push_at(by_snippet, split(a.id, "/")[1], a) end
+  local texts = {}
+  local links = {}
+  local order = {}
+  local revs = {}
+  for s in SNIPPETS do
+    local quote = snippet_pieces(s, by_snippet[s.name])
+    if has_key(revs, s.source) and revs[s.source] ~= quote.rev then fail("build_rocco_emitters: the " .. s.source .. " snippets were quoted at two commits") end
+    revs[s.source] = quote.rev
+    local shown = snippet_text(s, src[s.source].repo, quote)
+    texts[s.name] = shown.text
+    links[s.name] = snippet_link(s, src[s.source].github, quote, shown.cut)
+    push(order, shown.text)
+  end
+  local colored_html = colored(order)
+  local html = {}
+  for i = 1, #SNIPPETS do html[SNIPPETS[i].name] = colored_html[i] end
+  local used = {}
+  local out = {}
+  local drawn = {}
+  for l in lines(prose_at(src, revs)) do
+    local m = re_find(l, "^<!-- snippet ([a-z0-9-]+) -->$")
+    local d = re_find(l, "^<!-- diagram ([a-z0-9-]+) -->$")
+    if d ~= nil then
+      local found = nil
+      for g in DIAGRAMS do
+        if g.name == d.group then found = g end
+      end
+      if found == nil then fail("build_rocco_emitters: " .. PROSE .. " names the diagram " .. d.group .. ", which DIAGRAMS lacks") end
+      if has_key(drawn, found.name) then fail("build_rocco_emitters: " .. PROSE .. " names the diagram " .. found.name .. " twice") end
+      drawn[found.name] = true
+      push(out, diagram_html(found))
+    elseif m == nil then
+      push(out, l)
+    else
+      if not has_key(texts, m.group) then fail("build_rocco_emitters: " .. PROSE .. " names the snippet " .. m.group .. ", which SNIPPETS lacks") end
+      if has_key(used, m.group) then fail("build_rocco_emitters: " .. PROSE .. " names the snippet " .. m.group .. " twice") end
+      used[m.group] = true
+      push(out, links[m.group])
+      push(out, "<pre class=\"roc\"><code>" .. html[m.group] .. "</code></pre>")
+    end
+  end
+  for s in SNIPPETS do
+    if not has_key(used, s.name) then fail("build_rocco_emitters: the snippet " .. s.name .. " is in no `<!-- snippet " .. s.name .. " -->` line of " .. PROSE) end
+  end
+  for g in DIAGRAMS do
+    if not has_key(drawn, g.name) then fail("build_rocco_emitters: the diagram " .. g.name .. " is in no `<!-- diagram " .. g.name .. " -->` line of " .. PROSE) end
+  end
+  return join(out, "\n") .. "\n"
+end
+
+require_siblings()
+local text = page()
+if CHECK then
+  if not exists(PAGE) or read(PAGE) ~= text then fail("build_rocco_emitters: " .. PAGE .. " is stale: run shale site/build_rocco_emitters.shale") end
+  print("build_rocco_emitters: " .. PAGE .. " is up to date, its quotes unmoved since " .. LOCK)
+else
+  if not exists(PAGE_DIR) then mkdir(PAGE_DIR) end
+  if exists(PAGE) then replace(PAGE, text) else create(PAGE, text) end
+  print("build_rocco_emitters: wrote " .. PAGE .. ", " .. #text .. " bytes, and " .. LOCK)
+end

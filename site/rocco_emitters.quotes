@@ -1,0 +1,12 @@
+# Written by tools/quote_code.shale: a quote a line, its id, the commit it was quoted at, git's hash of its text, its file and what it keeps.
+emitter-type/1	565ec02477beeb105c9c57beb8fd2a4c97a8cdd0	55c30d51d1b20a2145f1743a771ce8fa03fb70c4	platform/Vocabulary.roc	definition Emitter, 3 pieces
+state/1	ba237da4aa35043bbbdc99f1c5428d2859c43175	39ded69ae443d0dcfae9c4e1beb0034743da5368	game/DustDevil.roc	definition Watcher
+state/2	ba237da4aa35043bbbdc99f1c5428d2859c43175	a46ccf81a3df044c880947e5eb646ed4c5e6a9db	game/DustDevil.roc	definition State
+state/3	ba237da4aa35043bbbdc99f1c5428d2859c43175	26958cc10c2cd513f3e712233e050425ea9988a7	game/DustDevil.roc	definition state, 1 pieces
+emitters/1	ba237da4aa35043bbbdc99f1c5428d2859c43175	2924219f7a67a7876064babd5fac411145ec36dc	game/DustDevil.roc	definition emitters
+column/1	ba237da4aa35043bbbdc99f1c5428d2859c43175	f94f53a11e8b5ed832a4bbe0a371c22f0697b29e	game/DustDevil.roc	definition column_id
+column/2	ba237da4aa35043bbbdc99f1c5428d2859c43175	81eefae409c1e0090be09e1e80501ab77e335aa0	game/DustDevil.roc	definition column
+helpers/1	ba237da4aa35043bbbdc99f1c5428d2859c43175	8dc4c25bb1a9d1a34a8b7cddbee260ffc80af055	game/DustDevil.roc	definition tint
+helpers/2	ba237da4aa35043bbbdc99f1c5428d2859c43175	8ec0b35354adfcd851912bc97195422ed7d08cc9	game/DustDevil.roc	definition spread
+helpers/3	ba237da4aa35043bbbdc99f1c5428d2859c43175	68eb663197e287bc0480289393a5ae45cee094e2	game/DustDevil.roc	definition upward
+scene/1	ba237da4aa35043bbbdc99f1c5428d2859c43175	d59fc29e4dd15154e8877785684d4d6b6d828347	game/main.roc	definition view, 2 pieces

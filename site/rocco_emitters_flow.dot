@@ -1,0 +1,26 @@
+// The Rocco Emitters article's drawing: the walk's place becomes the devil's
+// State, three builders turn it into Emitters, the Scene carries them, and
+// Rocco's host simulates the particles. site/build_rocco_emitters.shale
+// renders it with Graphviz and puts the SVG in the page.
+digraph flow {
+  graph [rankdir=TB, bgcolor="transparent", nodesep=0.3, ranksep=0.35, fontname="sans-serif", fontsize=12];
+  node [shape=box, style="rounded", fontname="sans-serif", fontsize=12, margin="0.14,0.08"];
+  edge [fontname="sans-serif", fontsize=11, arrowsize=0.7];
+
+  watcher [label="the walk\nWatcher"];
+  state [label="state\nState: foot, strength, clock"];
+  column [label="column"];
+  skirt [label="skirt"];
+  flecks [label="flecks"];
+  scene [label="view: Scene.emitters"];
+  host [label="Rocco's host\nsimulates every particle", style="rounded,bold"];
+
+  watcher -> state [label="game code"];
+  state -> column;
+  state -> skirt;
+  state -> flecks;
+  column -> scene [label="Emitter"];
+  skirt -> scene [label="Emitter"];
+  flecks -> scene [label="Emitter"];
+  scene -> host [label="each frame"];
+}
