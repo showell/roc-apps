@@ -19,7 +19,7 @@
 <li class="here"><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a><ol class="sections"><li><a href="rocs-copy-rule.html#when-a-write-copies">When a write copies</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-every-build">Shapes that copy in every build</a></li><li><a href="rocs-copy-rule.html#shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only</a></li><li><a href="rocs-copy-rule.html#records-and-boxes">Records and boxes</a></li></ol></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,10 +41,131 @@
 <article>
 <p class="chapter-number">Chapter 5</p>
 <h1 id="rocs-copy-rule">Roc&#39;s copy rule</h1>
-<p>Both programs lean on one rule of Roc&#39;s. The interpreter keeps a JavaScript program&#39;s heap in one Roc list, which many of its instructions write; the compiler builds an executable&#39;s bytes by appending to one list. Each is fast only while Roc writes its list in place, and this chapter states when Roc does. <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> gives the three habits the interpreter took from it.</p>
+<p>Roc has only values, yet it writes a list in place whenever it safely can. Both programs depend on that. The interpreter keeps a JavaScript program&#39;s heap in one Roc list, which many of its instructions write; the compiler builds an executable&#39;s bytes by appending to one list. Each is fast only while Roc writes its list in place. This chapter states when Roc does, and when it quietly copies the list first. Every later chapter that weighs a cost comes back to it, and <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> gives the three habits the interpreter took from it.</p>
 <h2 id="when-a-write-copies">When a write copies <a class="section-link" href="#when-a-write-copies" aria-label="Link to this section">§</a></h2>
 <p>Roc writes a list in place only while the list has a single owner, and a copy is silent. On RC1 every copy is a use after a consume: a write (<code>List.set</code>, <code>append</code>, <code>Dict.insert</code>) takes the value, and something still reads the old one after it. The copy allocates the whole list again on every such write, so its cost grows with the list.</p>
-<p>Each shape below is a loop in roc-apps&#39; <code>tools/copy_shapes/CopyShapes.roc</code>, held to its count of allocations a write in the release and dev builds (<code>expected.txt</code> and <code>expected-dev.txt</code> beside it, measured on RC1). The listings are lines of those loops, each loop&#39;s call of itself written on one line; each copying shape sits beside its twin that writes in place.</p>
+<p>This book calls that drop the copy cliff. A loop that writes in place pays O(1) a write; the same loop with a second owner pays O(n) a write, and the code reads the same either way.</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One write, two outcomes" width="337pt" height="98pt"
+ viewBox="0.00 0.00 337.00 98.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 94)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-94 333,-94 333,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M94,-36C94,-36 15,-36 15,-36 9,-36 3,-30 3,-24 3,-24 3,-12 3,-12 3,-6 9,0 15,0 15,0 94,0 94,0 100,0 106,-6 106,-12 106,-12 106,-24 106,-24 106,-30 100,-36 94,-36"/>
+<text text-anchor="middle" x="54.5" y="-14.9" font-family="Times,serif" font-size="12.00">xs: one owner</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M310.5,-36C310.5,-36 221.5,-36 221.5,-36 215.5,-36 209.5,-30 209.5,-24 209.5,-24 209.5,-12 209.5,-12 209.5,-6 215.5,0 221.5,0 221.5,0 310.5,0 310.5,0 316.5,0 322.5,-6 322.5,-12 322.5,-12 322.5,-24 322.5,-24 322.5,-30 316.5,-36 310.5,-36"/>
+<text text-anchor="middle" x="266" y="-21.4" font-family="Times,serif" font-size="12.00">written in place</text>
+<text text-anchor="middle" x="266" y="-8.4" font-family="Times,serif" font-size="12.00">O(1)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M106.21,-18C134.05,-18 168.91,-18 198.86,-18"/>
+<polygon fill="black" stroke="black" points="199.23,-21.5 209.23,-18 199.23,-14.5 199.23,-21.5"/>
+<text text-anchor="middle" x="156" y="-21.2" font-family="Times,serif" font-size="11.00">xs.set(j, i)</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M97,-90C97,-90 12,-90 12,-90 6,-90 0,-84 0,-78 0,-78 0,-66 0,-66 0,-60 6,-54 12,-54 12,-54 97,-54 97,-54 103,-54 109,-60 109,-66 109,-66 109,-78 109,-78 109,-84 103,-90 97,-90"/>
+<text text-anchor="middle" x="54.5" y="-68.9" font-family="Times,serif" font-size="12.00">xs: two owners</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M317,-90C317,-90 215,-90 215,-90 209,-90 203,-84 203,-78 203,-78 203,-66 203,-66 203,-60 209,-54 215,-54 215,-54 317,-54 317,-54 323,-54 329,-60 329,-66 329,-66 329,-78 329,-78 329,-84 323,-90 317,-90"/>
+<text text-anchor="middle" x="266" y="-75.4" font-family="Times,serif" font-size="12.00">copied whole,</text>
+<text text-anchor="middle" x="266" y="-62.4" font-family="Times,serif" font-size="12.00">then written: O(n)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M109.18,-72C134.55,-72 165.21,-72 192.6,-72"/>
+<polygon fill="black" stroke="black" points="192.92,-75.5 202.92,-72 192.92,-68.5 192.92,-75.5"/>
+<text text-anchor="middle" x="156" y="-75.2" font-family="Times,serif" font-size="11.00">xs.set(j, i)</text>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One write, two outcomes" width="237pt" height="126pt"
+ viewBox="0.00 0.00 236.50 126.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 122)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-122 232.5,-122 232.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M86,-118C86,-118 17,-118 17,-118 11,-118 5,-112 5,-106 5,-106 5,-94 5,-94 5,-88 11,-82 17,-82 17,-82 86,-82 86,-82 92,-82 98,-88 98,-94 98,-94 98,-106 98,-106 98,-112 92,-118 86,-118"/>
+<text text-anchor="middle" x="51.5" y="-96.9" font-family="Times,serif" font-size="12.00">xs: one owner</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M91,-36C91,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 91,0 91,0 97,0 103,-6 103,-12 103,-12 103,-24 103,-24 103,-30 97,-36 91,-36"/>
+<text text-anchor="middle" x="51.5" y="-21.4" font-family="Times,serif" font-size="12.00">written in place</text>
+<text text-anchor="middle" x="51.5" y="-8.4" font-family="Times,serif" font-size="12.00">O(1)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M51.5,-81.64C51.5,-71.3 51.5,-57.94 51.5,-46.22"/>
+<polygon fill="black" stroke="black" points="55,-46.05 51.5,-36.05 48,-46.05 55,-46.05"/>
+<text text-anchor="middle" x="74.5" y="-62.2" font-family="Times,serif" font-size="11.00">xs.set(j,</text>
+<text text-anchor="middle" x="74.5" y="-50.2" font-family="Times,serif" font-size="11.00">i)</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M208,-118C208,-118 133,-118 133,-118 127,-118 121,-112 121,-106 121,-106 121,-94 121,-94 121,-88 127,-82 133,-82 133,-82 208,-82 208,-82 214,-82 220,-88 220,-94 220,-94 220,-106 220,-106 220,-112 214,-118 208,-118"/>
+<text text-anchor="middle" x="170.5" y="-96.9" font-family="Times,serif" font-size="12.00">xs: two owners</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M216.5,-36C216.5,-36 124.5,-36 124.5,-36 118.5,-36 112.5,-30 112.5,-24 112.5,-24 112.5,-12 112.5,-12 112.5,-6 118.5,0 124.5,0 124.5,0 216.5,0 216.5,0 222.5,0 228.5,-6 228.5,-12 228.5,-12 228.5,-24 228.5,-24 228.5,-30 222.5,-36 216.5,-36"/>
+<text text-anchor="middle" x="170.5" y="-21.4" font-family="Times,serif" font-size="12.00">copied whole,</text>
+<text text-anchor="middle" x="170.5" y="-8.4" font-family="Times,serif" font-size="12.00">then written: O(n)</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M170.5,-81.64C170.5,-71.3 170.5,-57.94 170.5,-46.22"/>
+<polygon fill="black" stroke="black" points="174,-46.05 170.5,-36.05 167,-46.05 174,-46.05"/>
+<text text-anchor="middle" x="193.5" y="-62.2" font-family="Times,serif" font-size="11.00">xs.set(j,</text>
+<text text-anchor="middle" x="193.5" y="-50.2" font-family="Times,serif" font-size="11.00">i)</text>
+</g>
+</g>
+</svg><figcaption>One write, two outcomes</figcaption></figure><p>The technique behind the rule is reference counting with in-place update of a value held once, as in Lean 4 (Ullrich and de Moura, &quot;Counting Immutable Beans&quot;, 2019) and Koka&#39;s Perceus (Reinking, Xie, de Moura and Leijen, 2021).</p>
+<p>Each shape below is a loop in roc-apps&#39; <code>tools/copy_shapes/CopyShapes.roc</code>, held to its count of allocations a write in the release and dev builds (<code>expected.txt</code> and <code>expected-dev.txt</code> beside it, measured on RC1). The listings are lines of those loops, each loop&#39;s call of itself written on one line; each copying shape sits beside its twin that writes in place. In brief:</p>
+<table>
+<thead>
+<tr>
+<th>the shape that copies</th>
+<th>it copies in</th>
+<th>its twin, written in place</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>get-after-set</code></td>
+<td>every build</td>
+<td><code>set-restored</code></td>
+</tr>
+<tr>
+<td><code>closure-called-after</code></td>
+<td>every build</td>
+<td><code>closure-called-before</code></td>
+</tr>
+<tr>
+<td><code>nested-get-then-set</code></td>
+<td>every build</td>
+<td><code>nested-update</code></td>
+</tr>
+<tr>
+<td><code>dict-length-after-insert</code></td>
+<td>every build</td>
+<td>-</td>
+</tr>
+<tr>
+<td><code>dict-get-then-insert</code></td>
+<td>every build</td>
+<td><code>dict-take-then-insert</code></td>
+</tr>
+<tr>
+<td><code>helper-length-after-set</code></td>
+<td>the dev build</td>
+<td><code>helper-length-before-set</code></td>
+</tr>
+<tr>
+<td><code>helper-reads-record</code></td>
+<td>the dev build</td>
+<td><code>index-bound-before</code></td>
+</tr>
+<tr>
+<td><code>str-list-restored</code></td>
+<td>the dev build</td>
+<td><code>str-list-or-crash</code></td>
+</tr>
+</tbody>
+</table>
 <h2 id="shapes-that-copy-in-every-build">Shapes that copy in every build <a class="section-link" href="#shapes-that-copy-in-every-build" aria-label="Link to this section">§</a></h2>
 <p><strong>The old list read after its write.</strong> The write takes the list only while it is the list&#39;s one reader:</p>
 <figure class="listing"><figcaption>get-after-set: a copy a write</figcaption><pre><code class="language-roc"><span class="syn-name">ys</span> = xs.set(j, i) ?? xs
@@ -73,7 +194,7 @@ dict_get_then_insert(i + <span class="syn-number">1</span>, steps, size, d.inser
 <span class="syn-name">d0</span> = d.remove(<span class="syn-number">0</span>)
 dict_take_then_insert(i + <span class="syn-number">1</span>, steps, size, d0.insert(<span class="syn-number">0</span>, l.set(j, i) ?? l), sum + j)
 </code></pre></figure><h2 id="shapes-that-copy-in-the-dev-build-only">Shapes that copy in the dev build only <a class="section-link" href="#shapes-that-copy-in-the-dev-build-only" aria-label="Link to this section">§</a></h2>
-<p>In the dev build a helper stays a call that owns its arguments; the release build specializes it first, and writes in place.</p>
+<p>In the dev build a helper stays a call that owns its arguments. The release build specializes the helper first, and writes in place. These shapes still matter: a dev-only copy often becomes a release copy once the code around it changes (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>).</p>
 <p><strong>A helper that reads its list after writing it:</strong></p>
 <figure class="listing"><figcaption>helper-length-after-set: a copy a write, dev only</figcaption><pre><code class="language-roc"><span class="syn-name">bump_length_after</span> = |xs, j, v| (xs.set(j, v) ?? xs, xs.len())
 </code></pre></figure><p>Reading the length first is free in both builds (<code>helper-length-before-set</code>):</p>

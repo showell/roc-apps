@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,7 +41,7 @@
 <article>
 <p class="chapter-number">Chapter 14</p>
 <h1 id="javascripts-rules-for-values">JavaScript&#39;s rules for values</h1>
-<p>The compiler&#39;s runtime gives values their JavaScript meanings in machine code (<code>runtime_add</code> and its kin, <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>). This chapter is about the interpreter, which gives them the same meanings in Roc.</p>
+<p>The compiler&#39;s runtime gives values their JavaScript meanings in machine code (<code>runtime_add</code> and its kin, <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>). The interpreter gives them the same meanings in Roc, and this chapter shows how, with the hand-off of the heap that keeps those rules off the copy cliff.</p>
 <p>In JavaScript, one operator means different things for different values. <code>1 + 2</code> adds, and gives <code>3</code>. <code>&quot;a&quot; + 1</code> turns the number into text, and gives <code>&quot;a1&quot;</code>. <code>&quot;5&quot; * 2</code> asks for a string to become a number. A property read varies too: with <code>o</code> holding <code>{ x: 1 }</code>, <code>o.x</code> gives <code>1</code>, <code>o.y</code> gives <code>undefined</code>, and <code>[1, 2].length</code> reads a property every array has.</p>
 <p>Here it is carried by plain Roc functions, one for each piece of meaning: what <code>+</code> makes of two values, what a property read gives, what a store does, and the words of each error. The project calls each of these functions a rule. A rule takes values and gives back a value, or stops the run with a message, or throws. The rules live in <code>ValueRules.roc</code> and four modules built on it, so each piece of meaning, and each message, has one home.</p>
 <h2 id="the-common-cases-and-the-rest">The common cases, and the rest <a class="section-link" href="#the-common-cases-and-the-rest" aria-label="Link to this section">§</a></h2>
@@ -96,7 +96,7 @@
 <p>For <code>o.y</code>, <code>Instructions.property_read</code> looks through the object&#39;s own properties, finds <code>x</code> alone, and hands the read to <code>ValueRules.property</code>. For an object, that rule gives <code>Undefined</code> for a missing name, so <code>console.log(o.y)</code> prints <code>undefined</code>, as node does.</p>
 <p>The eight names of <code>Object.prototype</code> in <code>ValueRules.is_prototype_name</code>, such as <code>toString</code>, stop the run with a message, since the subset leaves prototypes out.</p>
 <h2 id="the-cells-are-lent">The cells are lent <a class="section-link" href="#the-cells-are-lent" aria-label="Link to this section">§</a></h2>
-<p>In Roc, every value stays as it was made: <code>List.set(list, i, x)</code> returns a list with the new item, and any other holder of the old list keeps the old items. Roc keeps this fast: when the list has one holder, Roc writes into that list&#39;s own memory; when it has two, Roc first copies the whole list. That copy is the copy cliff of <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a>.</p>
+<p><code>List.set(list, i, x)</code> writes the list&#39;s own memory while the list has one holder; with two, Roc first copies the whole list, the copy cliff of <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a>.</p>
 <p>The heap is one list of cells, and the VM&#39;s machine record holds it (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>). Some rules write it: <code>a.push(1)</code> reaches <code>ArrayRules.array_method</code>, which writes the array&#39;s cell, and a method that makes a new array allocates a cell.</p>
 <p>If a rule received the cells while the machine still held them, two values would refer to the heap, and the rule&#39;s first write would copy all of it. Every <code>push</code> would cost the whole heap.</p>
 <p>So the VM takes the cells out of its machine, which is left holding an empty list, and hands them to the rule as their one holder. The rule writes in place, and the VM puts back the cells the rule returns. That is all lending means: a hand-off of the only reference, for one call. <code>Machine.lent</code> takes the cells out:</p>
@@ -145,12 +145,32 @@
 </svg><figcaption>Who holds the cells around a rule</figcaption></figure><p>The allocation controls check it (<a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>). 05-array-push pushes through this path, and the release build is held to exactly one allocation a pass, its list of arguments (<code>js/controls/expected.txt</code>); a copy of the heap at each push would be a second.</p>
 <h2 id="the-four-modules-on-it">The four modules on it <a class="section-link" href="#the-four-modules-on-it" aria-label="Link to this section">§</a></h2>
 <p><code>ValueRules</code> holds the operators, the property reads and writes, and the patterns. Four modules hold the rest, one kind of value each, and each takes the lent cells and answers a <code>Got</code>:</p>
-<ul>
-<li><strong><code>StringRules</code></strong>: the methods of strings (<code>text_method</code>), those that count by position on ASCII text alone.</li>
-<li><strong><code>ArrayRules</code></strong>: <code>push</code>, <code>pop</code>, <code>splice</code> and the other array methods that take only values. <code>map</code>, <code>filter</code>, <code>sort</code> and the others that call the program back run the VM&#39;s loop, so the VM runs them.</li>
-<li><strong><code>CollectionRules</code></strong>: the walks that a spread, a pattern and <code>for ... of</code> make, and the methods of Maps and Sets.</li>
-<li><strong><code>BuiltinRules</code></strong>: the starting globals, what <code>new</code> makes, and the builtins that give a value alone.</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>module</th>
+<th>what it holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>StringRules</code></td>
+<td>the methods of strings (<code>text_method</code>), those that count by position on ASCII text alone</td>
+</tr>
+<tr>
+<td><code>ArrayRules</code></td>
+<td><code>push</code>, <code>pop</code>, <code>splice</code> and the other array methods that take only values; <code>map</code>, <code>filter</code>, <code>sort</code> and the others that call the program back run the VM&#39;s loop, so the VM runs them</td>
+</tr>
+<tr>
+<td><code>CollectionRules</code></td>
+<td>the walks that a spread, a pattern and <code>for ... of</code> make, and the methods of Maps and Sets</td>
+</tr>
+<tr>
+<td><code>BuiltinRules</code></td>
+<td>the starting globals, what <code>new</code> makes, and the builtins that give a value alone</td>
+</tr>
+</tbody>
+</table>
 <p><code>console.log</code>, the canvas, the timers, the program&#39;s own functions and the host stay with the VM.</p>
 
 </article>

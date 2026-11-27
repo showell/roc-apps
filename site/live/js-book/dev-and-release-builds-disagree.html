@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,7 +41,7 @@
 <article>
 <p class="chapter-number">Chapter 17</p>
 <h1 id="dev-and-release-builds-disagree">Dev and release builds disagree</h1>
-<p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, compiles slowly, and runs the VM&#39;s fib(22) about nine times faster: 99 ms of CPU against about 860 (<code>js/README.md</code>, 2026-11-24). Three findings about the pair have lasted.</p>
+<p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, compiles slowly, and runs the VM&#39;s fib(22) about nine times faster: 99 ms of CPU against about 860 (<code>js/README.md</code>, 2026-11-24). Three findings about the pair have lasted, and each tells a reader which build answers which question.</p>
 <h2 id="a-dev-timing-says-little">A dev timing says little <a class="section-link" href="#a-dev-timing-says-little" aria-label="Link to this section">§</a></h2>
 <p>Dev timings fail to predict release timings, even in direction:</p>
 <table>
@@ -73,7 +73,90 @@
 <p>At a helper&#39;s boundary the dev build keeps a call that owns its arguments, where the release build specializes the helper first, so the dev build makes copies the release build skips (<a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> lists three such shapes). The project met one in its own code. When <code>ValueRules</code> was split out, its first version took the engine&#39;s whole machine as an open record, and the dev build copied the cells on every write through it: 05-array-push&#39;s dev count rose from 3 to 12.73 allocations a pass (<code>d8d6b7fe</code>). The rules now take a small machine of the cells, which the VM lends them (<a class="chapter-link" href="javascripts-rules-for-values.html">“JavaScript&#39;s rules for values”</a>). A dev-only copy is often a shape that will copy in release once the code around it changes, so the dev counts are held too.</p>
 <h2 id="count-on-dev-time-on-release">Count on dev, time on release <a class="section-link" href="#count-on-dev-time-on-release" aria-label="Link to this section">§</a></h2>
 <p><code>js/controls/</code> holds nine small programs, each a loop that does one kind of write. <code>js/controls.shale</code> runs each at 1,000 and 10,000 passes and holds what one more pass allocates, exactly, in both builds: <code>expected.txt</code> for release and <code>expected-dev.txt</code> for dev, where each line explains its allocation. Counts are deterministic, so a change that moves one shows on the dev ladder in seconds, and most trials end there. Times are taken on the release build, once a round, from one shared build (<code>tools/roc_build.shale</code> keys each build by its inputs), as roc-apps&#39; <code>CLAUDE.md</code> (section 9) and <code>js/README.md</code> say.</p>
-
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One round of a change" width="641pt" height="44pt"
+ viewBox="0.00 0.00 641.00 44.31" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 40.31)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-40.31 637,-40.31 637,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M61,-36.31C61,-36.31 12,-36.31 12,-36.31 6,-36.31 0,-30.31 0,-24.31 0,-24.31 0,-12.31 0,-12.31 0,-6.31 6,-0.31 12,-0.31 12,-0.31 61,-0.31 61,-0.31 67,-0.31 73,-6.31 73,-12.31 73,-12.31 73,-24.31 73,-24.31 73,-30.31 67,-36.31 61,-36.31"/>
+<text text-anchor="middle" x="36.5" y="-15.21" font-family="Times,serif" font-size="12.00">a change</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M308,-36.31C308,-36.31 203,-36.31 203,-36.31 197,-36.31 191,-30.31 191,-24.31 191,-24.31 191,-12.31 191,-12.31 191,-6.31 197,-0.31 203,-0.31 203,-0.31 308,-0.31 308,-0.31 314,-0.31 320,-6.31 320,-12.31 320,-12.31 320,-24.31 320,-24.31 320,-30.31 314,-36.31 308,-36.31"/>
+<text text-anchor="middle" x="255.5" y="-21.71" font-family="Times,serif" font-size="12.00">the dev ladder</text>
+<text text-anchor="middle" x="255.5" y="-8.71" font-family="Times,serif" font-size="12.00">counts, in seconds</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M73.33,-18.31C102.49,-18.31 144.61,-18.31 180.9,-18.31"/>
+<polygon fill="black" stroke="black" points="180.96,-21.81 190.96,-18.31 180.96,-14.81 180.96,-21.81"/>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M190.59,-5.41C184.66,-4.56 178.73,-3.83 173,-3.31 136.71,0 127.1,1.65 91,-3.31 88.36,-3.67 85.66,-4.13 82.96,-4.66"/>
+<polygon fill="black" stroke="black" points="82.18,-1.25 73.19,-6.86 83.71,-8.08 82.18,-1.25"/>
+<text text-anchor="middle" x="132" y="-6.51" font-family="Times,serif" font-size="11.00">a count moved</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M505,-36.31C505,-36.31 433,-36.31 433,-36.31 427,-36.31 421,-30.31 421,-24.31 421,-24.31 421,-12.31 421,-12.31 421,-6.31 427,-0.31 433,-0.31 433,-0.31 505,-0.31 505,-0.31 511,-0.31 517,-6.31 517,-12.31 517,-12.31 517,-24.31 517,-24.31 517,-30.31 511,-36.31 505,-36.31"/>
+<text text-anchor="middle" x="469" y="-21.71" font-family="Times,serif" font-size="12.00">one shared</text>
+<text text-anchor="middle" x="469" y="-8.71" font-family="Times,serif" font-size="12.00">release build</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M320.24,-18.31C349.06,-18.31 382.84,-18.31 410.83,-18.31"/>
+<polygon fill="black" stroke="black" points="410.86,-21.81 420.86,-18.31 410.85,-14.81 410.86,-21.81"/>
+<text text-anchor="middle" x="370.5" y="-21.51" font-family="Times,serif" font-size="11.00">counts held</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M621,-36.31C621,-36.31 566,-36.31 566,-36.31 560,-36.31 554,-30.31 554,-24.31 554,-24.31 554,-12.31 554,-12.31 554,-6.31 560,-0.31 566,-0.31 566,-0.31 621,-0.31 621,-0.31 627,-0.31 633,-6.31 633,-12.31 633,-12.31 633,-24.31 633,-24.31 633,-30.31 627,-36.31 621,-36.31"/>
+<text text-anchor="middle" x="593.5" y="-15.21" font-family="Times,serif" font-size="12.00">the timing</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M517.01,-18.31C525.74,-18.31 534.88,-18.31 543.66,-18.31"/>
+<polygon fill="black" stroke="black" points="543.76,-21.81 553.76,-18.31 543.76,-14.81 543.76,-21.81"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="One round of a change" width="138pt" height="252pt"
+ viewBox="0.00 0.00 137.50 252.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 248)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-248 133.5,-248 133.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M67,-244C67,-244 28,-244 28,-244 22,-244 16,-238 16,-232 16,-232 16,-220 16,-220 16,-214 22,-208 28,-208 28,-208 67,-208 67,-208 73,-208 79,-214 79,-220 79,-220 79,-232 79,-232 79,-238 73,-244 67,-244"/>
+<text text-anchor="middle" x="47.5" y="-222.9" font-family="Times,serif" font-size="12.00">a change</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M83,-174C83,-174 12,-174 12,-174 6,-174 0,-168 0,-162 0,-162 0,-141 0,-141 0,-135 6,-129 12,-129 12,-129 83,-129 83,-129 89,-129 95,-135 95,-141 95,-141 95,-162 95,-162 95,-168 89,-174 83,-174"/>
+<text text-anchor="middle" x="47.5" y="-161.4" font-family="Times,serif" font-size="12.00">the dev ladder</text>
+<text text-anchor="middle" x="47.5" y="-148.4" font-family="Times,serif" font-size="12.00">counts,</text>
+<text text-anchor="middle" x="47.5" y="-135.4" font-family="Times,serif" font-size="12.00">in seconds</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M47.5,-207.82C47.5,-200.83 47.5,-192.52 47.5,-184.49"/>
+<polygon fill="black" stroke="black" points="51,-184.24 47.5,-174.24 44,-184.24 51,-184.24"/>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M47.5,-174.24C47.5,-181.63 47.5,-189.98 47.5,-197.74"/>
+<polygon fill="black" stroke="black" points="44,-197.82 47.5,-207.82 51,-197.82 44,-197.82"/>
+<text text-anchor="middle" x="88.5" y="-188.2" font-family="Times,serif" font-size="11.00">a count moved</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M78.5,-95C78.5,-95 16.5,-95 16.5,-95 10.5,-95 4.5,-89 4.5,-83 4.5,-83 4.5,-71 4.5,-71 4.5,-65 10.5,-59 16.5,-59 16.5,-59 78.5,-59 78.5,-59 84.5,-59 90.5,-65 90.5,-71 90.5,-71 90.5,-83 90.5,-83 90.5,-89 84.5,-95 78.5,-95"/>
+<text text-anchor="middle" x="47.5" y="-80.4" font-family="Times,serif" font-size="12.00">one shared</text>
+<text text-anchor="middle" x="47.5" y="-67.4" font-family="Times,serif" font-size="12.00">release build</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M47.5,-128.75C47.5,-121.41 47.5,-113.12 47.5,-105.4"/>
+<polygon fill="black" stroke="black" points="51,-105.37 47.5,-95.37 44,-105.37 51,-105.37"/>
+<text text-anchor="middle" x="80" y="-109.2" font-family="Times,serif" font-size="11.00">counts held</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M70,-36C70,-36 25,-36 25,-36 19,-36 13,-30 13,-24 13,-24 13,-12 13,-12 13,-6 19,0 25,0 25,0 70,0 70,0 76,0 82,-6 82,-12 82,-12 82,-24 82,-24 82,-30 76,-36 70,-36"/>
+<text text-anchor="middle" x="47.5" y="-14.9" font-family="Times,serif" font-size="12.00">the timing</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M47.5,-58.9C47.5,-54.95 47.5,-50.66 47.5,-46.4"/>
+<polygon fill="black" stroke="black" points="51,-46.09 47.5,-36.09 44,-46.09 51,-46.09"/>
+</g>
+</g>
+</svg><figcaption>One round of a change</figcaption></figure>
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="why-a-compiler-suits-roc.html"><small>Previous</small>Why a compiler suits Roc</a>

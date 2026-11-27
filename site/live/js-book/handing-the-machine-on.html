@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,10 +41,81 @@
 <article>
 <p class="chapter-number">Chapter 15</p>
 <h1 id="handing-the-machine-on">Handing the machine on</h1>
-<p>The interpreter&#39;s performance work came down to <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> and three habits that follow from it, each about the machine record of <a class="chapter-link" href="the-interpreter.html">“The interpreter”</a>.</p>
+<p>The interpreter&#39;s performance work came down to <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> and three habits that follow from it, each about the machine record of <a class="chapter-link" href="the-interpreter.html">“The interpreter”</a>. They apply to any Roc program that threads one large record through a loop:</p>
+<table>
+<thead>
+<tr>
+<th>habit</th>
+<th>why</th>
+<th>what it bought</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>know that a value is copied when it is handed on</td>
+<td>each instruction copies the whole inline record once</td>
+<td>-</td>
+</tr>
+<tr>
+<td>box what is rarely written</td>
+<td>a boxed part is one pointer in that copy</td>
+<td>fib(22) from 123 ms to 82 (<code>15686d94</code>)</td>
+</tr>
+<tr>
+<td>stay under 256 bytes</td>
+<td>LLVM copies a record of up to 256 bytes with vector moves, and calls <code>memcpy</code> past it</td>
+<td>fib(22) from 110 ms to 99 (<code>3aba5cf7</code>)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on <a class="section-link" href="#a-value-is-copied-when-it-is-handed-on" aria-label="Link to this section">§</a></h2>
 <p>Every VM instruction takes the machine and hands it back: <code>dispatch!</code> passes it to the instruction&#39;s handler, which answers an update of it, <code>{ ..machine, pc: ... }</code> or the like. A record update copies the record around the field it writes, so each instruction copies the whole inline record once, however little it changes. That cost is the record&#39;s size, paid at every instruction, and the next two habits keep the size down.</p>
-<h2 id="box-what-is-rarely-written">Box what is rarely written <a class="section-link" href="#box-what-is-rarely-written" aria-label="Link to this section">§</a></h2>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="One instruction&#39;s copy of the machine" width="280pt" height="285pt"
+ viewBox="0.00 0.00 279.50 285.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 281)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-281 275.5,-281 275.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M160.5,-277C160.5,-277 110.5,-277 110.5,-277 104.5,-277 98.5,-271 98.5,-265 98.5,-265 98.5,-253 98.5,-253 98.5,-247 104.5,-241 110.5,-241 110.5,-241 160.5,-241 160.5,-241 166.5,-241 172.5,-247 172.5,-253 172.5,-253 172.5,-265 172.5,-265 172.5,-271 166.5,-277 160.5,-277"/>
+<text text-anchor="middle" x="135.5" y="-255.9" font-family="Times,serif" font-size="12.00">dispatch!</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M167.5,-193C167.5,-193 103.5,-193 103.5,-193 97.5,-193 91.5,-187 91.5,-181 91.5,-181 91.5,-169 91.5,-169 91.5,-163 97.5,-157 103.5,-157 103.5,-157 167.5,-157 167.5,-157 173.5,-157 179.5,-163 179.5,-169 179.5,-169 179.5,-181 179.5,-181 179.5,-187 173.5,-193 167.5,-193"/>
+<text text-anchor="middle" x="135.5" y="-171.9" font-family="Times,serif" font-size="12.00">the handler</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M135.5,-240.61C135.5,-229.77 135.5,-215.6 135.5,-203.29"/>
+<polygon fill="black" stroke="black" points="139,-203.08 135.5,-193.08 132,-203.08 139,-203.08"/>
+<text text-anchor="middle" x="170.5" y="-214.2" font-family="Times,serif" font-size="11.00">the machine</text>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M204.5,-120C204.5,-120 66.5,-120 66.5,-120 60.5,-120 54.5,-114 54.5,-108 54.5,-108 54.5,-96 54.5,-96 54.5,-90 60.5,-84 66.5,-84 66.5,-84 204.5,-84 204.5,-84 210.5,-84 216.5,-90 216.5,-96 216.5,-96 216.5,-108 216.5,-108 216.5,-114 210.5,-120 204.5,-120"/>
+<text text-anchor="middle" x="135.5" y="-105.4" font-family="Times,serif" font-size="12.00">{ ..machine, pc: ... }</text>
+<text text-anchor="middle" x="135.5" y="-92.4" font-family="Times,serif" font-size="12.00">the inline record copied</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M135.5,-156.81C135.5,-148.79 135.5,-139.05 135.5,-130.07"/>
+<polygon fill="black" stroke="black" points="139,-130.03 135.5,-120.03 132,-130.03 139,-130.03"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M121,-36C121,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 121,0 121,0 127,0 133,-6 133,-12 133,-12 133,-24 133,-24 133,-30 127,-36 121,-36"/>
+<text text-anchor="middle" x="66.5" y="-14.9" font-family="Times,serif" font-size="12.00">eight vector moves</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M113.62,-83.93C107.4,-78.55 100.87,-72.34 95.5,-66 90.1,-59.62 85.01,-52.13 80.65,-45.03"/>
+<polygon fill="black" stroke="black" points="83.64,-43.21 75.55,-36.36 77.61,-46.76 83.64,-43.21"/>
+<text text-anchor="middle" x="139" y="-57.2" font-family="Times,serif" font-size="11.00">up to 256 bytes</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M245.5,-36C245.5,-36 163.5,-36 163.5,-36 157.5,-36 151.5,-30 151.5,-24 151.5,-24 151.5,-12 151.5,-12 151.5,-6 157.5,0 163.5,0 163.5,0 245.5,0 245.5,0 251.5,0 257.5,-6 257.5,-12 257.5,-12 257.5,-24 257.5,-24 257.5,-30 251.5,-36 245.5,-36"/>
+<text text-anchor="middle" x="204.5" y="-14.9" font-family="Times,serif" font-size="12.00">a memcpy call</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M163.32,-83.8C170.18,-78.67 177.1,-72.62 182.5,-66 187.43,-59.95 191.55,-52.62 194.83,-45.56"/>
+<polygon fill="black" stroke="black" points="198.1,-46.82 198.79,-36.25 191.66,-44.08 198.1,-46.82"/>
+<text text-anchor="middle" x="230.5" y="-57.2" font-family="Times,serif" font-size="11.00">past 256 bytes</text>
+</g>
+</g>
+</svg><figcaption>One instruction&#39;s copy of the machine</figcaption></figure><h2 id="box-what-is-rarely-written">Box what is rarely written <a class="section-link" href="#box-what-is-rarely-written" aria-label="Link to this section">§</a></h2>
 <p>A part of the machine that most instructions leave alone still adds its bytes to that copy on every instruction while it sits inline. Behind a <code>Box</code> it is one pointer. The event queue was the first example: only timers and clicks touch it. Before <code>15686d94</code> it sat inline, and a timer&#39;s clear wrote it so:</p>
 <figure class="listing"><figcaption>Vm.roc before 15686d94: the queue inline</figcaption><pre><code class="language-roc"><span class="syn-name">events</span> : <span class="syn-type">Events.Queue</span>,
 

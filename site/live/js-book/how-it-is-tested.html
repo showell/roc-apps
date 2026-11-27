@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -30,7 +30,7 @@
 <li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
 <li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
 <li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
-<li class="here"><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#the-compilers-checks">The compiler&#39;s checks</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
+<li class="here"><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#the-compilers-checks">The compiler&#39;s checks</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#the-page-check">The page check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
 <li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
@@ -50,17 +50,73 @@
 <p><code>check.shale js=1</code> runs the nine allocation controls of <a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>, in both builds. A missing expected file fails the run (<code>80b5e681</code>).</p>
 <h2 id="golden-logs-for-the-canvas">Golden logs for the canvas <a class="section-link" href="#golden-logs-for-the-canvas" aria-label="Link to this section">§</a></h2>
 <p><code>js/canvas.shale</code> holds each of the 9 canvas samples to its log of effects for scripted frames, keys and clicks, and a log moves only by an explicit freeze.</p>
-<h2 id="page-check">page_check <a class="section-link" href="#page-check" aria-label="Link to this section">§</a></h2>
+<h2 id="the-page-check">The page check <a class="section-link" href="#the-page-check" aria-label="Link to this section">§</a></h2>
 <p><code>js/page_check.mjs</code> drives the page&#39;s own JavaScript under node. It holds the wasm to node on every corpus program and refusal, holds the samples to their golden logs, and checks the memory view. The page is replaced only after it passes.</p>
 <h2 id="planted-faults">Planted faults <a class="section-link" href="#planted-faults" aria-label="Link to this section">§</a></h2>
-<p>The interpreter&#39;s record lists five plants, each reverted:</p>
-<ul>
-<li>a line width of 72 instead of 80 turned one program red (<code>278631d8</code>);</li>
-<li>the event queue left out of the roots turned 52 red, and <code>filter</code>&#39;s item left off the stack turned 53 red (<code>b623437d</code>);</li>
-<li>a wrong expected count turned 00-loop red by name (<code>80b5e681</code>);</li>
-<li>a memory view with its collection marks taken out turned page_check red (<code>668c52ca</code>).</li>
-</ul>
-<p>The compiler&#39;s commits list their own, each reverted too: a wrong expected byte of <code>lea</code>&#39;s encoding and a wrong hello-world text (<code>c3ff721</code>), <code>&lt;</code> lowered with the wrong condition (<code>0c5ea7e</code>), each rule of the inliner&#39;s budget (<code>22361e1</code>), and three faults in the heap&#39;s headers and pages (<code>a328636</code>). <code>tools/machine_size.shale</code>&#39;s header records one more: the machine&#39;s size held at 247 went red naming 248.</p>
+<p>A planted fault is a deliberate bug, committed to show that a check catches it, then reverted. The interpreter&#39;s record lists five:</p>
+<table>
+<thead>
+<tr>
+<th>the fault planted</th>
+<th>what turned red</th>
+<th>commit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a line width of 72 instead of 80</td>
+<td>one program</td>
+<td><code>278631d8</code></td>
+</tr>
+<tr>
+<td>the event queue left out of the roots</td>
+<td>program 52</td>
+<td><code>b623437d</code></td>
+</tr>
+<tr>
+<td><code>filter</code>&#39;s item left off the stack</td>
+<td>program 53</td>
+<td><code>b623437d</code></td>
+</tr>
+<tr>
+<td>a wrong expected count</td>
+<td>00-loop, by name</td>
+<td><code>80b5e681</code></td>
+</tr>
+<tr>
+<td>a memory view with its collection marks taken out</td>
+<td>page_check</td>
+<td><code>668c52ca</code></td>
+</tr>
+</tbody>
+</table>
+<p><code>tools/machine_size.shale</code>&#39;s header records one more: the machine&#39;s size held at 247 went red naming 248. The compiler&#39;s commits list their own, each reverted too:</p>
+<table>
+<thead>
+<tr>
+<th>the fault planted</th>
+<th>commit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a wrong expected byte of <code>lea</code>&#39;s encoding, and a wrong hello-world text</td>
+<td><code>c3ff721</code></td>
+</tr>
+<tr>
+<td><code>&lt;</code> lowered with the wrong condition</td>
+<td><code>0c5ea7e</code></td>
+</tr>
+<tr>
+<td>each rule of the inliner&#39;s budget</td>
+<td><code>22361e1</code></td>
+</tr>
+<tr>
+<td>three faults in the heap&#39;s headers and pages</td>
+<td><code>a328636</code></td>
+</tr>
+</tbody>
+</table>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

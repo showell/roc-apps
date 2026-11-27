@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li class="here"><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a><ol class="sections"><li><a href="a-canvas-in-the-browser.html#what-a-program-sees">What a program sees</a></li><li><a href="a-canvas-in-the-browser.html#the-page">The page</a></li><li><a href="a-canvas-in-the-browser.html#how-an-effect-travels">How an effect travels</a></li><li><a href="a-canvas-in-the-browser.html#the-queue-and-its-clock">The queue and its clock</a></li></ol></li>
@@ -41,16 +41,43 @@
 <article>
 <p class="chapter-number">Chapter 11</p>
 <h1 id="a-canvas-in-the-browser">A canvas in the browser</h1>
+<p>The playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a> runs the interpreter in a browser, where a program draws as it runs. It is also the one place where the VM&#39;s effects reach a screen, so it shows most plainly how a pure Roc program hands effects to a host. This chapter covers what a program may call, how the page runs it, and how each effect travels.</p>
 <h2 id="what-a-program-sees">What a program sees <a class="section-link" href="#what-a-program-sees" aria-label="Link to this section">§</a></h2>
-<p>In <a href="https://roc.lynrummy.com/js/">the playground</a>, a program is JavaScript from the subset plus a deliberately small API for one 400 by 400 canvas. It is a toy&#39;s API, sized for sketches, games of one screen and demonstrations:</p>
-<ul>
-<li><strong>Drawing:</strong> <code>background</code>, <code>fill</code>, <code>noFill</code>, <code>stroke</code>, <code>noStroke</code>, <code>line</code>, <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>polygon</code> and <code>text</code>, named after p5.js&#39;s but a small set of their own, with colors as CSS strings.</li>
-<li><strong>A turtle:</strong> <code>forward</code>, <code>back</code>, <code>turn</code>, <code>penUp</code>, <code>penDown</code> and <code>goto</code>.</li>
-<li><strong>Input:</strong> <code>mouseX()</code>, <code>mouseY()</code> and <code>keyIsDown(key)</code>, read when called, and <code>onClick(handler)</code>.</li>
-<li><strong>Time:</strong> <code>setTimeout</code>, <code>setInterval</code> and their clears, and a <code>function frame(t)</code>, which the page calls 30 times a second.</li>
-<li><strong>The memory view&#39;s hook:</strong> <code>onCollect(handler)</code>, which hears each garbage collection.</li>
-<li><strong><code>console.log</code>,</strong> which writes under the canvas.</li>
-</ul>
+<p>In the playground, a program is JavaScript from the subset plus a deliberately small API for one 400 by 400 canvas. It is a toy&#39;s API, sized for sketches, games of one screen and demonstrations:</p>
+<table>
+<thead>
+<tr>
+<th>kind</th>
+<th>the names</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>drawing</td>
+<td><code>background</code>, <code>fill</code>, <code>noFill</code>, <code>stroke</code>, <code>noStroke</code>, <code>line</code>, <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>polygon</code> and <code>text</code>, named after p5.js&#39;s but a small set of their own, with colors as CSS strings</td>
+</tr>
+<tr>
+<td>a turtle</td>
+<td><code>forward</code>, <code>back</code>, <code>turn</code>, <code>penUp</code>, <code>penDown</code> and <code>goto</code></td>
+</tr>
+<tr>
+<td>input</td>
+<td><code>mouseX()</code>, <code>mouseY()</code> and <code>keyIsDown(key)</code>, read when called, and <code>onClick(handler)</code></td>
+</tr>
+<tr>
+<td>time</td>
+<td><code>setTimeout</code>, <code>setInterval</code> and their clears, and a <code>function frame(t)</code>, which the page calls 30 times a second</td>
+</tr>
+<tr>
+<td>the memory view&#39;s hook</td>
+<td><code>onCollect(handler)</code>, which hears each garbage collection</td>
+</tr>
+<tr>
+<td>output</td>
+<td><code>console.log</code>, which writes under the canvas</td>
+</tr>
+</tbody>
+</table>
 <p>That is the whole of it: a program draws, listens and waits, and the page&#39;s DOM, the network and other files stay out of its reach. The playground&#39;s &quot;click dots&quot; sample uses most of it:</p>
 <figure class="listing"><figcaption>js/canvas/7-click-dots.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// Click to place dots</span>
 <span class="syn-comment">// Each click on the canvas adds a dot, joined to the last.</span>
@@ -174,11 +201,32 @@ draw();
 <polygon fill="black" stroke="black" points="182.06,-45.22 187.33,-36.03 177.48,-39.93 182.06,-45.22"/>
 </g>
 </g>
-</svg><figcaption>Three hosts, one interpreter</figcaption></figure><ul>
-<li><strong>The page&#39;s</strong> host (<code>JsApp.roc</code>, on the platform in <code>js/wasm/</code>) calls into the page&#39;s JavaScript while the Roc call runs.</li>
-<li><strong>The recording host,</strong> <code>js-canvas</code> (<code>JsCanvas.roc</code>), writes every effect and every read as a line, for the golden logs.</li>
-<li><strong><code>js-vm</code>&#39;s</strong> host prints each log as it is made.</li>
-</ul>
+</svg><figcaption>Three hosts, one interpreter</figcaption></figure><table>
+<thead>
+<tr>
+<th>host</th>
+<th>module</th>
+<th>what it does with an effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the page&#39;s</td>
+<td><code>JsApp.roc</code>, on the platform in <code>js/wasm/</code></td>
+<td>calls into the page&#39;s JavaScript while the Roc call runs</td>
+</tr>
+<tr>
+<td>the recording host, <code>js-canvas</code></td>
+<td><code>JsCanvas.roc</code></td>
+<td>writes every effect and every read as a line, for the golden logs</td>
+</tr>
+<tr>
+<td><code>js-vm</code>&#39;s</td>
+<td><code>JsVm.roc</code></td>
+<td>prints each log as it is made</td>
+</tr>
+</tbody>
+</table>
 <h2 id="the-queue-and-its-clock">The queue and its clock <a class="section-link" href="#the-queue-and-its-clock" aria-label="Link to this section">§</a></h2>
 <p><code>Events.roc</code> holds the one queue every callback goes through. A timer&#39;s callback, a click, the canvas&#39;s next <code>frame(t)</code> and a call of the <code>onCollect</code> handler after a collection are each an event, due at a time in milliseconds. The earliest runs first, and of two due at one time, the one queued first.</p>
 <p>The clock is virtual. It reads 0 while the program&#39;s own code runs, and moves to each event&#39;s time as that event runs: on the page, a tick moves it on to the frame&#39;s time (<code>Vm.tick!</code>), and <code>js-vm</code> moves it from event to event until the queue is empty. So the order of the callbacks follows from the program alone, and a program prints the same on every run, and the same as node. Take this program:</p>

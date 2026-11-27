@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27</a></li></ol></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,7 +41,7 @@
 <article>
 <p class="chapter-number">Chapter 6</p>
 <h1 id="the-compiler-to-x86-64">The compiler to x86-64</h1>
-<p>The <code>x86/</code> folder holds <code>js-x86</code>, an ahead-of-time compiler that turns a program into a static Linux x86-64 executable. Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>).</p>
+<p><code>js-x86</code>, in <code>x86/</code>, turns a program into a static Linux x86-64 executable, and Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>). So any byte the processor runs traces back to the Roc module that wrote it.</p>
 <h2 id="the-pipeline">The pipeline <a class="section-link" href="#the-pipeline" aria-label="Link to this section">§</a></h2>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="From the text to the executable" width="134pt" height="380pt"
  viewBox="0.00 0.00 134.00 380.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -89,15 +89,38 @@
 <text text-anchor="middle" x="72" y="-57.2" font-family="Times,serif" font-size="11.00">hex</text>
 </g>
 </g>
-</svg><figcaption>From the text to the executable</figcaption></figure><ul>
-<li><strong>The front end is shared.</strong> <code>JsToX86.roc</code> imports <code>Parser</code> and <code>Compile</code> from <code>js/roc/</code> as a package, so the compiler starts from the same <code>Bytecode</code> the interpreter runs (<a class="chapter-link" href="the-front-end.html">“The front end”</a>).</li>
-<li><strong><code>Lowering.roc</code></strong> turns each function&#39;s bytecode into <code>Assembly</code> statements, one instruction&#39;s machine code after another, and hands each family of instructions to a module of its own: <code>OperatorLowering</code>, <code>BuiltinLowering</code>, <code>CallLowering</code> and <code>IndexLowering</code>. <code>Inlining</code> and four later passes are in <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>.</li>
-<li><strong><code>Assembly.roc</code></strong> lays the statements out as bytes. A jump or a call that names a label gets a placeholder, patched once every label&#39;s place is known.</li>
-<li><strong><code>Elf.roc</code></strong> wraps the code as an executable: an ELF header, one program header and one segment, read and execute, mapped at 0x400000.</li>
-<li><strong>The last step only carries.</strong> Roc&#39;s default platform writes text alone to stdout, so <code>js-x86</code> prints the executable as hex, and <code>x86/executables.shale</code> turns each pair of digits back into its byte.</li>
-</ul>
+</svg><figcaption>From the text to the executable</figcaption></figure><table>
+<thead>
+<tr>
+<th>stage</th>
+<th>what it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the front end, shared</td>
+<td><code>JsToX86.roc</code> imports <code>Parser</code> and <code>Compile</code> from <code>js/roc/</code> as a package, so the compiler starts from the same <code>Bytecode</code> the interpreter runs (<a class="chapter-link" href="the-front-end.html">“The front end”</a>)</td>
+</tr>
+<tr>
+<td><code>Lowering.roc</code></td>
+<td>turns each function&#39;s bytecode into <code>Assembly</code> statements, one instruction&#39;s machine code after another; <code>OperatorLowering</code>, <code>BuiltinLowering</code>, <code>CallLowering</code> and <code>IndexLowering</code> each take a family of instructions, and <code>Inlining</code> and four later passes are in <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a></td>
+</tr>
+<tr>
+<td><code>Assembly.roc</code></td>
+<td>lays the statements out as bytes; a jump or a call that names a label gets a placeholder, patched once every label&#39;s place is known: backpatching, as in a one-pass assembler</td>
+</tr>
+<tr>
+<td><code>Elf.roc</code></td>
+<td>wraps the code as an executable: an ELF header, one program header and one segment, read and execute, mapped at 0x400000</td>
+</tr>
+<tr>
+<td><code>x86/executables.shale</code></td>
+<td>Roc&#39;s default platform writes text alone to stdout, so <code>js-x86</code> prints the executable as hex, and this script turns each pair of digits back into its byte</td>
+</tr>
+</tbody>
+</table>
 <h2 id="a-value-in-8-bytes">A value in 8 bytes <a class="section-link" href="#a-value-in-8-bytes" aria-label="Link to this section">§</a></h2>
-<p>A slot of the frame that <code>Compile</code> lays out has to hold any JavaScript value. The compiler fits every value into the 8 bytes of a double, by NaN-boxing, as LuaJIT and SpiderMonkey do. A double has about 2^53 bit patterns that all mean NaN, and x86-64&#39;s arithmetic makes only two of them. So a number is its own double, and every other value is one of the spare NaNs: its top 16 bits are a tag, and its low 48 bits are an address or a constant (<code>x86/roc/Boxing.roc</code>):</p>
+<p>A slot of the frame that <code>Compile</code> lays out has to hold any JavaScript value. The compiler fits every value into the 8 bytes of a double by NaN-boxing, the representation LuaJIT and SpiderMonkey use. A double has about 2^53 bit patterns that all mean NaN, and x86-64&#39;s arithmetic makes only two of them. So a number is its own double, and every other value is one of the spare NaNs: its top 16 bits are a tag, and its low 48 bits are an address or a constant (<code>x86/roc/Boxing.roc</code>):</p>
 <table>
 <thead>
 <tr>
@@ -147,7 +170,7 @@
 <p>The two NaNs the processor makes lie below every tag, so a value is a number exactly when its bits are below the first tag shifted into place: one unsigned compare.</p>
 <p><strong>A known kind stays untagged.</strong> The lowering walks each function&#39;s instructions keeping the kind of each slot and each place on the bytecode&#39;s stack: a number, an <code>Integer</code>, a boolean, a string, an array and so on, or <code>Value</code>, a value whose kind only the run decides. Where two known numbers meet <code>+</code>, the code is one <code>addsd</code>. A <code>Value</code>&#39;s tag is tested in line for <code>+</code> and the comparisons, and the runtime does the rest (<code>runtime_add</code>, <code>runtime_compare</code> and their kin). Since a value&#39;s bits are the same whatever the compiler knows of it, a place that widens to <code>Value</code> where two ways meet costs zero instructions. A function&#39;s parameters and its result take their kinds from the whole program: the lowering runs pass after pass until every call&#39;s argument kinds and every return&#39;s kind settle (<code>Lowering</code>&#39;s <code>items_with_numbers</code>).</p>
 <h2 id="the-runtime">The runtime <a class="section-link" href="#the-runtime" aria-label="Link to this section">§</a></h2>
-<p>Every executable carries the runtime, about 24 KB of machine code (<code>let x = 1;</code> compiles to 24,407 bytes, 2026-11-27, <code>x86/README.md</code>): the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>. Here is the allocator, from <code>Heap.roc</code>:</p>
+<p>Every executable carries the runtime, about 24 KB of machine code: the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>. Here is the allocator, from <code>Heap.roc</code>:</p>
 <figure class="listing"><figcaption>x86/roc/Heap.roc, the function allocate_items</figcaption><pre><code class="language-roc"><span class="syn-comment">## The allocator: `rdi` rounded up to 8, the header that and the kind in</span>
 <span class="syn-comment">## `rax` make, and the class whose block holds them both (the highest bit</span>
 <span class="syn-comment">## of `rdi + 7`, at least 3). The block&#39;s bytes are counted as taken, and</span>
@@ -272,8 +295,57 @@
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.ret,
 ]
-</code></pre></figure><p>Four registers belong to the runtime for the whole run: <code>r12</code> the stack&#39;s limit, <code>r13</code> the runtime&#39;s state, <code>r14</code> the heap&#39;s end and <code>r15</code> the heap&#39;s state, in a mapping of 3 GiB: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>). The allocator pops its size&#39;s free list or bumps through a page, and past a threshold it collects first (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>).</p>
-<p><code>x86/fib.js</code>&#39;s executable was 24,837 bytes the same day; milestone 2&#39;s fib(22), before the runtime, was 1,010 bytes (<code>0c5ea7e</code>).</p>
+</code></pre></figure><p>Four registers belong to the runtime for the whole run:</p>
+<table>
+<thead>
+<tr>
+<th>register</th>
+<th>holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>r12</code></td>
+<td>the stack&#39;s limit</td>
+</tr>
+<tr>
+<td><code>r13</code></td>
+<td>the runtime&#39;s state</td>
+</tr>
+<tr>
+<td><code>r14</code></td>
+<td>the heap&#39;s end</td>
+</tr>
+<tr>
+<td><code>r15</code></td>
+<td>the heap&#39;s state</td>
+</tr>
+</tbody>
+</table>
+<p>They live in a mapping of 3 GiB: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>). The allocator pops its size&#39;s free list or bumps through a page, and past a threshold it collects first (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>).</p>
+<p>The runtime dominates a small program&#39;s size:</p>
+<table>
+<thead>
+<tr>
+<th>executable</th>
+<th>size</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>let x = 1;</code>, 2026-11-27</td>
+<td>24,407 bytes (<code>x86/README.md</code>)</td>
+</tr>
+<tr>
+<td><code>x86/fib.js</code>, the same day</td>
+<td>24,837 bytes</td>
+</tr>
+<tr>
+<td>fib(22) at milestone 2 of <code>x86/README.md</code>, before the runtime</td>
+<td>1,010 bytes (<code>0c5ea7e</code>)</td>
+</tr>
+</tbody>
+</table>
 <h2 id="what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27 <a class="section-link" href="#what-it-compiles-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
 <p><code>x86/programs.shale</code> compiles each of the 63 corpus programs in <code>js/tests/</code> and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 51 of 63 (<code>x86/README.md</code>, &quot;The corpus&quot;). It also holds the 68 programs of <code>x86/tests/</code> to node and the 48 of <code>x86/tests/refused/</code> to their refusals. The 12 left stop at these, by the first reason each meets:</p>
 <table>
@@ -298,7 +370,7 @@
 </tr>
 </tbody>
 </table>
-<p>The compiler refuses what it has yet to compile by name, before it writes a byte. What only a value can decide stops the executable as it runs, with a line <code>x86: ... is not compiled yet</code> on stderr and exit 1.</p>
+<p><a class="chapter-link" href="limitations.html">“Limitations”</a> says how the compiler refuses the rest.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

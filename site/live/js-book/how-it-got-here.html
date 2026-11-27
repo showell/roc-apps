@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,16 +41,123 @@
 <article>
 <p class="chapter-number">Chapter 3</p>
 <h1 id="how-it-got-here">How it got here</h1>
-<p>This chapter is the history, a section a day. The interpreter came first, and the compiler was built on its front end.</p>
-<h2 id="2026-11-23-a-tree-walker">2026-11-23: a tree-walker <a class="section-link" href="#2026-11-23-a-tree-walker" aria-label="Link to this section">§</a></h2>
-<p>The first interpreter walked the tree (<code>30837f8e</code>), its whole state one value threaded through the walk: the heap, the scopes, the output and the step count. The same day it gained the node oracle, a wasm page with an editor and a Run button (<code>6a0ea512</code>), exact allocation counts (<code>84263a4b</code>), variables resolved to slots before the run (<code>920cda0c</code>), a canvas behind a host of effects (<code>65a8d71a</code>), and timers and clicks on one queue with a virtual clock (<code>941e9e67</code>). By the end of the day the walker passed 50 of 50 corpus programs and 44 of 44 refusals.</p>
+<p>The whole project took five days, 2026-11-23 to 2026-11-27, and this chapter gives one section to each. The interpreter came first, and the compiler was built on its front end. Every step names its commit, so a reader can check out the code as it stood that day.</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="The five days" width="167pt" height="332pt"
+ viewBox="0.00 0.00 167.00 332.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 328)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-328 163,-328 163,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M138,-324C138,-324 21,-324 21,-324 15,-324 9,-318 9,-312 9,-312 9,-300 9,-300 9,-294 15,-288 21,-288 21,-288 138,-288 138,-288 144,-288 150,-294 150,-300 150,-300 150,-312 150,-312 150,-318 144,-324 138,-324"/>
+<text text-anchor="middle" x="79.5" y="-302.9" font-family="Times,serif" font-size="12.00">11&#45;23: a tree&#45;walker</text>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M134.5,-252C134.5,-252 24.5,-252 24.5,-252 18.5,-252 12.5,-246 12.5,-240 12.5,-240 12.5,-228 12.5,-228 12.5,-222 18.5,-216 24.5,-216 24.5,-216 134.5,-216 134.5,-216 140.5,-216 146.5,-222 146.5,-228 146.5,-228 146.5,-240 146.5,-240 146.5,-246 140.5,-252 134.5,-252"/>
+<text text-anchor="middle" x="79.5" y="-237.4" font-family="Times,serif" font-size="12.00">11&#45;24: the VM;</text>
+<text text-anchor="middle" x="79.5" y="-224.4" font-family="Times,serif" font-size="12.00">the first executable</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M79.5,-287.7C79.5,-279.98 79.5,-270.71 79.5,-262.11"/>
+<polygon fill="black" stroke="black" points="83,-262.1 79.5,-252.1 76,-262.1 83,-262.1"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M135.5,-180C135.5,-180 23.5,-180 23.5,-180 17.5,-180 11.5,-174 11.5,-168 11.5,-168 11.5,-156 11.5,-156 11.5,-150 17.5,-144 23.5,-144 23.5,-144 135.5,-144 135.5,-144 141.5,-144 147.5,-150 147.5,-156 147.5,-156 147.5,-168 147.5,-168 147.5,-174 141.5,-180 135.5,-180"/>
+<text text-anchor="middle" x="79.5" y="-165.4" font-family="Times,serif" font-size="12.00">11&#45;25: the compiler</text>
+<text text-anchor="middle" x="79.5" y="-152.4" font-family="Times,serif" font-size="12.00">on the corpus</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M79.5,-215.7C79.5,-207.98 79.5,-198.71 79.5,-190.11"/>
+<polygon fill="black" stroke="black" points="83,-190.1 79.5,-180.1 76,-190.1 83,-190.1"/>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M141.5,-108C141.5,-108 17.5,-108 17.5,-108 11.5,-108 5.5,-102 5.5,-96 5.5,-96 5.5,-84 5.5,-84 5.5,-78 11.5,-72 17.5,-72 17.5,-72 141.5,-72 141.5,-72 147.5,-72 153.5,-78 153.5,-84 153.5,-84 153.5,-96 153.5,-96 153.5,-102 147.5,-108 141.5,-108"/>
+<text text-anchor="middle" x="79.5" y="-93.4" font-family="Times,serif" font-size="12.00">11&#45;26: method tables;</text>
+<text text-anchor="middle" x="79.5" y="-80.4" font-family="Times,serif" font-size="12.00">Roc joins the race</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M79.5,-143.7C79.5,-135.98 79.5,-126.71 79.5,-118.11"/>
+<polygon fill="black" stroke="black" points="83,-118.1 79.5,-108.1 76,-118.1 83,-118.1"/>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M147,-36C147,-36 12,-36 12,-36 6,-36 0,-30 0,-24 0,-24 0,-12 0,-12 0,-6 6,0 12,0 12,0 147,0 147,0 153,0 159,-6 159,-12 159,-12 159,-24 159,-24 159,-30 153,-36 147,-36"/>
+<text text-anchor="middle" x="79.5" y="-21.4" font-family="Times,serif" font-size="12.00">11&#45;27: a collector for</text>
+<text text-anchor="middle" x="79.5" y="-8.4" font-family="Times,serif" font-size="12.00">the compiled programs</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M79.5,-71.7C79.5,-63.98 79.5,-54.71 79.5,-46.11"/>
+<polygon fill="black" stroke="black" points="83,-46.1 79.5,-36.1 76,-46.1 83,-46.1"/>
+</g>
+</g>
+</svg><figcaption>The five days</figcaption></figure><h2 id="2026-11-23-a-tree-walker">2026-11-23: a tree-walker <a class="section-link" href="#2026-11-23-a-tree-walker" aria-label="Link to this section">§</a></h2>
+<p>The first interpreter walked the tree (<code>30837f8e</code>). Its whole state was one value threaded through the walk: the heap, the scopes, the output and the step count. It grew fast that day:</p>
+<table>
+<thead>
+<tr>
+<th>what the walker gained on its first day</th>
+<th>commit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the node oracle, and a wasm page with an editor and a Run button</td>
+<td><code>6a0ea512</code></td>
+</tr>
+<tr>
+<td>exact allocation counts</td>
+<td><code>84263a4b</code></td>
+</tr>
+<tr>
+<td>variables resolved to slots before the run</td>
+<td><code>920cda0c</code></td>
+</tr>
+<tr>
+<td>a canvas behind a host of effects</td>
+<td><code>65a8d71a</code></td>
+</tr>
+<tr>
+<td>timers and clicks on one queue, with a virtual clock</td>
+<td><code>941e9e67</code></td>
+</tr>
+</tbody>
+</table>
+<p>By the end of the day the walker passed 50 of 50 corpus programs and 44 of 44 refusals.</p>
 <h2 id="2026-11-24-the-vm-and-the-compilers-first-programs">2026-11-24: the VM, and the compiler&#39;s first programs <a class="section-link" href="#2026-11-24-the-vm-and-the-compilers-first-programs" aria-label="Link to this section">§</a></h2>
-<p>The bytecode VM was built beside the walker in three rounds. The first (<code>fe85d386</code>) matched node on 37 of 50 programs and refused the other 13; the second (<code>60466bc7</code>, <code>b69660c4</code>) added exceptions, <code>switch</code>, destructuring, Maps and Sets and the timers, and reached 50 of 50; the third (<code>abb4fc0a</code>) added a mark-sweep collector, which took the heap programs&#39; peaks of 40 to 164 MB down to about 4 MB (<code>62110109</code>). The playground moved onto the VM (<code>fd9fb4e4</code>), and the walker was deleted (<code>aef0658b</code>). The page gained a memory view (<code>668c52ca</code>), a speed fix brought the VM&#39;s machine record under 256 bytes (<code>3aba5cf7</code>), and classes came as syntax sugar (<code>0b6d8deb</code>). The project moved from roc-apps to its own repository the same day.</p>
+<p>The bytecode VM was built beside the walker in three rounds:</p>
+<table>
+<thead>
+<tr>
+<th>round</th>
+<th>commits</th>
+<th>what it added</th>
+<th>where it stood after</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>first</td>
+<td><code>fe85d386</code></td>
+<td>the VM itself</td>
+<td>matched node on 37 of 50 programs, refused the other 13</td>
+</tr>
+<tr>
+<td>second</td>
+<td><code>60466bc7</code>, <code>b69660c4</code></td>
+<td>exceptions, <code>switch</code>, destructuring, Maps and Sets, the timers</td>
+<td>50 of 50</td>
+</tr>
+<tr>
+<td>third</td>
+<td><code>abb4fc0a</code></td>
+<td>a mark-sweep collector</td>
+<td>the heap programs&#39; peaks of 40 to 164 MB down to about 4 MB (<code>62110109</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The playground moved onto the VM (<code>fd9fb4e4</code>), and the walker was deleted (<code>aef0658b</code>). The page gained a memory view (<code>668c52ca</code>), a speed fix brought the VM&#39;s machine record under 256 bytes (<code>3aba5cf7</code>), and classes came as syntax sugar (<code>0b6d8deb</code>). The project moved from roc-apps to its own repository the same day.</p>
 <p>At 20:39 UTC the compiler made its first executable, a hello world (<code>c3ff721</code>), and 47 minutes later it compiled a recursive <code>fib</code> to node&#39;s answer (<code>0c5ea7e</code>).</p>
 <h2 id="2026-11-25-the-compiler-on-the-corpus">2026-11-25: the compiler on the corpus <a class="section-link" href="#2026-11-25-the-compiler-on-the-corpus" aria-label="Link to this section">§</a></h2>
 <p>By 01:21 UTC the compiler ran 45 of the 61 programs the corpus then held exactly as node does (<code>451306b</code>), and by 17:00, 47, with classes (<code>6ec8068</code>). The fib race began the same day, a long Fibonacci in limbs, compiled and timed against node (<code>b4eb82f</code>).</p>
 <h2 id="2026-11-26-method-tables-and-a-third-contestant">2026-11-26: method tables, and a third contestant <a class="section-link" href="#2026-11-26-method-tables-and-a-third-contestant" aria-label="Link to this section">§</a></h2>
-<p>The methods moved off the instances (<code>e4834f9</code>): each class got one table of its methods, each method one function whose first parameter is the receiver, so that the compiler can call a method directly once it knows the receiver&#39;s class (<code>555b245</code>). Roc&#39;s own build of the fib race joined as a third contestant (<code>ee99278</code>), and the compiler came out even with it (<a class="chapter-link" href="three-compilers-one-race.html">“Three compilers, one race”</a>). The same day the compiler gained an integer kind for whole numbers proved in range (<code>81b5809</code>) and put small leaf functions in line at their calls inside loops (<code>7810da3</code>).</p>
+<p>The methods moved off the instances (<code>e4834f9</code>): each class got one table of its methods, each method one function whose first parameter is the receiver, so that the compiler can call a method directly once it knows the receiver&#39;s class (<code>555b245</code>). Roc&#39;s own build of the fib race joined as a third contestant (<code>ee99278</code>), and the compiler came out even with it (<a class="chapter-link" href="the-fib-race.html">“The fib race”</a>). The same day the compiler gained an integer kind for whole numbers proved in range (<code>81b5809</code>) and put small leaf functions in line at their calls inside loops (<code>7810da3</code>).</p>
 <h2 id="2026-11-27-a-collector-for-the-compiled-programs">2026-11-27: a collector for the compiled programs <a class="section-link" href="#2026-11-27-a-collector-for-the-compiled-programs" aria-label="Link to this section">§</a></h2>
 <p>The compiled programs&#39; heap gained a header on every block and pages of one block size each (<code>a328636</code>), then a mark and sweep from conservative roots, with a torture tier that collects at every allocation (<code>460b606</code>; <a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>). Big daddy then ran at its full size, 10,000 rounds, with its heap at most 8.8 MB (<code>x86/COLLECTOR.md</code>).</p>
 

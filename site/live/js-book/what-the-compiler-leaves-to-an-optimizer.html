@@ -19,7 +19,7 @@
 <li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
 <li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="the-fib-race.html"><span class="number">8</span>The fib race</a></li>
 <li class="here"><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a><ol class="sections"><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-makes-code-cheaper">What makes code cheaper</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#the-plain-parts">The plain parts</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#where-an-optimizer-would-pay">Where an optimizer would pay</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-comes-next">What comes next</a></li></ol></li>
 <li class="part">Part III: The interpreter</li><li><a href="the-interpreter.html"><span class="number">10</span>The interpreter</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">11</span>A canvas in the browser</a></li>
@@ -41,29 +41,97 @@
 <article>
 <p class="chapter-number">Chapter 9</p>
 <h1 id="what-the-compiler-leaves-to-an-optimizer">What the compiler leaves to an optimizer</h1>
-<p>The compiler&#39;s code is plain, and <a class="chapter-link" href="the-compiler-against-node.html">“The compiler against node”</a> measures what that costs against V8. This chapter says what the compiler does to make code cheaper, what it leaves undone, and what comes next.</p>
+<p>The compiler&#39;s code is plain, and <a class="chapter-link" href="the-compiler-against-node.html">“The compiler against node”</a> measures what that costs against V8. This chapter is the map for anyone making the code faster: what the compiler already does to make code cheaper, what it leaves undone, and what comes next.</p>
 <h2 id="what-makes-code-cheaper">What makes code cheaper <a class="section-link" href="#what-makes-code-cheaper" aria-label="Link to this section">§</a></h2>
-<p>The compiler makes code cheaper in these ways (<code>x86/roc/Lowering.roc</code>&#39;s header, <code>x86/README.md</code>):</p>
-<ul>
-<li>a known kind skips the tag&#39;s test, so two known numbers add with one <code>addsd</code>; a whole number proved in range is an <code>Integer</code>, so a loop&#39;s counter steps with <code>add</code> and indexes an array as it is (<code>x86/README.md</code>, &quot;An integer kind&quot;);</li>
-<li>a function known by its code is called directly, and keeps the parameter kinds its calls give it;</li>
-<li>a function known before the program runs takes zero bytes in a slot, and becomes a closure record only where it is used as a value;</li>
-<li>a class&#39;s field is read at the place its constructor gives it, and a method from its class&#39;s table, each tested in line (<code>FieldSlots.roc</code>, <code>MethodTables.roc</code>);</li>
-<li>for what is unknown, the commonest cases are tested in line, and the runtime&#39;s routine is called only when the test fails: <code>+</code> and the comparisons of two numbers, a number&#39;s tag test, and an array&#39;s <code>length</code>, item read and item write (<code>OperatorLowering.roc</code>, <code>IndexLowering.roc</code>; <code>17cb2b0</code>, <code>d6ecebd</code>);</li>
-<li>a small leaf function called inside a loop is put in line in the bytecode, within a budget of instructions (<code>Inlining.roc</code>);</li>
-<li>after the lowering, a looping function&#39;s four busiest frame places live in registers (<code>Registers.roc</code>), and three passes take out loads of what a register already holds, dead register moves, and jumps to jumps (<code>Forwarding.roc</code>, <code>Moves.roc</code>, <code>Jumps.roc</code>).</li>
-</ul>
-<p>Each is a standard technique. A test in line before a call to the general routine is an inline cache (Deutsch and Schiffman, 1984, for Smalltalk-80), and guessing a field&#39;s place from its class follows Self&#39;s maps (Chambers, Ungar and Lee, 1989), which V8 calls hidden classes. Inlining, jump threading and the passes over moves are textbook optimizations, and choosing registers by counting uses is the plainest register allocation, short of graph coloring (Chaitin, 1982).</p>
+<p>Each optimization the compiler makes is a standard technique (<code>x86/roc/Lowering.roc</code>&#39;s header, <code>x86/README.md</code>):</p>
+<table>
+<thead>
+<tr>
+<th>what the compiler does</th>
+<th>where</th>
+<th>the technique</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>a known kind skips the tag&#39;s test, so two known numbers add with one <code>addsd</code>; a whole number proved in range is an <code>Integer</code>, so a loop&#39;s counter steps with <code>add</code> and indexes an array as it is</td>
+<td><code>Lowering.roc</code>; <code>x86/README.md</code>, &quot;An integer kind&quot;</td>
+<td>kinds found by iterating to a fixed point, as in dataflow analysis (Kildall, 1973)</td>
+</tr>
+<tr>
+<td>a function known by its code is called directly, and keeps the parameter kinds its calls give it</td>
+<td><code>Lowering.roc</code></td>
+<td>a direct call of a known function</td>
+</tr>
+<tr>
+<td>a function known before the program runs takes zero bytes in a slot, and becomes a closure record only where it is used as a value</td>
+<td><code>Lowering.roc</code></td>
+<td>a closure made only where it escapes</td>
+</tr>
+<tr>
+<td>a class&#39;s field is read at the place its constructor gives it, and a method from its class&#39;s table, each tested in line</td>
+<td><code>FieldSlots.roc</code>, <code>MethodTables.roc</code></td>
+<td>Self&#39;s maps (Chambers, Ungar and Lee, 1989), which V8 calls hidden classes</td>
+</tr>
+<tr>
+<td>for what is unknown, the commonest cases are tested in line, and the runtime&#39;s routine is called only when the test fails: <code>+</code> and the comparisons of two numbers, a number&#39;s tag test, and an array&#39;s <code>length</code>, item read and item write</td>
+<td><code>OperatorLowering.roc</code>, <code>IndexLowering.roc</code>; <code>17cb2b0</code>, <code>d6ecebd</code></td>
+<td>an inline cache (Deutsch and Schiffman, 1984, for Smalltalk-80)</td>
+</tr>
+<tr>
+<td>a small leaf function called inside a loop is put in line in the bytecode, within a budget of instructions</td>
+<td><code>Inlining.roc</code></td>
+<td>inlining, a textbook optimization</td>
+</tr>
+<tr>
+<td>after the lowering, a looping function&#39;s four busiest frame places live in registers</td>
+<td><code>Registers.roc</code></td>
+<td>register allocation by usage counts (Freiburghouse, 1974), the plainest kind, short of graph coloring (Chaitin, 1982)</td>
+</tr>
+<tr>
+<td>three passes take out loads of what a register already holds, dead register moves, and jumps to jumps</td>
+<td><code>Forwarding.roc</code>, <code>Moves.roc</code>, <code>Jumps.roc</code></td>
+<td>peephole optimization (McKeeman, 1965) and jump threading</td>
+</tr>
+</tbody>
+</table>
 <h2 id="the-plain-parts">The plain parts <a class="section-link" href="#the-plain-parts" aria-label="Link to this section">§</a></h2>
 <p>Everything else is done the plainest way. Each function&#39;s frame is fixed: every slot, and every place on the bytecode&#39;s stack, has its own address below <code>rbp</code>, and an instruction loads its operands from there into <code>rax</code> or <code>xmm0</code>, works, and stores the result back, or uses the register Registers gave the place. Each bytecode instruction becomes its own machine code, in order, and a call stays a call but for the inlined leaves. Registers renames at most four places a function, chosen by how often plain moves name them; a search of <code>x86/roc/</code> on 2026-11-27 finds zero mentions of constant folding.</p>
 <h2 id="where-an-optimizer-would-pay">Where an optimizer would pay <a class="section-link" href="#where-an-optimizer-would-pay" aria-label="Link to this section">§</a></h2>
-<p>An optimizer would pay most on loops. The loops program has the widest gap, 6 to 8 times. A guess, unmeasured, as <code>x86/BENCH.md</code> gives it: a tight loop over a local array is where V8&#39;s registers and small integers help most, and where the executable&#39;s trips through memory cost most. A second guess, also unmeasured: loops and collatz both use <code>%</code>, which the executable lowers to <code>idiv</code>, one of the processor&#39;s slower instructions. The README&#39;s milestone 6, type specialization for long numeric loops, is aimed at the first. In the fib race the cost was measured, by reading the machine code: eleven calls into the runtime for each limb, since an array&#39;s items are of unknown kind, which the in-line paths cut (<code>x86/race/README.md</code>).</p>
+<p>An optimizer would pay most on loops. The loops program has the widest gap, 6 to 8 times. <code>x86/BENCH.md</code> offers an unmeasured guess: a tight loop over a local array is where V8&#39;s registers and small integers help most, and where the executable&#39;s trips through memory cost most. A second guess, also unmeasured, is that loops and collatz both use <code>%</code>, which the executable lowers to <code>idiv</code>, one of the processor&#39;s slower instructions. The README&#39;s milestone 6, type specialization for long numeric loops, is aimed at the first. In the fib race the cost was measured, by reading the machine code: eleven calls into the runtime for each limb, since an array&#39;s items are of unknown kind, which the in-line paths cut (<code>x86/race/README.md</code>).</p>
 <h2 id="what-comes-next">What comes next <a class="section-link" href="#what-comes-next" aria-label="Link to this section">§</a></h2>
-<p>The compiler&#39;s own milestones say what follows (<code>x86/README.md</code>). Classes came first, and compile since <code>6ec8068</code>: the parser already writes each class as plain functions, so the work was the <code>NewInstance</code> and <code>InstanceOf</code> instructions of the bytecode. Since 2026-11-26 an instance holds its class&#39;s table of methods, and a method takes its receiver as its first parameter, passed in <code>rdx</code> by every call through a value. Next is milestone 4, the runtime in the subset: <code>console.log</code>&#39;s formatting, Map and Set, and number printing, which four corpus programs wait on (02, 30, 58 and 54), written in the JavaScript subset and compiled by this compiler. Milestone 5, the collector of <code>x86/COLLECTOR.md</code> (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>), is in (<code>a328636</code>, <code>460b606</code>). Then milestone 6, the type specialization the loops above ask for.</p>
+<p>The compiler&#39;s own milestones say what follows (<code>x86/README.md</code>):</p>
+<table>
+<thead>
+<tr>
+<th>work</th>
+<th>state</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>classes</td>
+<td>compiled since <code>6ec8068</code>; the parser already writes each class as plain functions, so the work was the <code>NewInstance</code> and <code>InstanceOf</code> instructions of the bytecode</td>
+</tr>
+<tr>
+<td>milestone 4, the runtime in the subset: <code>console.log</code>&#39;s formatting, Map and Set, and number printing, written in the JavaScript subset and compiled by this compiler</td>
+<td>next; four corpus programs wait on its number printing (02, 30, 58 and 54)</td>
+</tr>
+<tr>
+<td>milestone 5, the collector of <code>x86/COLLECTOR.md</code> (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a>)</td>
+<td>in (<code>a328636</code>, <code>460b606</code>)</td>
+</tr>
+<tr>
+<td>milestone 6, the type specialization the loops above ask for</td>
+<td>after milestone 4</td>
+</tr>
+</tbody>
+</table>
+<p>Since 2026-11-26 an instance holds its class&#39;s table of methods, and a method takes its receiver as its first parameter, passed in <code>rdx</code> by every call through a value.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="three-compilers-one-race.html"><small>Previous</small>Three compilers, one race</a>
+<a rel="prev" href="the-fib-race.html"><small>Previous</small>The fib race</a>
 <a rel="next" href="the-interpreter.html"><small>Next</small>The interpreter</a>
 </nav>
 </main>
