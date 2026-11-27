@@ -43,7 +43,7 @@ const STAGING = "http://localhost:9200/"
 -- The three pages, named as they are, and the files web/build.shale names by
 -- their bytes, `<name>.<16 hex digits>.<ext>`.
 const PAGES = {"index.html", "sandbox.html", "plus.html"}
-const PAGE_HASHED = {"nibble.js", "sandbox.js", "plus.js", "machine.js", "nibble.css", "nibble.wasm", "plus.wasm", "puzzles.json"}
+const PAGE_HASHED = {"nibble.js", "sandbox.js", "plus.js", "machine.js", "nibble.css", "nibble.wasm", "plus.wasm", "plus_names.bin", "puzzles.json"}
 
 -- Stops the publish when cook-levin-riff has a change of any kind.
 function refuse_changes(when)
