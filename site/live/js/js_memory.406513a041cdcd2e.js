@@ -12,7 +12,7 @@
 // size, which only grows.
 
 // The strategy, each sentence true of js/roc/Collector.roc, Heap.roc and
-// Vm.roc, and of js/wasm/host.zig.
+// Vm.roc, and of js/wasm/platform/host.c.
 export const STRATEGY = [
   "Every value a program shares by reference, an object, an array, a closure, a Map or a Set, a captured variable, lives in one Roc list of cells, the heap, and a JavaScript reference is a cell's index.",
   "A collection is a mark and sweep that moves nothing: it runs between two instructions, where every value the program holds is in the machine, and marks each cell its roots reach (the operand stack, the builtins, a throw in flight and the event queue's callbacks).",
