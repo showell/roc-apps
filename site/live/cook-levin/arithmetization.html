@@ -199,7 +199,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </code></pre>
 <h2 id="the-stepper-as-a-second-machine">The stepper as a second machine <a class="section-link" href="#the-stepper-as-a-second-machine" aria-label="Link to this section">§</a></h2>
 <p>Evaluated at the bits of a state and an instruction, the four polynomials give the next state&#39;s bits. So the stepper is a second implementation of the machine, written as algebra.</p>
-<p><strong>Theorem 12.</strong> On every one of the 4,096 programs and each of the four inputs, the stepper, evaluating the step polynomials one step at a time, accepts exactly when <code>run_progam</code> does.</p>
+<p><strong>Theorem 17.</strong> On every one of the 4,096 programs and each of the four inputs, the stepper, evaluating the step polynomials one step at a time, accepts exactly when <code>run_progam</code> does.</p>
 <p><em>Proof.</em> <code>tests/test_cross_check.c</code> runs all 16,384 pairs both ways and holds the differences to 0 and the accepting pairs to 5,596. The Python&#39;s <code>find_solutions</code> makes the same check on each problem&#39;s example program alone, 16 programs on 4 inputs.</p>
 
 </article>

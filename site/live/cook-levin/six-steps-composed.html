@@ -230,7 +230,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p>The final <code>hb</code> has degree 9 and its largest coefficient is 6; <code>lb</code> has degree 14 and 21; <code>halted</code> 14 and 20; <code>accepted</code> 14 and 63. Sixty-three is the largest coefficient of the four final polynomials, so int64 holds each with room to spare. <a class="chapter-link" href="the-polynomials-in-full.html">“The polynomials, in full”</a> prints the four. Built with <code>gcc -O2</code> for this book, <code>compose_main</code> composed all six in 233 ms, 199 of them in step 6, at a peak of 4,224 KiB resident.</p>
 <h2 id="the-proof">The proof <a class="section-link" href="#the-proof" aria-label="Link to this section">§</a></h2>
 <p>Fourteen 0/1 variables make 2^14 = 16,384 points, and each point is one input with one program. This is the book&#39;s thesis, as a theorem:</p>
-<p><strong>Theorem 13.</strong> At every one of the 2^14 points, the composed polynomial <code>accepted</code> is 1 when the machine accepts that input with that program and 0 when it rejects it.</p>
+<p><strong>Theorem 18.</strong> At every one of the 2^14 points, the composed polynomial <code>accepted</code> is 1 when the machine accepts that input with that program and 0 when it rejects it.</p>
 <p><em>Proof.</em> <code>tests/test_compose.c</code> evaluates the four final polynomials at every point and holds them to <code>run_progam</code> (its test <code>the_composed_polynomials_agree_with_the_machine_on_all_2_to_the_14</code>). The Roc port&#39;s proof prints the same verdict (<code>roc/golden/composition.txt</code>):</p>
 <pre><code class="language-text">proof: 16384 points, 0 differ, 5596 accepted, 2891 accepted with no halt
 </code></pre>
