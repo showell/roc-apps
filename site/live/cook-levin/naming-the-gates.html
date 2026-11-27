@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Naming the gates · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">3</span>Nibble, the puzzle page</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="the-languages-in-this-book.html"><span class="number">5</span>The languages in this book</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">6</span>Formal languages and machines</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">7</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">8</span>Which instructions are needed</a></li>
+<li class="part">Part II: P, NP and Cook-Levin</li>
+<li class="category">The classes</li><li><a href="p-and-np.html"><span class="number">9</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">10</span>Nibble, sized</a></li>
+<li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
+<li class="part">Part III: Cook-Levin on the toy</li>
+<li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">17</span>The circuit as equations</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">18</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">19</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">20</span>Checking a claim</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">21</span>From equations to CNF</a></li>
+<li class="category">Naming: the tableau and SAT</li><li><a href="the-cook-levin-machine.html"><span class="number">22</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">23</span>The tableau, filled in</a></li>
+<li class="here"><a href="naming-the-gates.html"><span class="number">24</span>Naming the gates</a><ol class="sections"><li><a href="naming-the-gates.html#a-circuit-of-three-gates">A circuit of three gates</a></li><li><a href="naming-the-gates.html#the-same-circuit-after">The same circuit, after</a></li><li><a href="naming-the-gates.html#propagation-runs-the-circuit">Propagation runs the circuit</a></li><li><a href="naming-the-gates.html#sipsers-tableau-and-our-circuit">Sipser&#39;s tableau and our circuit</a></li></ol></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">25</span>Cook-Levin as SAT</a></li>
+<li><a href="proofs-of-unsatisfiability.html"><span class="number">26</span>Proofs of unsatisfiability</a></li>
+<li><a href="solved-by-hand.html"><span class="number">27</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">28</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part IV: expanding, the polynomials</li><li><a href="the-program-left-unknown.html"><span class="number">29</span>The program left unknown</a></li>
+<li><a href="arithmetization.html"><span class="number">30</span>Arithmetization</a></li>
+<li><a href="six-steps-composed.html"><span class="number">31</span>Six steps composed</a></li>
+<li><a href="the-delightful-monstrosity.html"><span class="number">32</span>The delightful monstrosity</a></li>
+<li class="part">Part V: Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">33</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">34</span>Two theorems about Nibble++</a></li>
+<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">35</span>Shortest programs with mod2 and half</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">36</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">37</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">38</span>Guided search</a></li>
+<li class="part">Part VI: the cross-checks, and the history</li><li><a href="the-oracles.html"><span class="number">39</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">40</span>The Roc port</a></li>
+<li><a href="how-it-got-here.html"><span class="number">41</span>How it got here</a></li>
+<li class="category">Closing</li><li><a href="what-the-toy-taught-us.html"><span class="number">42</span>What the toy taught us</a></li>
+<li><a href="what-comes-next.html"><span class="number">43</span>What comes next</a></li>
+<li><a href="appendix-the-steps-encodings.html">Appendix: the step&#39;s encodings</a></li>
+<li><a href="appendix-two-drat-proofs.html">Appendix: two DRAT proofs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 24</p>
+<h1 id="naming-the-gates">Naming the gates</h1>
+<p><strong>SAT solving. A review; it needs <a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a> and <a class="chapter-link" href="the-tableau-filled-in.html">“The tableau, filled in”</a>.</strong> We turn a circuit of three gates into nine clauses by Tseitin&#39;s encoding, one fresh variable a gate, and watch a solver&#39;s simplest rule run the circuit forward.</p>
+<p>A solver reads CNF, and the machine is a circuit, gates feeding gates. Writing a circuit as CNF directly multiplies its ANDs out over its ORs, and each layer of gates can multiply the size again, as f&#39;s text grew six-fold a line in <a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a>. Grigori Tseitin&#39;s encoding names instead: each gate&#39;s output gets a fresh variable, and a few clauses say that the variable equals its gate. The formula grows by three clauses a gate, however deep the circuit is. <a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a> and <a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a> used it at full size; here it is small enough to watch, before <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> uses it on every puzzle.</p>
+<h2 id="a-circuit-of-three-gates">A circuit of three gates <a class="section-link" href="#a-circuit-of-three-gates" aria-label="Link to this section">§</a></h2>
+<p>Here is <code>out = (a AND b) OR (NOT c)</code>, its gates&#39; outputs named g1, g2 and out:</p>
+<figure class="diagram"><svg class="diagram" role="img" aria-label="The circuit, before" width="245pt" height="188pt"
+ viewBox="0.00 0.00 245.00 188.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 184)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-184 241,-184 241,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M42,-180C42,-180 12,-180 12,-180 6,-180 0,-174 0,-168 0,-168 0,-156 0,-156 0,-150 6,-144 12,-144 12,-144 42,-144 42,-144 48,-144 54,-150 54,-156 54,-156 54,-168 54,-168 54,-174 48,-180 42,-180"/>
+<text text-anchor="middle" x="27" y="-158.9" font-family="Times,serif" font-size="12.00">a</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M116.5,-108C116.5,-108 37.5,-108 37.5,-108 31.5,-108 25.5,-102 25.5,-96 25.5,-96 25.5,-84 25.5,-84 25.5,-78 31.5,-72 37.5,-72 37.5,-72 116.5,-72 116.5,-72 122.5,-72 128.5,-78 128.5,-84 128.5,-84 128.5,-96 128.5,-96 128.5,-102 122.5,-108 116.5,-108"/>
+<text text-anchor="middle" x="77" y="-86.9" font-family="Times,serif" font-size="12.00">g1 = a AND b</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M39.36,-143.7C45.23,-135.47 52.37,-125.48 58.84,-116.42"/>
+<polygon fill="black" stroke="black" points="61.82,-118.28 64.78,-108.1 56.12,-114.21 61.82,-118.28"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M114,-180C114,-180 84,-180 84,-180 78,-180 72,-174 72,-168 72,-168 72,-156 72,-156 72,-150 78,-144 84,-144 84,-144 114,-144 114,-144 120,-144 126,-150 126,-156 126,-156 126,-168 126,-168 126,-174 120,-180 114,-180"/>
+<text text-anchor="middle" x="99" y="-158.9" font-family="Times,serif" font-size="12.00">b</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M93.56,-143.7C91.11,-135.9 88.16,-126.51 85.43,-117.83"/>
+<polygon fill="black" stroke="black" points="88.71,-116.59 82.38,-108.1 82.04,-118.69 88.71,-116.59"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M207,-180C207,-180 177,-180 177,-180 171,-180 165,-174 165,-168 165,-168 165,-156 165,-156 165,-150 171,-144 177,-144 177,-144 207,-144 207,-144 213,-144 219,-150 219,-156 219,-156 219,-168 219,-168 219,-174 213,-180 207,-180"/>
+<text text-anchor="middle" x="192" y="-158.9" font-family="Times,serif" font-size="12.00">c</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M225,-108C225,-108 159,-108 159,-108 153,-108 147,-102 147,-96 147,-96 147,-84 147,-84 147,-78 153,-72 159,-72 159,-72 225,-72 225,-72 231,-72 237,-78 237,-84 237,-84 237,-96 237,-96 237,-102 231,-108 225,-108"/>
+<text text-anchor="middle" x="192" y="-86.9" font-family="Times,serif" font-size="12.00">g2 = NOT c</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M192,-143.7C192,-135.98 192,-126.71 192,-118.11"/>
+<polygon fill="black" stroke="black" points="195.5,-118.1 192,-108.1 188.5,-118.1 195.5,-118.1"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M178,-36C178,-36 90,-36 90,-36 84,-36 78,-30 78,-24 78,-24 78,-12 78,-12 78,-6 84,0 90,0 90,0 178,0 178,0 184,0 190,-6 190,-12 190,-12 190,-24 190,-24 190,-30 184,-36 178,-36"/>
+<text text-anchor="middle" x="134" y="-14.9" font-family="Times,serif" font-size="12.00">out = g1 OR g2</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M91.09,-71.7C97.92,-63.3 106.26,-53.07 113.76,-43.86"/>
+<polygon fill="black" stroke="black" points="116.47,-46.07 120.07,-36.1 111.04,-41.65 116.47,-46.07"/>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M177.66,-71.7C170.71,-63.3 162.23,-53.07 154.6,-43.86"/>
+<polygon fill="black" stroke="black" points="157.25,-41.57 148.17,-36.1 151.86,-46.04 157.25,-41.57"/>
+</g>
+</g>
+</svg><figcaption>The circuit, before</figcaption></figure><h2 id="the-same-circuit-after">The same circuit, after <a class="section-link" href="#the-same-circuit-after" aria-label="Link to this section">§</a></h2>
+<p>Each gate becomes its clauses, and one more clause, <code>(out)</code>, asks for out = 1:</p>
+<figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The circuit, after: each gate&#39;s clauses beside it" width="342pt" height="249pt"
+ viewBox="0.00 0.00 341.50 249.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 245)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-245 337.5,-245 337.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M66.5,-241C66.5,-241 36.5,-241 36.5,-241 30.5,-241 24.5,-235 24.5,-229 24.5,-229 24.5,-217 24.5,-217 24.5,-211 30.5,-205 36.5,-205 36.5,-205 66.5,-205 66.5,-205 72.5,-205 78.5,-211 78.5,-217 78.5,-217 78.5,-229 78.5,-229 78.5,-235 72.5,-241 66.5,-241"/>
+<text text-anchor="middle" x="51.5" y="-219.9" font-family="Times,serif" font-size="12.00">a</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M163,-169C163,-169 12,-169 12,-169 6,-169 0,-163 0,-157 0,-157 0,-121 0,-121 0,-115 6,-109 12,-109 12,-109 163,-109 163,-109 169,-109 175,-115 175,-121 175,-121 175,-157 175,-157 175,-163 169,-169 163,-169"/>
+<text text-anchor="middle" x="87.5" y="-155.4" font-family="Times,serif" font-size="12.00">g1 = a AND b</text>
+<text text-anchor="middle" x="87.5" y="-142.4" font-family="Times,serif" font-size="12.00">(NOT g1 OR a)</text>
+<text text-anchor="middle" x="87.5" y="-129.4" font-family="Times,serif" font-size="12.00">(NOT g1 OR b)</text>
+<text text-anchor="middle" x="87.5" y="-116.4" font-family="Times,serif" font-size="12.00">(g1 OR NOT a OR NOT b)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M59.13,-204.61C62.47,-197 66.54,-187.75 70.53,-178.66"/>
+<polygon fill="black" stroke="black" points="73.82,-179.87 74.63,-169.31 67.41,-177.06 73.82,-179.87"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M138.5,-241C138.5,-241 108.5,-241 108.5,-241 102.5,-241 96.5,-235 96.5,-229 96.5,-229 96.5,-217 96.5,-217 96.5,-211 102.5,-205 108.5,-205 108.5,-205 138.5,-205 138.5,-205 144.5,-205 150.5,-211 150.5,-217 150.5,-217 150.5,-229 150.5,-229 150.5,-235 144.5,-241 138.5,-241"/>
+<text text-anchor="middle" x="123.5" y="-219.9" font-family="Times,serif" font-size="12.00">b</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M115.87,-204.61C112.53,-197 108.46,-187.75 104.47,-178.66"/>
+<polygon fill="black" stroke="black" points="107.59,-177.06 100.37,-169.31 101.18,-179.87 107.59,-177.06"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M278.5,-241C278.5,-241 248.5,-241 248.5,-241 242.5,-241 236.5,-235 236.5,-229 236.5,-229 236.5,-217 236.5,-217 236.5,-211 242.5,-205 248.5,-205 248.5,-205 278.5,-205 278.5,-205 284.5,-205 290.5,-211 290.5,-217 290.5,-217 290.5,-229 290.5,-229 290.5,-235 284.5,-241 278.5,-241"/>
+<text text-anchor="middle" x="263.5" y="-219.9" font-family="Times,serif" font-size="12.00">c</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M321.5,-162.5C321.5,-162.5 205.5,-162.5 205.5,-162.5 199.5,-162.5 193.5,-156.5 193.5,-150.5 193.5,-150.5 193.5,-127.5 193.5,-127.5 193.5,-121.5 199.5,-115.5 205.5,-115.5 205.5,-115.5 321.5,-115.5 321.5,-115.5 327.5,-115.5 333.5,-121.5 333.5,-127.5 333.5,-127.5 333.5,-150.5 333.5,-150.5 333.5,-156.5 327.5,-162.5 321.5,-162.5"/>
+<text text-anchor="middle" x="263.5" y="-148.9" font-family="Times,serif" font-size="12.00">g2 = NOT c</text>
+<text text-anchor="middle" x="263.5" y="-135.9" font-family="Times,serif" font-size="12.00">(NOT g2 OR NOT c)</text>
+<text text-anchor="middle" x="263.5" y="-122.9" font-family="Times,serif" font-size="12.00">(g2 OR c)</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M263.5,-204.61C263.5,-195.35 263.5,-183.65 263.5,-172.75"/>
+<polygon fill="black" stroke="black" points="267,-172.66 263.5,-162.66 260,-172.66 267,-172.66"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M244.5,-73C244.5,-73 106.5,-73 106.5,-73 100.5,-73 94.5,-67 94.5,-61 94.5,-61 94.5,-12 94.5,-12 94.5,-6 100.5,0 106.5,0 106.5,0 244.5,0 244.5,0 250.5,0 256.5,-6 256.5,-12 256.5,-12 256.5,-61 256.5,-61 256.5,-67 250.5,-73 244.5,-73"/>
+<text text-anchor="middle" x="175.5" y="-59.4" font-family="Times,serif" font-size="12.00">out = g1 OR g2</text>
+<text text-anchor="middle" x="175.5" y="-46.4" font-family="Times,serif" font-size="12.00">(NOT out OR g1 OR g2)</text>
+<text text-anchor="middle" x="175.5" y="-33.4" font-family="Times,serif" font-size="12.00">(out OR NOT g1)</text>
+<text text-anchor="middle" x="175.5" y="-20.4" font-family="Times,serif" font-size="12.00">(out OR NOT g2)</text>
+<text text-anchor="middle" x="175.5" y="-7.4" font-family="Times,serif" font-size="12.00">(out)</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M112.95,-108.93C120.57,-100.24 129.09,-90.5 137.33,-81.09"/>
+<polygon fill="black" stroke="black" points="140.21,-83.12 144.16,-73.29 134.94,-78.5 140.21,-83.12"/>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M243.75,-115.45C234.86,-105.29 224.04,-92.93 213.66,-81.08"/>
+<polygon fill="black" stroke="black" points="216.15,-78.61 206.93,-73.39 210.88,-83.22 216.15,-78.61"/>
+</g>
+</g>
+</svg><svg class="diagram diagram-phone" role="img" aria-label="The circuit, after: each gate&#39;s clauses beside it" width="313pt" height="217pt"
+ viewBox="0.00 0.00 312.50 217.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 213)">
+<polygon fill="white" stroke="transparent" points="-4,4 -4,-213 308.5,-213 308.5,4 -4,4"/>
+<g id="node1" class="node">
+<path fill="none" stroke="black" d="M66.5,-209C66.5,-209 36.5,-209 36.5,-209 30.5,-209 24.5,-203 24.5,-197 24.5,-197 24.5,-185 24.5,-185 24.5,-179 30.5,-173 36.5,-173 36.5,-173 66.5,-173 66.5,-173 72.5,-173 78.5,-179 78.5,-185 78.5,-185 78.5,-197 78.5,-197 78.5,-203 72.5,-209 66.5,-209"/>
+<text text-anchor="middle" x="51.5" y="-187.9" font-family="Times,serif" font-size="12.00">a</text>
+</g>
+<g id="node4" class="node">
+<path fill="none" stroke="black" d="M153,-151C153,-151 12,-151 12,-151 6,-151 0,-145 0,-139 0,-139 0,-105 0,-105 0,-99 6,-93 12,-93 12,-93 153,-93 153,-93 159,-93 165,-99 165,-105 165,-105 165,-139 165,-139 165,-145 159,-151 153,-151"/>
+<text text-anchor="middle" x="82.5" y="-138.4" font-family="Times,serif" font-size="12.00">g1 = a AND b</text>
+<text text-anchor="middle" x="82.5" y="-125.4" font-family="Times,serif" font-size="12.00">(NOT g1 OR a)</text>
+<text text-anchor="middle" x="82.5" y="-112.4" font-family="Times,serif" font-size="12.00">(NOT g1 OR b)</text>
+<text text-anchor="middle" x="82.5" y="-99.4" font-family="Times,serif" font-size="12.00">(g1 OR NOT a OR NOT b)</text>
+</g>
+<g id="edge1" class="edge">
+<path fill="none" stroke="black" d="M59.48,-172.75C61.25,-168.94 63.18,-164.75 65.16,-160.49"/>
+<polygon fill="black" stroke="black" points="68.47,-161.66 69.49,-151.11 62.12,-158.72 68.47,-161.66"/>
+</g>
+<g id="node2" class="node">
+<path fill="none" stroke="black" d="M129.5,-209C129.5,-209 99.5,-209 99.5,-209 93.5,-209 87.5,-203 87.5,-197 87.5,-197 87.5,-185 87.5,-185 87.5,-179 93.5,-173 99.5,-173 99.5,-173 129.5,-173 129.5,-173 135.5,-173 141.5,-179 141.5,-185 141.5,-185 141.5,-197 141.5,-197 141.5,-203 135.5,-209 129.5,-209"/>
+<text text-anchor="middle" x="114.5" y="-187.9" font-family="Times,serif" font-size="12.00">b</text>
+</g>
+<g id="edge2" class="edge">
+<path fill="none" stroke="black" d="M106.26,-172.75C104.39,-168.83 102.33,-164.53 100.24,-160.14"/>
+<polygon fill="black" stroke="black" points="103.39,-158.63 95.93,-151.11 97.08,-161.64 103.39,-158.63"/>
+</g>
+<g id="node3" class="node">
+<path fill="none" stroke="black" d="M254.5,-209C254.5,-209 224.5,-209 224.5,-209 218.5,-209 212.5,-203 212.5,-197 212.5,-197 212.5,-185 212.5,-185 212.5,-179 218.5,-173 224.5,-173 224.5,-173 254.5,-173 254.5,-173 260.5,-173 266.5,-179 266.5,-185 266.5,-185 266.5,-197 266.5,-197 266.5,-203 260.5,-209 254.5,-209"/>
+<text text-anchor="middle" x="239.5" y="-187.9" font-family="Times,serif" font-size="12.00">c</text>
+</g>
+<g id="node5" class="node">
+<path fill="none" stroke="black" d="M292.5,-144.5C292.5,-144.5 186.5,-144.5 186.5,-144.5 180.5,-144.5 174.5,-138.5 174.5,-132.5 174.5,-132.5 174.5,-111.5 174.5,-111.5 174.5,-105.5 180.5,-99.5 186.5,-99.5 186.5,-99.5 292.5,-99.5 292.5,-99.5 298.5,-99.5 304.5,-105.5 304.5,-111.5 304.5,-111.5 304.5,-132.5 304.5,-132.5 304.5,-138.5 298.5,-144.5 292.5,-144.5"/>
+<text text-anchor="middle" x="239.5" y="-131.9" font-family="Times,serif" font-size="12.00">g2 = NOT c</text>
+<text text-anchor="middle" x="239.5" y="-118.9" font-family="Times,serif" font-size="12.00">(NOT g2 OR NOT c)</text>
+<text text-anchor="middle" x="239.5" y="-105.9" font-family="Times,serif" font-size="12.00">(g2 OR c)</text>
+</g>
+<g id="edge3" class="edge">
+<path fill="none" stroke="black" d="M239.5,-172.75C239.5,-167.28 239.5,-161.06 239.5,-154.9"/>
+<polygon fill="black" stroke="black" points="243,-154.76 239.5,-144.76 236,-154.76 243,-154.76"/>
+</g>
+<g id="node6" class="node">
+<path fill="none" stroke="black" d="M224.5,-71C224.5,-71 96.5,-71 96.5,-71 90.5,-71 84.5,-65 84.5,-59 84.5,-59 84.5,-12 84.5,-12 84.5,-6 90.5,0 96.5,0 96.5,0 224.5,0 224.5,0 230.5,0 236.5,-6 236.5,-12 236.5,-12 236.5,-59 236.5,-59 236.5,-65 230.5,-71 224.5,-71"/>
+<text text-anchor="middle" x="160.5" y="-58.4" font-family="Times,serif" font-size="12.00">out = g1 OR g2</text>
+<text text-anchor="middle" x="160.5" y="-45.4" font-family="Times,serif" font-size="12.00">(NOT out OR g1 OR g2)</text>
+<text text-anchor="middle" x="160.5" y="-32.4" font-family="Times,serif" font-size="12.00">(out OR NOT g1)</text>
+<text text-anchor="middle" x="160.5" y="-19.4" font-family="Times,serif" font-size="12.00">(out OR NOT g2)</text>
+<text text-anchor="middle" x="160.5" y="-6.4" font-family="Times,serif" font-size="12.00">(out)</text>
+</g>
+<g id="edge4" class="edge">
+<path fill="none" stroke="black" d="M108.47,-92.86C112.66,-88.33 117.08,-83.54 121.49,-78.76"/>
+<polygon fill="black" stroke="black" points="124.18,-81 128.39,-71.28 119.04,-76.26 124.18,-81"/>
+</g>
+<g id="edge5" class="edge">
+<path fill="none" stroke="black" d="M219.16,-99.24C213.31,-92.99 206.73,-85.95 200.15,-78.91"/>
+<polygon fill="black" stroke="black" points="202.42,-76.22 193.04,-71.3 197.31,-81 202.42,-76.22"/>
+</g>
+</g>
+</svg><figcaption>The circuit, after: each gate&#39;s clauses beside it</figcaption></figure><p>Each clause is one direction of &quot;the variable equals its gate&quot;:</p>
+<table>
+<thead>
+<tr>
+<th>gate</th>
+<th>its clauses</th>
+<th>what they say</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>g1 = a AND b</code></td>
+<td><code>(NOT g1 OR a)</code>, <code>(NOT g1 OR b)</code>, <code>(g1 OR NOT a OR NOT b)</code></td>
+<td>g1 = 1 forces a = 1; g1 = 1 forces b = 1; a = b = 1 forces g1 = 1</td>
+</tr>
+<tr>
+<td><code>g2 = NOT c</code></td>
+<td><code>(NOT g2 OR NOT c)</code>, <code>(g2 OR c)</code></td>
+<td>g2 = 1 forces c = 0; c = 0 forces g2 = 1</td>
+</tr>
+<tr>
+<td><code>out = g1 OR g2</code></td>
+<td><code>(NOT out OR g1 OR g2)</code>, <code>(out OR NOT g1)</code>, <code>(out OR NOT g2)</code></td>
+<td>out = 1 forces g1 or g2 to 1; g1 = 1 forces out = 1; g2 = 1 forces out = 1</td>
+</tr>
+<tr>
+<td>the claim</td>
+<td><code>(out)</code></td>
+<td>out = 1</td>
+</tr>
+</tbody>
+</table>
+<p>An OR gate&#39;s clauses mirror an AND&#39;s. The book&#39;s encoders write a complement as a literal&#39;s minus sign and save g2&#39;s two clauses; this example names g2 to show every gate. The whole CNF, as <code>sat/readable/circuit.txt</code> holds it, six variables and nine clauses (<code>sat/to_dimacs.shale</code> gives its DIMACS):</p>
+<pre><code class="language-text">-- out = (a AND b) OR (NOT c), by Tseitin&#39;s encoding: g1 = a AND b,
+-- g2 = NOT c, out = g1 OR g2, and the unit clause (out) asks for out = 1.
+a = x1
+b = x2
+c = x3
+g1 = x4
+g2 = x5
+out = x6
+6 variables, 9 clauses
+(NOT g1 OR a)
+(NOT g1 OR b)
+(g1 OR NOT a OR NOT b)
+(NOT g2 OR NOT c)
+(g2 OR c)
+(NOT out OR g1 OR g2)
+(out OR NOT g1)
+(out OR NOT g2)
+(out)
+</code></pre>
+<h2 id="propagation-runs-the-circuit">Propagation runs the circuit <a class="section-link" href="#propagation-runs-the-circuit" aria-label="Link to this section">§</a></h2>
+<p>Unit propagation is the rule of <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>: a clause whose literals are all false but one forces that one. Fix the three inputs, and each gate&#39;s clauses force its output as soon as its inputs are known, in the circuit&#39;s own order, so propagation evaluates the circuit. <code>sat/walkthrough.shale</code> runs it, with a few lines of propagation of its own. A true case:</p>
+<pre><code class="language-text">inputs fixed: a = true, b = true, c = false
+g1 = true, from (g1 OR NOT a OR NOT b)
+g2 = true, from (g2 OR c)
+out = true, from (out OR NOT g1)
+every clause has a true literal, (out) among them
+</code></pre>
+<p>These are the values of <code>sat/readable/circuit_model.v</code>, a model of the formula. A false case:</p>
+<pre><code class="language-text">inputs fixed: a = false, b = true, c = true
+g1 = false, from (NOT g1 OR a)
+g2 = false, from (NOT g2 OR NOT c)
+out = false, from (NOT out OR g1 OR g2)
+conflict: every literal of (out) is false
+</code></pre>
+<p>The gates compute out = 0, and the claim asks for 1. With these inputs the formula is unsatisfiable, and seeing it took three forced values and zero guesses. The whole decider behaves the same way in <a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a>: with every input fixed, rocsat answers in 0 decisions, one propagation a variable.</p>
+<h2 id="sipsers-tableau-and-our-circuit">Sipser&#39;s tableau and our circuit <a class="section-link" href="#sipsers-tableau-and-our-circuit" aria-label="Link to this section">§</a></h2>
+<p>Sipser&#39;s proof of Cook-Levin (<a class="chapter-link" href="p-np-and-cook-levin.html">“P, NP and Cook-Levin”</a>) gives each cell of the tableau its own variables, one for each symbol the cell might hold, and states the machine&#39;s rules by <em>windows</em>: every 2 × 3 block of cells must be one the rules allow. A window touches six cells, a fixed number, so its rule is a formula of constant size, and multiplying it out into CNF costs a constant a window, using the cells&#39; variables alone. Our formula is one circuit, gates feeding gates down six steps, and multiplied out it grows by a factor a step: 3,869 clauses for the decider by distribution (<a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a>). So we name every gate, three clauses each. Both routes stay polynomial: Sipser&#39;s by keeping each piece small, ours by Tseitin&#39;s names.</p>
+<p>Three gates, nine clauses, and the solver&#39;s one rule computes the circuit.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-tableau-filled-in.html"><small>Previous</small>The tableau, filled in</a>
+<a rel="next" href="cook-levin-as-sat.html"><small>Next</small>Cook-Levin as SAT</a>
+</nav>
+</main>
+</body>
+</html>

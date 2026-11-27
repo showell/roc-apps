@@ -42,24 +42,26 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="from-equations-to-cnf.html"><span class="number">21</span>From equations to CNF</a></li>
 <li class="category">Naming: the tableau and SAT</li><li><a href="the-cook-levin-machine.html"><span class="number">22</span>The Cook-Levin machine</a></li>
 <li><a href="the-tableau-filled-in.html"><span class="number">23</span>The tableau, filled in</a></li>
-<li><a href="cook-levin-as-sat.html"><span class="number">24</span>Cook-Levin as SAT</a></li>
-<li><a href="solved-by-hand.html"><span class="number">25</span>Solved by hand</a></li>
-<li><a href="the-solvers-work-in-full.html"><span class="number">26</span>The solver&#39;s work, in full</a></li>
-<li class="part">Part IV: expanding, the polynomials</li><li><a href="the-program-left-unknown.html"><span class="number">27</span>The program left unknown</a></li>
-<li><a href="arithmetization.html"><span class="number">28</span>Arithmetization</a></li>
-<li><a href="six-steps-composed.html"><span class="number">29</span>Six steps composed</a></li>
-<li><a href="the-delightful-monstrosity.html"><span class="number">30</span>The delightful monstrosity</a></li>
-<li class="part">Part V: Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">31</span>Nibble++</a></li>
-<li><a href="two-theorems-about-nibble.html"><span class="number">32</span>Two theorems about Nibble++</a></li>
-<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">33</span>Shortest programs with mod2 and half</a></li>
-<li><a href="nibble-meets-rocsat.html"><span class="number">34</span>Nibble++ meets rocsat</a></li>
-<li><a href="is-not-14-needs-28-lines.html"><span class="number">35</span>is_not_14 needs 28 lines</a></li>
-<li><a href="guided-search.html"><span class="number">36</span>Guided search</a></li>
-<li class="part">Part VI: the cross-checks, and the history</li><li><a href="the-oracles.html"><span class="number">37</span>The oracles</a></li>
-<li><a href="the-roc-port.html"><span class="number">38</span>The Roc port</a></li>
-<li><a href="how-it-got-here.html"><span class="number">39</span>How it got here</a></li>
-<li class="category">Closing</li><li><a href="what-the-toy-taught-us.html"><span class="number">40</span>What the toy taught us</a></li>
-<li class="here"><a href="what-comes-next.html"><span class="number">41</span>What comes next</a></li>
+<li><a href="naming-the-gates.html"><span class="number">24</span>Naming the gates</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">25</span>Cook-Levin as SAT</a></li>
+<li><a href="proofs-of-unsatisfiability.html"><span class="number">26</span>Proofs of unsatisfiability</a></li>
+<li><a href="solved-by-hand.html"><span class="number">27</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">28</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part IV: expanding, the polynomials</li><li><a href="the-program-left-unknown.html"><span class="number">29</span>The program left unknown</a></li>
+<li><a href="arithmetization.html"><span class="number">30</span>Arithmetization</a></li>
+<li><a href="six-steps-composed.html"><span class="number">31</span>Six steps composed</a></li>
+<li><a href="the-delightful-monstrosity.html"><span class="number">32</span>The delightful monstrosity</a></li>
+<li class="part">Part V: Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">33</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">34</span>Two theorems about Nibble++</a></li>
+<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">35</span>Shortest programs with mod2 and half</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">36</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">37</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">38</span>Guided search</a></li>
+<li class="part">Part VI: the cross-checks, and the history</li><li><a href="the-oracles.html"><span class="number">39</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">40</span>The Roc port</a></li>
+<li><a href="how-it-got-here.html"><span class="number">41</span>How it got here</a></li>
+<li class="category">Closing</li><li><a href="what-the-toy-taught-us.html"><span class="number">42</span>What the toy taught us</a></li>
+<li class="here"><a href="what-comes-next.html"><span class="number">43</span>What comes next</a><ol class="sections"><li><a href="what-comes-next.html#ways-we-could-make-the-solvers-work-lighter">Ways we could make the solver&#39;s work lighter</a></li></ol></li>
 <li><a href="appendix-the-steps-encodings.html">Appendix: the step&#39;s encodings</a></li>
 <li><a href="appendix-two-drat-proofs.html">Appendix: two DRAT proofs</a></li>
 </ol>
@@ -67,9 +69,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <main>
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 41</p>
+<p class="chapter-number">Chapter 43</p>
 <h1 id="what-comes-next">What comes next</h1>
-<p><strong>Every frame. Tools and history; it stands alone.</strong> We list the questions still open, and say how to start on your own.</p>
+<p><strong>Every frame. Tools and history; it stands alone.</strong> We list the questions still open, say how to start on your own, and name three ways to lighten the solver&#39;s work.</p>
 <p>A few questions stand open:</p>
 <ul>
 <li><strong>A conjecture about <code>half</code>.</strong> Over {zero, decr, mod2} and over {zero, decr}, <code>half</code> seems to help the same 38,911 formal languages; the census checks it on every one, and it awaits a proof (<a class="chapter-link" href="shortest-programs-with-mod2-and-half.html">“Shortest programs with mod2 and half”</a>).</li>
@@ -77,6 +79,17 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><strong>Nondeterminism.</strong> The machine is deterministic. The SAT encoding already treats the program as the unknown, which is the theorem&#39;s &quot;a certificate exists&quot;; a machine with choice instructions would make the riff closer to the theorem.</li>
 </ul>
 <p>You can use any mainstream programming language to study the toy languages. <code>js/cook_levin.js</code> is the machine, the search and the six-step composition in plain JavaScript, and it prints the same report and composition byte for byte under node, and also as an x86-64 program compiled by js-x86, a compiler we wrote ourselves, in Roc, in <a href="https://github.com/showell/roc-js-interpreter">roc-js-interpreter</a>.</p>
+<h2 id="ways-we-could-make-the-solvers-work-lighter">Ways we could make the solver&#39;s work lighter <a class="section-link" href="#ways-we-could-make-the-solvers-work-lighter" aria-label="Link to this section">§</a></h2>
+<p>Each idea here holds for every puzzle alike, so the solver still finds each puzzle&#39;s answer itself, and each would help any solver of rocsat&#39;s kind.</p>
+<p><strong>Symmetry breaking.</strong> Many programs are twins: <code>nada</code> leaves the machine as it was, so moving a program&#39;s <code>nada</code> lines to its end keeps what it decides. Clauses that say &quot;a <code>nada</code> line is followed by <code>nada</code>&quot;, two for each pair of neighbouring lines, keep one twin of each family, and the solver searches fewer programs. <code>sat/walkthrough.shale</code> counts them over all 4,096:</p>
+<pre><code class="language-text">line 1 nada gives line 2 nada: (x1 OR x2 OR NOT x3), (x1 OR x2 OR NOT x4)
+the 10 clauses for lines 1 to 6 keep 1093 of the 4096 programs
+problems decided: 16 by all 4096, 16 by the 1093 kept
+{0, 2, 3} keeps its one program, 1689
+</code></pre>
+<p>Each SATISFIABLE answer stays SATISFIABLE, and each UNSATISFIABLE one stays UNSATISFIABLE. The count of solutions changes, so the oracle&#39;s count of programs would keep the formula as it is.</p>
+<p><strong>Better encodings.</strong> A smaller step shrinks all 24 of its copies at once. The encoder already folds constants and shares gates, so a puzzle&#39;s formula has 404 gates where 24 steppers of 34 would have 816 (<a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>), and <code>sat_step</code>&#39;s 34 AND and OR gates are fewer than the mux circuit&#39;s 43 (<a class="chapter-link" href="appendix-the-steps-encodings.html">“Appendix: the step&#39;s encodings”</a>). Each AND or OR gate saved is three clauses fewer in every copy of the step that builds it.</p>
+<p><strong>Fewer inputs at a time.</strong> <a class="chapter-link" href="guided-search.html">“Guided search”</a> asks about a few inputs at once and adds an input each round the found program gets it wrong, so each round asks the solver to satisfy a few of the 16 runs.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Proofs of unsatisfiability · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">3</span>Nibble, the puzzle page</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
+<li><a href="the-languages-in-this-book.html"><span class="number">5</span>The languages in this book</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">6</span>Formal languages and machines</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">7</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">8</span>Which instructions are needed</a></li>
+<li class="part">Part II: P, NP and Cook-Levin</li>
+<li class="category">The classes</li><li><a href="p-and-np.html"><span class="number">9</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">10</span>Nibble, sized</a></li>
+<li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
+<li class="part">Part III: Cook-Levin on the toy</li>
+<li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">17</span>The circuit as equations</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">18</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">19</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">20</span>Checking a claim</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">21</span>From equations to CNF</a></li>
+<li class="category">Naming: the tableau and SAT</li><li><a href="the-cook-levin-machine.html"><span class="number">22</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">23</span>The tableau, filled in</a></li>
+<li><a href="naming-the-gates.html"><span class="number">24</span>Naming the gates</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">25</span>Cook-Levin as SAT</a></li>
+<li class="here"><a href="proofs-of-unsatisfiability.html"><span class="number">26</span>Proofs of unsatisfiability</a><ol class="sections"><li><a href="proofs-of-unsatisfiability.html#satisfiable-is-checked-unsatisfiable-is-proved">SATISFIABLE is checked, UNSATISFIABLE is proved</a></li><li><a href="proofs-of-unsatisfiability.html#lemmas-by-rup">Lemmas, by RUP</a></li><li><a href="proofs-of-unsatisfiability.html#deletions">Deletions</a></li><li><a href="proofs-of-unsatisfiability.html#rat-briefly">RAT, briefly</a></li></ol></li>
+<li><a href="solved-by-hand.html"><span class="number">27</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">28</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part IV: expanding, the polynomials</li><li><a href="the-program-left-unknown.html"><span class="number">29</span>The program left unknown</a></li>
+<li><a href="arithmetization.html"><span class="number">30</span>Arithmetization</a></li>
+<li><a href="six-steps-composed.html"><span class="number">31</span>Six steps composed</a></li>
+<li><a href="the-delightful-monstrosity.html"><span class="number">32</span>The delightful monstrosity</a></li>
+<li class="part">Part V: Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">33</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">34</span>Two theorems about Nibble++</a></li>
+<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">35</span>Shortest programs with mod2 and half</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">36</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">37</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">38</span>Guided search</a></li>
+<li class="part">Part VI: the cross-checks, and the history</li><li><a href="the-oracles.html"><span class="number">39</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">40</span>The Roc port</a></li>
+<li><a href="how-it-got-here.html"><span class="number">41</span>How it got here</a></li>
+<li class="category">Closing</li><li><a href="what-the-toy-taught-us.html"><span class="number">42</span>What the toy taught us</a></li>
+<li><a href="what-comes-next.html"><span class="number">43</span>What comes next</a></li>
+<li><a href="appendix-the-steps-encodings.html">Appendix: the step&#39;s encodings</a></li>
+<li><a href="appendix-two-drat-proofs.html">Appendix: two DRAT proofs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 26</p>
+<h1 id="proofs-of-unsatisfiability">Proofs of unsatisfiability</h1>
+<p><strong>SAT solving. A review; it needs <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>.</strong> We show what a DRAT proof is on a formula of four clauses you can check with a pencil, and why an UNSATISFIABLE answer needs a proof when a SATISFIABLE one needs only an assignment.</p>
+<h2 id="satisfiable-is-checked-unsatisfiable-is-proved">SATISFIABLE is checked, UNSATISFIABLE is proved <a class="section-link" href="#satisfiable-is-checked-unsatisfiable-is-proved" aria-label="Link to this section">§</a></h2>
+<p>A SATISFIABLE answer carries its own evidence, the assignment, and <code>rocsat check</code> tests it clause by clause, in time that grows in step with the formula&#39;s length. That is NP&#39;s verifier (<a class="chapter-link" href="p-and-np.html">“P and NP”</a>), and it runs in polynomial time. Finding the assignment is the hard part. The plain way tries all 2^n assignments of n variables: 4,096 for a puzzle&#39;s 12 program bits, since propagation settles its other 404 variables, and 2^56 for the 56 program bits of is_not_14 at 28 lines. rocsat prunes most of each search away, yet every method known takes exponential time on some formulas; whether some method could always take polynomial time is the P versus NP question. An UNSATISFIABLE answer needs evidence of another kind, a proof that every assignment breaks a clause, and DRAT is the format rocsat writes it in.</p>
+<h2 id="lemmas-by-rup">Lemmas, by RUP <a class="section-link" href="#lemmas-by-rup" aria-label="Link to this section">§</a></h2>
+<p>A DRAT proof is a list of clauses, its <em>lemmas</em>, each a consequence of the formula and the lemmas before it, ending at the empty clause <code>()</code>, which is false under every assignment. A checker tests each lemma by <em>reverse unit propagation</em>, RUP: suppose every literal of the lemma false, propagate, and look for a conflict. A conflict shows that the lemma holds wherever the formula and the lemmas before it hold.</p>
+<p>Here is a formula small enough to check by hand, <code>sat/walkthrough/no_opcode.cnf</code>: line 1&#39;s two bits, with each of the four opcodes ruled out by one clause.</p>
+<table>
+<thead>
+<tr>
+<th>clause</th>
+<th>rules out</th>
+<th>its bits</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>(hb OR lb)</code></td>
+<td><code>nada</code></td>
+<td>00</td>
+</tr>
+<tr>
+<td><code>(hb OR NOT lb)</code></td>
+<td><code>zero</code></td>
+<td>01</td>
+</tr>
+<tr>
+<td><code>(NOT hb OR lb)</code></td>
+<td><code>decr</code></td>
+<td>10</td>
+</tr>
+<tr>
+<td><code>(NOT hb OR NOT lb)</code></td>
+<td><code>mod2</code></td>
+<td>11</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-text">-- line 1 of a program, with each of its four opcodes ruled out
+hb = x1
+lb = x2
+2 variables, 4 clauses
+(hb OR lb)
+(hb OR NOT lb)
+(NOT hb OR lb)
+(NOT hb OR NOT lb)
+</code></pre>
+<p>Line 1 has to be some opcode, so the formula is unsatisfiable. Its proof, <code>no_opcode.drat</code>, is four lines, and <code>sat/walkthrough.shale</code> replays each by propagation of its own:</p>
+<pre><code class="language-text">line 1, `1 0`: the lemma (hb)
+  suppose hb = false
+  lb = true, from (hb OR lb)
+  conflict: every literal of (hb OR NOT lb) is false
+  so (hb) follows by RUP
+line 2, `d 1 2 0`: delete (hb OR lb)
+line 3, `d 1 -2 0`: delete (hb OR NOT lb)
+line 4, `0`: the lemma ()
+  hb = true, from (hb)
+  lb = true, from (NOT hb OR lb)
+  conflict: every literal of (NOT hb OR NOT lb) is false
+  so () follows by RUP
+</code></pre>
+<p>The lemma <code>(hb)</code> says line 1 is <code>decr</code> or <code>mod2</code>, since the first two clauses ruled out <code>nada</code> and <code>zero</code>. With hb known, the last two clauses clash, and the empty clause follows. The repository&#39;s checker, <code>src/drat.c</code>, agrees: <code>verified: 2 lemmas (0 by RAT), 2 deletions, over 2 variables and 4 clauses; the empty clause at line 4</code>.</p>
+<p>The shortest proof is the empty clause alone, a file of one line, <code>0</code>. It suffices when propagation from the formula&#39;s own clauses reaches a conflict, as in the false case of <a class="chapter-link" href="naming-the-gates.html">“Naming the gates”</a>: <code>sat/walkthrough/circuit_false.drat</code> is that line, beside the circuit&#39;s CNF with its three inputs fixed, and the checker accepts it.</p>
+<h2 id="deletions">Deletions <a class="section-link" href="#deletions" aria-label="Link to this section">§</a></h2>
+<p>A line that starts with <code>d</code> deletes a clause from the checker&#39;s database. Above, once <code>(hb)</code> is known, it satisfies <code>(hb OR lb)</code> and <code>(hb OR NOT lb)</code> for good, and deleting them saves propagation the work of visiting them. Deleting only weakens the database, so each later lemma still follows from the formula. Deletions are a solver&#39;s housekeeping, and they keep a long proof fast to check: the proof that five lines are too few for {0, 2, 3} has 286 lemmas and 387 deletions (<a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>).</p>
+<h2 id="rat-briefly">RAT, briefly <a class="section-link" href="#rat-briefly" aria-label="Link to this section">§</a></h2>
+<p>RAT stands for <em>resolution asymmetric tautology</em>. An <em>asymmetric tautology</em> is a clause RUP accepts. <em>Resolution</em> joins two clauses that clash on one variable, <code>(l OR A)</code> and <code>(NOT l OR B)</code>, into <code>(A OR B)</code>. A lemma is RAT on its first literal l when every clause holding the complement of l, resolved with the lemma, gives a clause RUP accepts. That lets a proof name a fresh variable m: <code>(m OR NOT hb OR NOT lb)</code> is RAT on m, since the database holds <code>NOT m</code> in zero clauses, and <code>(NOT m OR hb)</code> and <code>(NOT m OR lb)</code> follow, Tseitin&#39;s three clauses for m = hb AND lb, made inside a proof. <code>src/drat.c</code> tries RAT on a lemma&#39;s first literal when RUP fails. All 15 of rocsat&#39;s puzzle proofs pass by RUP alone, so RAT appears in this book in this paragraph.</p>
+<p>A SATISFIABLE answer is an assignment you check, and an UNSATISFIABLE one is a proof you replay; here both fit on a page.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="cook-levin-as-sat.html"><small>Previous</small>Cook-Levin as SAT</a>
+<a rel="next" href="solved-by-hand.html"><small>Next</small>Solved by hand</a>
+</nav>
+</main>
+</body>
+</html>
