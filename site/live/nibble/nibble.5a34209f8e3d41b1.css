@@ -74,26 +74,11 @@ header .links { display: flex; align-items: baseline; gap: 14px; }
 header a { color: var(--accent); }
 .decided { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; }
 .decided code { font-weight: 600; overflow-wrap: anywhere; }
-.elegance { margin: 6px 2px 0; font-size: 0.85rem; color: var(--muted); }
-.elegance .stars { color: var(--accent); letter-spacing: 1px; white-space: nowrap; }
 .load { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
 .load label { color: var(--muted); font-size: 0.92rem; }
 .load input { width: 5.2rem; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; }
 .load input.bad { border-color: var(--bad); }
-/* The Nibble++ sandbox: a wide number box, a machine code that wraps, the
-   step buttons and the line they are on. */
-.actions + .actions { margin-top: 8px; }
-.actions .count { color: var(--muted); font-size: 0.92rem; }
-.actions button:disabled { opacity: 0.45; cursor: default; }
-.load.wide { flex: 1 1 100%; min-width: 0; }
-.load.wide input { flex: 1; min-width: 0; width: auto; }
+/* The Nibble++ sandbox: a machine code that wraps, with its "?". */
 .machine-line { font-size: 0.85rem; color: var(--muted); }
 .machine-line code { overflow-wrap: anywhere; }
 .machine-line .code-help { padding: 0; width: 1.6rem; height: 1.6rem; border-radius: 50%; border: 1px solid var(--accent); background: var(--panel); color: var(--accent); font-size: 0.85rem; cursor: pointer; }
-.stepper { margin-top: 12px; }
-.stepper button { padding: 6px 12px; }
-.stepper .step-label { color: var(--muted); font-size: 0.92rem; }
-.slot.current .num { color: var(--accent); font-weight: 700; }
-table.plus th.step { width: 3.2rem; }
-table.plus td { white-space: normal; }
-tr.accepted td[data-col="result"] { color: var(--good); font-weight: 600; }
