@@ -5,7 +5,7 @@
 // Nothing is kept between visits: a reload starts at puzzle 1.
 // web/build.shale rewrites machine.js's name to its hashed one.
 
-import { STEPS, INPUTS, OPS, PUZZLES, codeOf, setText, outcomeOf, el, drawOps, opTip, machineCode, CODE_EXPLAIN, traceTable } from "./machine.5fbe919a2979e99e.js";
+import { STEPS, INPUTS, OPS, PUZZLES, codeOf, setText, outcomeOf, el, drawOps, opTip, machineCode, CODE_EXPLAIN, traceTable } from "./machine.9c38f3ca638d7d58.js";
 
 const LINES = ["an empty", "a one-line", "a two-line", "a three-line", "a four-line", "a five-line", "a six-line"];
 

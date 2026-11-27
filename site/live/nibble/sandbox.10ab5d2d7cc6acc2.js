@@ -6,7 +6,7 @@
 // Nothing is kept between visits: a reload starts at all nada.
 // web/build.shale rewrites machine.js's name to its hashed one.
 
-import { STEPS, INPUTS, OPS, PUZZLES, machine, codeOf, programOf, setText, el, drawOps, opTip, machineCode, CODE_EXPLAIN, traceTable } from "./machine.5fbe919a2979e99e.js";
+import { STEPS, INPUTS, OPS, PUZZLES, machine, codeOf, programOf, setText, el, drawOps, opTip, machineCode, CODE_EXPLAIN, traceTable } from "./machine.9c38f3ca638d7d58.js";
 
 const PROGRAMS = 4 ** STEPS;
 let program = programOf(0);

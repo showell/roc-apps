@@ -12,7 +12,7 @@ export const INPUTS = [0, 1, 2, 3];
 export const NONE = 0, ACCEPTED = 1;
 
 const [wasm, table] = await Promise.all([
-  fetch("nibble.c9f85bcae2462a60.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
+  fetch("nibble.6745219783632f65.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b)),
   fetch("puzzles.60c40870ab0a98bf.json").then((r) => r.json()),
 ]).catch((e) => {
   const said = document.getElementById("loading");
