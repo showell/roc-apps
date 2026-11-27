@@ -65,7 +65,7 @@
 <main>
 <nav class="steps"><a href="../#shared-library">Roc on Shale</a></nav>
 <h1>The shared Roc library</h1>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Bytes.roc"><code>cookbook/roc/lib/Bytes.roc</code></a>, 128 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Bytes.roc"><code>cookbook/roc/lib/Bytes.roc</code></a>, 128 lines</p>
 <pre><code><span class="syn-comment">## A line&#39;s bytes read as Shale&#39;s builtins read a string: a place counted</span>
 <span class="syn-comment">## from 1, cut as `sub` cuts, trimmed as `trim` trims, and a width that is</span>
 <span class="syn-comment">## the bytes with a tab counting four. A recipe that scans Roc a byte at a</span>
@@ -195,7 +195,7 @@
 <span class="syn-name">is_blank</span> : <span class="syn-type">U8</span> -&gt; <span class="syn-type">Bool</span>
 <span class="syn-name">is_blank</span> = |byte| byte == <span class="syn-string">&#39; &#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\t&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\r&#39;</span> <span class="syn-keyword">or</span> byte == <span class="syn-string">&#39;\n&#39;</span>
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Declarations.roc"><code>cookbook/roc/lib/Declarations.roc</code></a>, 341 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Declarations.roc"><code>cookbook/roc/lib/Declarations.roc</code></a>, 341 lines</p>
 <pre><code><span class="syn-comment">## What a file declares at its top level or as a module type&#39;s member, read</span>
 <span class="syn-comment">## from its tree in file order: its types, its values and the record fields of its</span>
 <span class="syn-comment">## types and annotations, never a local&#39;s. Each carries `place`, its node&#39;s</span>
@@ -538,7 +538,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Finding.roc"><code>cookbook/roc/lib/Finding.roc</code></a>, 42 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Finding.roc"><code>cookbook/roc/lib/Finding.roc</code></a>, 42 lines</p>
 <pre><code><span class="syn-comment">## A finding of one of a recipe&#39;s checks: the file, the line, the check and</span>
 <span class="syn-comment">## what is wrong there, ordered as the Shale originals sorted their reports</span>
 <span class="syn-comment">## and printed as their lines.</span>
@@ -582,7 +582,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Forest.roc"><code>cookbook/roc/lib/Forest.roc</code></a>, 124 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Forest.roc"><code>cookbook/roc/lib/Forest.roc</code></a>, 124 lines</p>
 <pre><code><span class="syn-comment">## Every parsed file&#39;s tree joined into one list of nodes, as the Shale</span>
 <span class="syn-comment">## originals of check_how_failure_is_reported and find_functions_and_parameters_that_dont_earn_their_keep join them: each node&#39;s</span>
 <span class="syn-comment">## `parent` and `kids` are places in the joined list, counted from 1, a</span>
@@ -708,7 +708,7 @@
 		}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Groups.roc"><code>cookbook/roc/lib/Groups.roc</code></a>, 472 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Groups.roc"><code>cookbook/roc/lib/Groups.roc</code></a>, 472 lines</p>
 <pre><code><span class="syn-comment">## Roc&#39;s bracket groups read from a file&#39;s lines, for check_and_fix_group_stacking and</span>
 <span class="syn-comment">## wrap_long_lines_with_trailing_commas (ported from the Shale groups.shale): each pair of</span>
 <span class="syn-comment">## brackets or a lambda&#39;s `|...|`, where it opens and closes, its items counted by the</span>
@@ -1182,7 +1182,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Headers.roc"><code>cookbook/roc/lib/Headers.roc</code></a>, 130 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Headers.roc"><code>cookbook/roc/lib/Headers.roc</code></a>, 130 lines</p>
 <pre><code><span class="syn-comment">## What a Roc file&#39;s header says about who chooses its names: a name an app&#39;s platform asks for, a</span>
 <span class="syn-comment">## hook a platform hands its host and a method Roc calls by name were chosen</span>
 <span class="syn-comment">## somewhere else, so the recipes judge them differently from the names a</span>
@@ -1314,7 +1314,7 @@
 <span class="syn-name">bracketed_names</span> = |text|
 	(<span class="syn-type">Text</span>.between(text, <span class="syn-string">&quot;[&quot;</span>, <span class="syn-string">&quot;]&quot;</span>) ?? <span class="syn-string">&quot;&quot;</span>).split_on(<span class="syn-string">&quot;,&quot;</span>).map(<span class="syn-type">Text</span>.trim).keep_if(|name| name != <span class="syn-string">&quot;&quot;</span>)
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Imports.roc"><code>cookbook/roc/lib/Imports.roc</code></a>, 209 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Imports.roc"><code>cookbook/roc/lib/Imports.roc</code></a>, 209 lines</p>
 <pre><code><span class="syn-comment">## A Roc file&#39;s imports, read from Roc&#39;s own tree of it, and the ones the file</span>
 <span class="syn-comment">## never uses: find_unused_imports&#39; rule, `unused_import`, in its one home</span>
 <span class="syn-comment">## (cookbook/roc/find_unused_imports.shale&#39;s header says what counts as a</span>
@@ -1525,7 +1525,7 @@
 <span class="syn-name">kids_of_kind</span> = |nodes, kind|
 	<span class="syn-type">Set</span>.from_list(nodes.keep_if(|node| node.kind == kind).join_map(|node| node.kids))
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Packed.roc"><code>cookbook/roc/lib/Packed.roc</code></a>, 277 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Packed.roc"><code>cookbook/roc/lib/Packed.roc</code></a>, 277 lines</p>
 <pre><code><span class="syn-comment">## The groups that stay packed whatever the stacking rule says, as the Shale</span>
 <span class="syn-comment">## groups.shale read them: a row of literals, read at a glance,</span>
 <span class="syn-comment">## and numeric data, such as a polygon&#39;s points. A number is a literal or a</span>
@@ -1804,7 +1804,7 @@
 	number_record_end,
 )
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/RocTypes.roc"><code>cookbook/roc/lib/RocTypes.roc</code></a>, 355 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/RocTypes.roc"><code>cookbook/roc/lib/RocTypes.roc</code></a>, 355 lines</p>
 <pre><code><span class="syn-comment">## roc-types&#39; output read: the type Roc&#39;s own checker gives each expression</span>
 <span class="syn-comment">## and pattern of an app&#39;s modules, by region, in version 1 of the format</span>
 <span class="syn-comment">## (https://github.com/showell/roc-types, its FORMAT.md), refusals worded as</span>
@@ -2161,7 +2161,7 @@
 	<span class="syn-type">Ok</span>(<span class="syn-type">Str</span>.from_utf8_lossy($out))
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Stacking.roc"><code>cookbook/roc/lib/Stacking.roc</code></a>, 450 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Stacking.roc"><code>cookbook/roc/lib/Stacking.roc</code></a>, 478 lines</p>
 <pre><code><span class="syn-comment">## The stacking rule&#39;s one home, over Groups&#39; groups (ported from the Shale</span>
 <span class="syn-comment">## groups.shale, since retired): a group of three or more items and `tokens`</span>
 <span class="syn-comment">## or more tokens stacks, one item a line, and any other group sits on one</span>
@@ -2476,17 +2476,44 @@
 	inner.line &gt; outer.line <span class="syn-keyword">or</span> (inner.line == outer.line <span class="syn-keyword">and</span> inner.open &gt; outer.open)
 
 <span class="syn-comment">## The text before a group once it sits on one line. A stacked group among an</span>
-<span class="syn-comment">## annotation&#39;s arguments moves its line down from the annotation&#39;s, and `roc</span>
-<span class="syn-comment">## fmt` brings it back up with the group on one line.</span>
+<span class="syn-comment">## annotation&#39;s arguments moves its line down from the annotation&#39;s, and the</span>
+<span class="syn-comment">## arguments between them each go on a line of their own; `roc fmt` brings</span>
+<span class="syn-comment">## them all back up with the group on one line.</span>
 <span class="syn-name">text_up_to_group</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">Groups.Group</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
 <span class="syn-name">text_up_to_group</span> = |source_lines, group| {
 	up_to = <span class="syn-type">Bytes</span>.span(<span class="syn-type">Bytes</span>.line_of(source_lines, group.line), <span class="syn-number">1</span>, group.open)
-	above = <span class="syn-type">Bytes</span>.line_of(source_lines, group.line - <span class="syn-number">1</span>)
-	<span class="syn-keyword">if</span> group.line &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> is_annotation_line(<span class="syn-type">Bytes</span>.trimmed(above)) {
-		above.append(<span class="syn-string">&#39; &#39;</span>).concat(<span class="syn-type">Bytes</span>.trimmed(up_to))
-	} <span class="syn-keyword">else</span> {
-		up_to
+	<span class="syn-keyword">match</span> annotation_above(source_lines, group.line) {
+		<span class="syn-type">Ok</span>(start) =&gt; {
+			<span class="syn-keyword">var</span> $joined = <span class="syn-type">Bytes</span>.line_of(source_lines, start)
+			<span class="syn-keyword">var</span> $i = start + <span class="syn-number">1</span>
+			<span class="syn-keyword">while</span> $i &lt; group.line {
+				$joined = $joined.append(<span class="syn-string">&#39; &#39;</span>).concat(<span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.line_of(source_lines, $i)))
+				$i = $i + <span class="syn-number">1</span>
+			}
+			$joined.append(<span class="syn-string">&#39; &#39;</span>).concat(<span class="syn-type">Bytes</span>.trimmed(up_to))
+		}
+		<span class="syn-type">Err</span>(_) =&gt; up_to
 	}
+}
+
+<span class="syn-comment">## The line of the annotation whose arguments a line is among: the nearest</span>
+<span class="syn-comment">## line above it that starts a function&#39;s annotation and ends in a comma</span>
+<span class="syn-comment">## (is_annotation_line), every line between ending in a comma too, as the</span>
+<span class="syn-comment">## annotation&#39;s arguments, one a line, do once `roc fmt` has stacked them.</span>
+<span class="syn-name">annotation_above</span> : <span class="syn-type">List</span>(<span class="syn-type">Str</span>), <span class="syn-type">U64</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">U64</span>, [<span class="syn-type">NoAnnotation</span>])
+<span class="syn-name">annotation_above</span> = |source_lines, line| {
+	<span class="syn-keyword">var</span> $i = line
+	<span class="syn-keyword">while</span> $i &gt; <span class="syn-number">1</span> {
+		$i = $i - <span class="syn-number">1</span>
+		above = <span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.line_of(source_lines, $i))
+		<span class="syn-keyword">if</span> is_annotation_line(above) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Ok</span>($i)
+		}
+		<span class="syn-keyword">if</span> above.last() != <span class="syn-type">Ok</span>(<span class="syn-string">&#39;,&#39;</span>) {
+			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-type">NoAnnotation</span>)
+		}
+	}
+	<span class="syn-type">Err</span>(<span class="syn-type">NoAnnotation</span>)
 }
 
 <span class="syn-comment">## `joined`, the line a group would be on, with the rest of its annotation</span>
@@ -2498,9 +2525,10 @@
 <span class="syn-name">with_annotation_rest</span> = |source_lines, at| {
 	group = at.group
 	opens = annotation_opens(<span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.line_of(source_lines, group.line)))
-	follows = group.line &gt; <span class="syn-number">1</span> <span class="syn-keyword">and</span> is_annotation_line(
-		<span class="syn-type">Bytes</span>.trimmed(<span class="syn-type">Bytes</span>.line_of(source_lines, group.line - <span class="syn-number">1</span>)),
-	)
+	follows = <span class="syn-keyword">match</span> annotation_above(source_lines, group.line) {
+		<span class="syn-type">Ok</span>(_) =&gt; <span class="syn-type">Bool.True</span>
+		<span class="syn-type">Err</span>(_) =&gt; <span class="syn-type">Bool.False</span>
+	}
 	<span class="syn-keyword">if</span> !(opens) <span class="syn-keyword">and</span> !(follows) {
 		<span class="syn-keyword">return</span> at.joined
 	}
@@ -2613,7 +2641,7 @@
 		<span class="syn-type">Bytes</span>.width_of(indent.concat(<span class="syn-type">Bytes</span>.rest_from(at.bytes, at.group.close))) &lt;= width
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Text.roc"><code>cookbook/roc/lib/Text.roc</code></a>, 215 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Text.roc"><code>cookbook/roc/lib/Text.roc</code></a>, 215 lines</p>
 <pre><code><span class="syn-comment">## Text cut, trimmed, lowered and ordered as Shale&#39;s builtins and preludes do</span>
 <span class="syn-comment">## it (`lines`, `words`, `trim`, `lower`, `sub`, `split`, `between`,</span>
 <span class="syn-comment">## `basename`, `dirname`, `path_under`, `sort`), and a name&#39;s words, so a</span>
@@ -2830,7 +2858,7 @@
 		words.append(<span class="syn-type">Text</span>.lower(<span class="syn-type">Str</span>.from_utf8_lossy(bytes)))
 	}
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/Tree.roc"><code>cookbook/roc/lib/Tree.roc</code></a>, 168 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/Tree.roc"><code>cookbook/roc/lib/Tree.roc</code></a>, 168 lines</p>
 <pre><code><span class="syn-comment">## Roc&#39;s tree of a file, as `Shale.roc_tree!` gives it, read: a node by its</span>
 <span class="syn-comment">## place, its attributes and kids, a type written back as Roc writes it or as</span>
 <span class="syn-comment">## a shape, the module a file holds, and whether the file is an app.</span>
@@ -3000,7 +3028,7 @@
 	}
 }
 </code></pre>
-<p class="file"><a href="https://github.com/showell/shale/blob/012cf3403d692db2bc2dbf498ebb727f32495667/cookbook/roc/lib/main.roc"><code>cookbook/roc/lib/main.roc</code></a>, 13 lines</p>
+<p class="file"><a href="https://github.com/showell/shale/blob/f6c23df3fe466f30a4f53d6ee99c1991bffc6594/cookbook/roc/lib/main.roc"><code>cookbook/roc/lib/main.roc</code></a>, 13 lines</p>
 <pre><code><span class="syn-comment">## The modules the cookbook&#39;s Roc recipes share, a package each recipe&#39;s app</span>
 <span class="syn-comment">## names by a relative path (`lib: &quot;../lib/main.roc&quot;`, then `import lib.Tree`):</span>
 <span class="syn-comment">## Roc&#39;s tree of a file read (Tree), several files&#39; trees joined (Forest),</span>
