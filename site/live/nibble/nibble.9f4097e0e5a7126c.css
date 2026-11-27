@@ -73,7 +73,7 @@ tr[data-row="outcome"] td { font-size: 0.72rem; }
 header .links { display: flex; align-items: baseline; gap: 14px; }
 header a { color: var(--accent); }
 .decided { margin-top: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; }
-.decided code { font-weight: 600; }
+.decided code { font-weight: 600; overflow-wrap: anywhere; }
 .load { display: inline-flex; align-items: center; gap: 6px; margin: 0; }
 .load label { color: var(--muted); font-size: 0.92rem; }
 .load input { width: 5.2rem; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; }

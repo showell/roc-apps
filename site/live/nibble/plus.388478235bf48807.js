@@ -1,14 +1,18 @@
 // plus.js: the Nibble++ sandbox, the Nibble sandbox (sandbox.js) for
 // Nibble++. AX holds 0 to 15, a program is 1 to 30 lines of half, zero, decr
-// and mod2, and it opens as thirty decrs. The machine is the Roc port's
+// and mod2, and it opens as zero, decr, zero, decr, zero and 25 decrs, which
+// decide {0, 1, 2}. The machine is the Roc port's
 // roc/Plus.roc compiled to wasm (roc/PlusWasm.roc on web/platform/plus.roc).
 // The trace is a row an input, after the line the step buttons are on, so
 // 16 inputs fit a phone; the box above the program is the language it
 // decides. A program loads by its number too: two bits a line, line 1 first,
 // up to 60 bits, so the numbers are BigInts. Nothing is kept between visits.
 // It shares nibble.css with the Nibble pages but not machine.js, whose
-// module loads Nibble's wasm and puzzle table as it starts.
-// web/build.shale rewrites the wasm's name to its hashed one.
+// module loads Nibble's wasm and puzzle table as it starts. The languages'
+// names are web/plus_names.c's table, plus_names.bin (its header says how
+// it is laid out; docs/NIBBLE_PLUS_NAMES.md says how the names are chosen).
+// web/build.shale rewrites the wasm's and the table's names to their hashed
+// ones.
 
 const MAX_LINES = 30;
 const INPUTS = Array.from({ length: 16 }, (_, n) => n);
@@ -21,16 +25,54 @@ const OPS = [
   { name: "decr", comment: "reject zero or decrement AX" },
   { name: "mod2", comment: "set AX to AX % 2" },
 ];
-const DECR = 2;
-const START = () => Array(MAX_LINES).fill(DECR);
+// The order the ops are shown in, by code: the workhorses zero, decr and
+// mod2, then half, which shortens programs.
+const SHOWN = [1, 2, 3, 0];
+const ZERO = 1, DECR = 2;
+const START = () => [ZERO, DECR, ZERO, DECR, ZERO, ...Array(MAX_LINES - 5).fill(DECR)];
 
-const machine = await fetch("plus.30f5a0b8d928868e.wasm").then((r) => r.arrayBuffer()).then((b) => WebAssembly.instantiate(b))
-  .then((w) => w.instance.exports).catch((e) => {
-    const said = document.getElementById("loading");
-    said.className = "err";
-    said.textContent = `The machine didn't load: ${e.message}`;
-    throw e;
-  });
+const LANGUAGES = 65536;
+const fetched = (url) => fetch(url).then((r) => {
+  if (!r.ok) throw new Error(`${url}: ${r.status}`);
+  return r.arrayBuffer();
+});
+
+// The names table: its tokens, each ended by a newline, then a 0 byte; then
+// each language's name as its tokens' numbers (from 1), a byte each, ended
+// by a 0 byte, none for a language with no name. A name is its tokens joined
+// by `_`, after `is_` unless it starts with has_, lacks_, grumpy or
+// always_true.
+function readNames(bytes) {
+  const end = bytes.indexOf(0);
+  if (end < 0) throw new Error("plus_names.bin has no vocabulary");
+  const tokens = [null, ...new TextDecoder().decode(bytes.subarray(0, end)).split("\n").slice(0, -1)];
+  const starts = new Uint32Array(LANGUAGES + 1);
+  let at = end + 1;
+  for (let lang = 0; lang < LANGUAGES; lang++) {
+    starts[lang] = at;
+    at = bytes.indexOf(0, at) + 1;
+    if (at === 0) throw new Error(`plus_names.bin ends at language ${lang}`);
+  }
+  starts[LANGUAGES] = at;
+  if (at !== bytes.length) throw new Error("plus_names.bin runs past its last language");
+  return (lang) => {
+    const words = Array.from(bytes.subarray(starts[lang], starts[lang + 1] - 1), (t) => tokens[t]);
+    if (words.length === 0) return null;
+    if (words.includes(undefined)) throw new Error(`plus_names.bin's language ${lang} has a token past its vocabulary`);
+    const bare = /^(has_|lacks_|grumpy$|always_true$)/.test(words[0]);
+    return (bare ? "" : "is_") + words.join("_");
+  };
+}
+
+const [machine, nameOf] = await Promise.all([
+  fetched("plus.30f5a0b8d928868e.wasm").then((b) => WebAssembly.instantiate(b)).then((w) => w.instance.exports),
+  fetched("plus_names.e25f4cc7f9e84c31.bin").then((b) => readNames(new Uint8Array(b))),
+]).catch((e) => {
+  const said = document.getElementById("loading");
+  said.className = "err";
+  said.textContent = `The machine didn't load: ${e.message}`;
+  throw e;
+});
 
 const el = (tag, attrs = {}, ...kids) => {
   const e = document.createElement(tag);
@@ -41,6 +83,18 @@ const el = (tag, attrs = {}, ...kids) => {
   return e;
 };
 const setText = (set) => (set.length === 0 ? "{ }" : `{${set.join(", ")}}`);
+// A set with each run of three or more written as its ends: {0–13, 15}.
+function rangeText(set) {
+  const parts = [];
+  for (let i = 0; i < set.length;) {
+    let j = i;
+    while (j + 1 < set.length && set[j + 1] === set[j] + 1) j++;
+    if (j - i >= 2) parts.push(`${set[i]}–${set[j]}`);
+    else for (let k = i; k <= j; k++) parts.push(String(set[k]));
+    i = j + 1;
+  }
+  return parts.length === 0 ? "{ }" : `{${parts.join(", ")}}`;
+}
 
 // A program is its ops' codes. Its code, for the machine, is two bits a
 // line, line 1 lowest, as plus_pack. Its number, for the reader, is base 4
@@ -65,7 +119,7 @@ function opTip(op) {
 const TIPS = OPS.map((_, op) => opTip(op));
 
 const legend = document.getElementById("ops");
-for (const op of OPS) legend.append(el("dt", { text: op.name }), el("dd", { text: op.comment }));
+for (const op of SHOWN.map((k) => OPS[k])) legend.append(el("dt", { text: op.name }), el("dd", { text: op.comment }));
 
 let program = START();
 // The trace shows the machine after this many lines; it follows the end of
@@ -131,13 +185,18 @@ panel.replaceChildren(
   trace,
 );
 
-// The language a program decides: its accepted inputs, and its code, the
-// sum of 2^n over them.
+// The language a program decides: its name, when the table has one, its
+// accepted inputs with runs written as ranges, its code (the sum of 2^n over
+// them), and the inputs one by one.
 function drawDecided(c) {
   const lang = machine.accepts(c, program.length);
   const accepted = INPUTS.filter((n) => (lang >> n) & 1);
-  decided.replaceChildren("This program decides the language ", el("code", { id: "decided-set", text: setText(accepted) }),
-    ", #", el("span", { id: "decided-code", text: String(lang) }), " of 65,536: it accepts those inputs and rejects the rest.");
+  const name = nameOf(lang);
+  decided.replaceChildren("This program decides ",
+    ...(name === null ? ["the language "] : [el("code", { id: "decided-name", text: name }), ", "]),
+    el("code", { id: "decided-range", text: rangeText(accepted) }),
+    ", #", el("span", { id: "decided-code", text: String(lang) }), " of 65,536: it accepts ",
+    el("span", { id: "decided-set", text: setText(accepted) }), " and rejects the rest.");
 }
 
 // Input n's run: the line it halted at (0 for none) and how it ended.
@@ -172,7 +231,8 @@ function draw() {
   const c = codeOf(program);
   slots.replaceChildren(...program.map((op, line) => {
     const row = el("div", { class: "slot" + (line + 1 === step ? " current" : ""), "data-line": String(line) }, el("span", { class: "num", text: String(line + 1) }));
-    OPS.forEach((o, k) => {
+    SHOWN.forEach((k) => {
+      const o = OPS[k];
       const b = el("button", { type: "button", class: o.name + (k === op ? " on" : ""), title: TIPS[k], "data-slot": String(line), "data-op": o.name, text: o.name });
       b.addEventListener("click", () => { program[line] = k; draw(); });
       row.append(b);
@@ -184,7 +244,7 @@ function draw() {
   removeLine.disabled = program.length === 1;
   number.placeholder = `0 to ${largest(program.length)}`;
   code.textContent = `${program.map((op) => op.toString(2).padStart(2, "0")).join(" ")}  (#${numberOf(program)})`;
-  codeExplain.textContent = "The machine code: each line's opcode in two bits, line 1 first (half 00, zero 01, decr 10, mod2 11). "
+  codeExplain.textContent = "The machine code: each line's opcode in two bits, line 1 first (zero 01, decr 10, mod2 11, half 00). "
     + `${program.length} ${program.length === 1 ? "line makes" : "lines make"} ${2 * program.length} bits, so there are ${(largest(program.length) + 1n).toLocaleString("en-US")} programs of this length, numbered 0 to ${largest(program.length)}: read the bits as one binary number, line 1 first.`;
   stepLabel.textContent = `after line ${step} of ${program.length}`;
   drawTrace(c);
