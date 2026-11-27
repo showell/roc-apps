@@ -6,65 +6,98 @@
 <title>Rolling cube</title>
 <link rel="stylesheet" href="nibble.5a34209f8e3d41b1.css">
 <style>
-  #stage { position: relative; }
-  #scene { display: block; width: 100%; height: auto; border-radius: 8px; background: #1b1d22; touch-action: none; cursor: grab; }
-  #scene.dragging { cursor: grabbing; }
-  .controls { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 0; align-items: center; }
-  .controls button { padding: 6px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; cursor: pointer; }
-  .controls button:disabled { opacity: 0.45; cursor: default; }
-  .controls .roll { min-width: 2.6rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 600; }
-  .controls .gap { flex: 0 0 8px; }
-  #program { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: 16px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
+  /* Three panes side by side on a wide screen, the canvas as tall as the
+     window allows; one column on a narrow one. */
+  main.cube { max-width: none; padding: 6px 16px 8px; }
+  main.cube header { align-items: center; height: 32px; }
+  main.cube h1 { margin: 0; font-size: 1.15rem; }
+  .panes { display: grid; grid-template-columns: clamp(230px, 22vw, 320px) minmax(0, 1fr) clamp(210px, 19vw, 300px); gap: 14px; margin-top: 4px; }
+  .pane { min-width: 0; }
+  #scene { display: block; width: 100%; height: calc(100vh - 54px); min-height: 260px; border-radius: 8px; background: #1b1d22; touch-action: none; }
+  #scene.can-roll { cursor: pointer; }
+  .pane h2 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .pane h2:not(:first-child) { margin-top: 12px; }
+  #program { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
   #program.bad { border-color: var(--bad); }
-  label.field { display: block; margin: 12px 0 4px; color: var(--muted); font-size: 0.9rem; }
-  #rolls { font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; min-height: 1.5em; letter-spacing: 0.08em; }
-  #rolls span.done { color: var(--fg); }
-  #rolls span.todo { color: var(--muted); opacity: 0.6; }
-  #rolls span.now { background: var(--accent); color: var(--accent-fg); border-radius: 3px; }
-  #rolls span.off { color: var(--bad); text-decoration: line-through; }
-  #status { color: var(--muted); }
-  #status.err, #said.err { color: var(--bad); }
-  .readout { display: flex; gap: 16px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+  #said { margin: 4px 0 0; font-size: 0.88rem; min-height: 0; }
+  #said:empty { display: none; }
+  #said.err, #status.err { color: var(--bad); }
+  .drive { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }
+  .keys { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 42px); gap: 4px; flex: none; }
+  .keys button { position: relative; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: 17px system-ui, sans-serif; cursor: pointer; }
+  .keys button small { position: absolute; right: 3px; bottom: 1px; font: 600 10px ui-monospace, Menlo, monospace; color: var(--muted); }
+  .keys button.pressed, .keys button:active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  .keys button.pressed small { color: var(--accent-fg); }
+  .keys [data-roll="N"] { grid-column: 2; grid-row: 1; }
+  .keys [data-roll="W"] { grid-column: 1; grid-row: 2; }
+  .keys [data-roll="S"] { grid-column: 2; grid-row: 2; }
+  .keys [data-roll="E"] { grid-column: 3; grid-row: 2; }
+  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1; min-width: 0; }
+  .steps button, .samples button { padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; font-size: 0.9rem; cursor: pointer; }
+  .steps button:disabled { opacity: 0.45; cursor: default; }
+  .samples { display: flex; flex-wrap: wrap; gap: 4px; }
+  .samples button { background: transparent; font-size: 0.86rem; padding: 3px 7px; }
+  #length, #par { font-size: 1.05rem; }
+  #par { margin-top: 2px; }
   #lit-map { display: grid; grid-template-columns: repeat(4, 22px); gap: 3px; }
   #lit-map div { width: 22px; height: 22px; border-radius: 3px; background: #2b2d33; border: 1px solid var(--line); }
   #lit-map div.lit { background: #ffb347; border-color: #ffb347; box-shadow: 0 0 6px #ffb34799; }
-  #par { font-size: 1.1rem; }
-  .samples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .samples button { padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); font: inherit; font-size: 0.92rem; cursor: pointer; }
-  .rules { color: var(--muted); font-size: 0.95rem; }
+  #status { margin: 0; color: var(--muted); font-size: 0.92rem; }
+  #rolls { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; letter-spacing: 0.08em; font-size: 0.92rem; }
+  #rolls span.done { color: var(--fg); }
+  #rolls span.todo { color: var(--muted); opacity: 0.6; }
+  #rolls span.now { background: var(--accent); color: var(--accent-fg); border-radius: 3px; }
+  #rolls span.halt { background: var(--bad); color: var(--bg); border-radius: 3px; }
+  #rolls span.dead { color: var(--muted); opacity: 0.45; text-decoration: line-through; }
+  @media (max-width: 899px) {
+    .panes { grid-template-columns: minmax(0, 1fr); }
+    .pane.view { order: -1; }
+    #scene { height: min(72vw, 52vh); min-height: 220px; }
+  }
 </style>
 </head>
 <body>
-<main>
-  <header><h1>Rolling cube</h1></header>
-  <p class="rules">A 4 × 4 board, every tile dark. The cube starts on a1 (the far left corner) with its painted face up. Each roll tips it over an edge into the next cell; whenever it lands with the paint down, the tile under it flips. A program's meaning is the set of tiles lit at the end. Arrow keys roll the cube; drag the board to turn it.</p>
-  <section id="stage">
-    <p id="loading">Loading the cube...</p>
-    <canvas id="scene" width="720" height="500" aria-label="The board and the cube, in 3D"></canvas>
-    <div class="controls" id="rolls-row">
-      <button type="button" class="roll" data-roll="N" title="Roll north (up arrow)">N</button>
-      <button type="button" class="roll" data-roll="E" title="Roll east (right arrow)">E</button>
-      <button type="button" class="roll" data-roll="S" title="Roll south (down arrow)">S</button>
-      <button type="button" class="roll" data-roll="W" title="Roll west (left arrow)">W</button>
-      <span class="gap"></span>
-      <button type="button" id="reset" title="Back to the start">Reset</button>
-      <button type="button" id="back" title="One roll back">Back</button>
-      <button type="button" id="play">Play</button>
-      <button type="button" id="forward" title="One roll forward">Forward</button>
-      <button type="button" id="clear" title="An empty program">Clear</button>
+<main class="cube">
+  <header><h1>Rolling cube</h1><a href="cube_help.html" id="help">Help</a></header>
+  <p id="loading">Loading the cube...</p>
+  <div class="panes">
+    <div class="pane write">
+      <h2><label for="program">Program</label></h2>
+      <input id="program" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="" placeholder="rolls: N E S W">
+      <p id="said"></p>
+      <div class="drive">
+        <div class="keys" role="group" aria-label="Roll the cube (the arrow keys work too)">
+          <button type="button" data-roll="N" title="Roll north (the up arrow key)">▲<small>N</small></button>
+          <button type="button" data-roll="W" title="Roll west (the left arrow key)">◀<small>W</small></button>
+          <button type="button" data-roll="S" title="Roll south (the down arrow key)">▼<small>S</small></button>
+          <button type="button" data-roll="E" title="Roll east (the right arrow key)">▶<small>E</small></button>
+        </div>
+        <div class="steps">
+          <button type="button" id="play">Play</button>
+          <button type="button" id="reset" title="Back to the start">Reset</button>
+          <button type="button" id="back" title="One roll back">Back</button>
+          <button type="button" id="forward" title="One roll forward">Forward</button>
+          <button type="button" id="clear" title="An empty program">Clear</button>
+        </div>
+      </div>
+      <h2>Samples</h2>
+      <div class="samples" id="samples"></div>
     </div>
-    <label class="field" for="program">Program (N, E, S, W; spaces allowed)</label>
-    <input id="program" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="">
-    <p id="said"></p>
-    <p id="rolls"></p>
-    <p id="status"></p>
-    <div class="readout">
+    <div class="pane view">
+      <canvas id="scene" width="720" height="500" aria-label="The board and the cube, in 3D; click a tile beside the cube to roll onto it"></canvas>
+    </div>
+    <div class="pane read">
+      <h2>Length</h2>
+      <div id="length"></div>
+      <h2>Lit at the end</h2>
       <div id="lit-map" aria-label="The tiles the program lights"></div>
-      <div><div id="length"></div><div id="par"></div></div>
+      <div id="par" title="par: the fewest rolls that end with this set lit"></div>
+      <h2>The run</h2>
+      <p id="status"></p>
+      <p id="rolls"></p>
     </div>
-    <div class="samples" id="samples"></div>
-  </section>
+  </div>
 </main>
-<script type="module" src="cube.0d50cab7b8e33ff8.js"></script>
+<script type="module" src="cube.34a0dadc537d689e.js"></script>
 </body>
 </html>

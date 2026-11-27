@@ -10,10 +10,16 @@
 // census's, cube_pars.bin, a byte a lit set (web/cube_data.c). Nothing is
 // kept between visits. web/build.shale rewrites the wasm's and the table's
 // names to their hashed ones.
+//
+// A roll off the board halts the machine: it joins the program, the cube
+// tips toward the edge and settles back, and the rolls after it do nothing.
+// A program is at most L rolls, the wasm's `max_length()`. Rolls come from
+// the arrow buttons, the arrow keys, the text box, or a click on a tile next
+// to the cube (or a drag from the cube onto one); the camera is fixed.
 
 const ROLLS = "NESW";
 // CubeWasm.roc's state: the lit set in bits 0-15, the cell in 16-19, the
-// painted face in 20-22; bit 24 is a roll off the board.
+// painted face in 20-22; bit 24 is a roll off the board, which halts it.
 const OFF = 1 << 24;
 const litOf = (w) => w & 0xffff;
 const cellOf = (w) => (w >> 16) & 15;
@@ -27,10 +33,11 @@ const FACE_VECTORS = [[0, 1, 0], [0, -1, 0], [0, 0, -1], [0, 0, 1], [1, 0, 0], [
 const ROLL_VECTORS = [[0, 0, -1], [1, 0, 0], [0, 0, 1], [-1, 0, 0]];
 
 const SAMPLES = [
-  { name: "ESWN, the 4-roll macro", program: "ESWN" },
-  { name: "b2 alone (par 8)", program: "ESENSNWS" },
-  { name: "the diagonal (par 18)", program: "ESSENNWWESESESNNWW" },
-  { name: "every tile (par 47)", program: "EEESWNWSENWSWNESWESWESWNESENWNESESWNESWNEWNEWNE" },
+  { name: "ESWN loop", program: "ESWN", title: "the 4-roll loop: back on a1, nothing lit, the paint north" },
+  { name: "b2 alone", program: "ESENSNWS", title: "b2 lit alone, in its par, 8" },
+  { name: "the diagonal", program: "ESSENNWWESESESNNWW", title: "the diagonal, in its par, 18" },
+  { name: "a halt", program: "ESENNSSS", title: "the fifth roll, N from c1, leaves the board and halts the machine; the S rolls after it do nothing" },
+  { name: "the longest", program: "EEESWNESWNESSWWENWENWSWNESWESWESWNESNESENWNES", title: "every tile but d4, in its par, 45: the longest program there is" },
 ];
 
 const fetched = (url) => fetch(url).then((r) => {
@@ -39,7 +46,7 @@ const fetched = (url) => fetch(url).then((r) => {
 });
 
 const [machine, pars] = await Promise.all([
-  fetched("cube.26da3181289821de.wasm").then((b) => WebAssembly.instantiate(b)).then((w) => w.instance.exports),
+  fetched("cube.b73e3a49a51f81a3.wasm").then((b) => WebAssembly.instantiate(b)).then((w) => w.instance.exports),
   fetched("cube_pars.ae6c160fdee15462.bin").then((b) => {
     const bytes = new Uint8Array(b);
     if (bytes.length !== 65536) throw new Error(`cube_pars.bin has ${bytes.length} bytes, not 65,536`);
@@ -52,30 +59,36 @@ const [machine, pars] = await Promise.all([
   throw e;
 });
 document.getElementById("loading").remove();
+const L = machine.max_length(0);
 
 // ── the program and its run ──────────────────────────────────────────
 
+// Frame i is the run after i rolls. A halted run has one frame more than
+// its states: the halt, the state before the roll off the board, shown as
+// halted.
 const view = {
   program: [],      // roll codes
-  frames: [0],      // the state before any roll, then after each
-  offAt: -1,        // the roll that leaves the board, or -1
+  frames: [0],      // the state before any roll, then after each made
+  haltAt: -1,       // the roll that halts the machine, or -1
   at: 0,            // the frame shown
-  anim: null,       // { from, roll, dir, start, ms }
+  anim: null,       // { from, roll, dir, halt, target, start, ms }
   playing: false,
 };
 
 function runProgram() {
   view.frames = [0];
-  view.offAt = -1;
+  view.haltAt = -1;
   for (let i = 0; i < view.program.length; i++) {
     const next = machine.roll(view.frames[i], view.program[i]);
-    if (next & OFF) { view.offAt = i; break; }
+    if (next & OFF) { view.haltAt = i; break; }
     view.frames.push(next);
   }
-  view.at = Math.min(view.at, view.frames.length - 1);
+  view.at = Math.min(view.at, lastFrame());
 }
 
-const lastFrame = () => view.frames.length - 1;
+const lastFrame = () => view.frames.length - 1 + (view.haltAt >= 0 ? 1 : 0);
+const isHalt = (frame) => view.haltAt >= 0 && frame === view.frames.length;
+const wordAt = (frame) => view.frames[Math.min(frame, view.frames.length - 1)];
 
 // ── the 3D scene ─────────────────────────────────────────────────────
 
@@ -200,7 +213,7 @@ function label(proj, p, text) {
 function draw(now) {
   const dpr = window.devicePixelRatio || 1;
   const width = canvas.clientWidth || 720;
-  const height = Math.round(width * 0.68);
+  const height = canvas.clientHeight || Math.round(width * 0.68);
   if (canvas.width !== Math.round(width * dpr) || canvas.height !== Math.round(height * dpr)) {
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
@@ -214,16 +227,19 @@ function draw(now) {
   const proj = projector(width, height);
   const e = proj.eye;
 
-  // What is shown: a frame, or a roll part done.
-  let word = view.frames[view.at], roll = -1, angle = 0;
+  // What is shown: a frame, or a roll part done. A halting roll tips the
+  // cube toward the edge and back.
+  let word = wordAt(view.at), roll = -1, angle = 0;
   if (view.anim) {
     const t = Math.min(1, (now - view.anim.start) / view.anim.ms);
     const eased = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
     word = view.anim.from;
     roll = view.anim.roll;
-    angle = (view.anim.dir > 0 ? eased : 1 - eased) * (Math.PI / 2);
+    angle = view.anim.halt ? Math.sin(Math.PI * t) * 0.38 : (view.anim.dir > 0 ? eased : 1 - eased) * (Math.PI / 2);
   }
   const lit = litOf(word);
+  const halted = !view.anim && isHalt(view.at);
+  const targets = view.anim ? [] : rollTargets(word);
 
   // The base, then the tiles far to near, each with its back faces culled.
   for (const f of boxFaces(-2.15, 2.15, -0.32, -0.12, -2.15, 2.15)) {
@@ -238,9 +254,12 @@ function draw(now) {
   for (const t of tiles) {
     const on = (lit >> t.cell) & 1;
     const rgb = on ? LIT_TILE : DARK_TILE;
+    const target = targets.find((g) => g.cell === t.cell);
     for (const f of boxFaces(t.x - 0.46, t.x + 0.46, -0.12, 0, t.z - 0.46, t.z + 0.46)) {
       if (!facing(f, e)) continue;
-      if (on && f.n[1] > 0) {
+      if (target && f.n[1] > 0 && !on) {
+        fillFace(proj, f.pts, shaded(rgb, f.n), target.cell === hover ? "rgba(122, 162, 240, 0.95)" : "rgba(122, 162, 240, 0.35)");
+      } else if (on && f.n[1] > 0) {
         ctx.save();
         ctx.shadowColor = "rgba(255, 170, 60, 0.85)";
         ctx.shadowBlur = 22;
@@ -269,13 +288,87 @@ function draw(now) {
   const s = 0.5 + lift * 0.25;
   fillFace(proj, [[cube.centre[0] - s, 0.002, cube.centre[2] - s], [cube.centre[0] + s, 0.002, cube.centre[2] - s],
     [cube.centre[0] + s, 0.002, cube.centre[2] + s], [cube.centre[0] - s, 0.002, cube.centre[2] + s]], "rgba(0, 0, 0, 0.35)");
+  const silhouette = [];
   for (const f of cube.faces) {
     if (!facing(f, e)) continue;
     fillFace(proj, f.pts, shaded(f.painted ? PAINT : CUBE, f.n, 0.5), "rgba(20, 20, 24, 0.55)");
+    silhouette.push(f.pts.map((p) => proj.point(p)));
   }
 
+  // The halt: a red bar on the board's edge where the roll would have gone.
+  if (halted) {
+    const d = ROLL_VECTORS[view.program[view.haltAt]];
+    const cell = cellOf(word);
+    const cx = (cell % 4) - 1.5 + 0.62 * d[0], cz = Math.floor(cell / 4) - 1.5 + 0.62 * d[2];
+    const along = [d[2], 0, d[0]];
+    const a = [cx - 0.45 * along[0], 0.02, cz - 0.45 * along[2]], b = [cx + 0.45 * along[0], 0.02, cz + 0.45 * along[2]];
+    const [ax, ay] = proj.point(a), [bx, by] = proj.point(b);
+    ctx.strokeStyle = "#ff5a4f";
+    ctx.lineWidth = 5;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(ax, ay);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+    ctx.font = "600 15px system-ui, sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#ff7a70";
+    ctx.fillText(`halted at roll ${view.haltAt + 1}`, 14, 20);
+  }
+
+  // Where a click rolls: each rollable neighbour's top face, as drawn.
+  hits.cube = silhouette;
+  hits.targets = targets.map((g) => ({ roll: g.roll, cell: g.cell,
+    quad: [[g.x - 0.5, 0, g.z - 0.5], [g.x + 0.5, 0, g.z - 0.5], [g.x + 0.5, 0, g.z + 0.5], [g.x - 0.5, 0, g.z + 0.5]].map((p) => proj.point(p)) }));
+  // Each target's point to click: its centre, or where the cube hides that,
+  // the nearest point of the tile that shows.
+  canvas.dataset.targets = hits.targets.map((g) => {
+    const t = g.cell, x = (t % 4) - 1.5, z = Math.floor(t / 4) - 1.5;
+    let best = null;
+    for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
+      const p = proj.point([x - 0.4 + 0.1 * i, 0, z - 0.4 + 0.1 * j]);
+      const off = Math.hypot(i - 4, j - 4);
+      if (rollAt(p[0], p[1]) === g.roll && (!best || off < best.off)) best = { p, off };
+    }
+    return best ? `${ROLLS[g.roll]}:${Math.round(best.p[0])},${Math.round(best.p[1])}` : "";
+  }).filter(Boolean).join(" ");
+  const corners = silhouette.flat();
+  canvas.dataset.cube = `${Math.round(corners.reduce((s, p) => s + p[0], 0) / corners.length)},${Math.round(corners.reduce((s, p) => s + p[1], 0) / corners.length)}`;
   canvas.dataset.frame = String(view.at);
   canvas.dataset.animating = view.anim ? "1" : "0";
+  canvas.dataset.halted = halted ? "1" : "0";
+}
+
+// The tiles a roll from `word` lands on: the cube's neighbours on the board.
+function rollTargets(word) {
+  const cell = cellOf(word), r = Math.floor(cell / 4), c = cell % 4;
+  const out = [];
+  [[-1, 0], [0, 1], [1, 0], [0, -1]].forEach(([dr, dc], roll) => {
+    if (r + dr < 0 || r + dr > 3 || c + dc < 0 || c + dc > 3) return;
+    const to = (r + dr) * 4 + c + dc;
+    out.push({ roll, cell: to, x: (to % 4) - 1.5, z: Math.floor(to / 4) - 1.5 });
+  });
+  return out;
+}
+
+const hits = { cube: [], targets: [] };
+let hover = -1;
+
+function inside(poly, x, y) {
+  let odd = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) odd = !odd;
+  }
+  return odd;
+}
+
+// The roll a point on the canvas asks for: a neighbour tile's top, not
+// behind the cube; or -1.
+function rollAt(x, y) {
+  if (hits.cube.some((poly) => inside(poly, x, y))) return -1;
+  const g = hits.targets.find((t) => inside(t.quad, x, y));
+  return g ? g.roll : -1;
 }
 
 let drawQueued = false;
@@ -306,13 +399,15 @@ function finishAnim() {
   }
 }
 
-// Animates from the shown frame to the one next to it.
+// Animates from the shown frame to the one next to it; to or from the halt,
+// the cube tips toward the edge and settles back.
 function stepTo(target) {
   if (view.anim) { const keep = view.playing; view.playing = false; finishAnim(); view.playing = keep; }
   if (target < 0 || target > lastFrame() || target === view.at) return;
   const dir = target > view.at ? 1 : -1;
   const before = dir > 0 ? view.at : target;
-  view.anim = { from: view.frames[before], roll: view.program[before], dir, target, start: performance.now(), ms: STEP_MS };
+  const halt = isHalt(Math.max(view.at, target));
+  view.anim = { from: view.frames[before], roll: view.program[before], dir, halt, target, start: performance.now(), ms: halt ? STEP_MS * 1.4 : STEP_MS };
   showRun();
   requestDraw();
 }
@@ -346,29 +441,28 @@ function showRun() {
   rollsLine.replaceChildren(...view.program.map((r, i) => {
     const span = document.createElement("span");
     span.textContent = ROLLS[r];
-    span.className = i === view.offAt ? "off" : i < shown ? (i === shown - 1 ? "now" : "done") : "todo";
+    if (view.haltAt >= 0 && i > view.haltAt) span.className = "dead";
+    else if (i === view.haltAt && shown > i) span.className = "halt";
+    else span.className = i < shown ? (i === shown - 1 ? "now" : "done") : "todo";
     return span;
   }));
-  const word = view.frames[shown];
-  const where = `the cube on ${cellName(cellOf(word))}, the paint ${FACE_NAMES[faceOf(word)]}`;
-  if (view.offAt >= 0 && shown === lastFrame()) {
+  const word = wordAt(shown);
+  const where = `on ${cellName(cellOf(word))}, the paint ${FACE_NAMES[faceOf(word)]}`;
+  if (isHalt(shown)) {
     status.className = "err";
-    status.textContent = `Roll ${view.offAt + 1} (${ROLLS[view.program[view.offAt]]}) would leave the board from ${cellName(cellOf(word))}, so the program stops there.`;
+    const after = view.program.length - view.haltAt - 1;
+    status.textContent = `Halted at roll ${view.haltAt + 1}: ${ROLLS[view.program[view.haltAt]]} from ${cellName(cellOf(word))} leaves the board.` +
+      (after > 0 ? ` The ${after} roll${after === 1 ? "" : "s"} after it do nothing.` : "");
   } else {
     status.className = "";
     status.textContent = shown === 0 ? `The start: ${where}.` : `After roll ${shown} of ${view.program.length}: ${where}.`;
   }
   const n = view.program.length;
-  lengthLine.textContent = `${n} roll${n === 1 ? "" : "s"}`;
-  if (view.offAt >= 0) {
-    mapCells.forEach((d) => d.classList.remove("lit"));
-    parLine.textContent = "No par: the program rolls off the board.";
-  } else {
-    const lit = litOf(view.frames[lastFrame()]);
-    mapCells.forEach((d, cell) => d.classList.toggle("lit", ((lit >> cell) & 1) === 1));
-    parLine.textContent = `par ${pars[lit]}; yours is ${n}`;
-  }
-  parLine.dataset.lit = view.offAt >= 0 ? "" : String(litOf(view.frames[lastFrame()]));
+  lengthLine.textContent = `${n} of ${L} rolls`;
+  const lit = litOf(view.frames[view.frames.length - 1]);
+  mapCells.forEach((d, cell) => d.classList.toggle("lit", ((lit >> cell) & 1) === 1));
+  parLine.textContent = `par ${pars[lit]}; yours is ${n}`;
+  parLine.dataset.lit = String(lit);
   playButton.textContent = view.playing ? "Pause" : "Play";
   document.getElementById("back").disabled = shown === 0;
   document.getElementById("reset").disabled = shown === 0 && !view.anim;
@@ -377,7 +471,8 @@ function showRun() {
 }
 
 // The program from the text box: N, E, S and W in either case, spaces
-// skipped; anything else is refused, and the run stays as it was.
+// skipped; anything else is refused, and so is a program past L rolls, and
+// the run stays as it was.
 function fromText() {
   const text = input.value.toUpperCase();
   const bad = text.replace(/[NESW\s]/g, "");
@@ -385,6 +480,13 @@ function fromText() {
     input.classList.add("bad");
     said.className = "err";
     said.textContent = `Only N, E, S, W and spaces: "${bad[0]}" is not a roll.`;
+    return;
+  }
+  const length = text.replace(/\s/g, "").length;
+  if (length > L) {
+    input.classList.add("bad");
+    said.className = "err";
+    said.textContent = `Too long: ${length} rolls, and a program is at most ${L}.`;
     return;
   }
   input.classList.remove("bad");
@@ -409,14 +511,15 @@ function setProgram(text, at) {
   requestDraw();
 }
 
-// A roll from a button or a key: the program is cut at the frame shown and
-// the roll added there, unless it would leave the board.
+// A roll from a button, a key or a click: the program is cut at the frame
+// shown and the roll added there. A roll off the board joins it and halts
+// the machine; a roll after a halt joins it and does nothing. Past L rolls
+// it is refused.
 function rollNow(code) {
   stop();
-  const word = view.frames[view.at];
-  if (machine.roll(word, code) & OFF) {
+  if (view.at + 1 > L) {
     said.className = "err";
-    said.textContent = `${ROLLS[code]} from ${cellName(cellOf(word))} would leave the board.`;
+    said.textContent = `A program is at most ${L} rolls.`;
     return;
   }
   said.textContent = "";
@@ -424,11 +527,19 @@ function rollNow(code) {
   input.value = programText();
   input.classList.remove("bad");
   runProgram();
-  stepTo(view.at + 1);
+  if (view.at < lastFrame()) stepTo(view.at + 1);
+  else { showRun(); requestDraw(); }
+}
+
+const rollButtons = Array.from(document.querySelectorAll("button[data-roll]"));
+function pressed(code) {
+  const b = rollButtons.find((x) => x.dataset.roll === ROLLS[code]);
+  b.classList.add("pressed");
+  setTimeout(() => b.classList.remove("pressed"), 160);
 }
 
 input.addEventListener("input", fromText);
-for (const b of document.querySelectorAll("button[data-roll]")) {
+for (const b of rollButtons) {
   b.addEventListener("click", () => rollNow(ROLLS.indexOf(b.dataset.roll)));
 }
 document.getElementById("reset").addEventListener("click", () => { stop(); view.at = 0; showRun(); requestDraw(); });
@@ -448,6 +559,7 @@ document.addEventListener("keydown", (ev) => {
   if (ev.target === input || ev.altKey || ev.ctrlKey || ev.metaKey) return;
   if (!(ev.key in KEYS)) return;
   ev.preventDefault();
+  pressed(KEYS[ev.key]);
   rollNow(KEYS[ev.key]);
 });
 
@@ -456,6 +568,7 @@ for (const s of SAMPLES) {
   const b = document.createElement("button");
   b.type = "button";
   b.textContent = s.name;
+  b.title = s.title;
   b.dataset.program = s.program;
   b.addEventListener("click", () => {
     setProgram(s.program, 0);
@@ -465,23 +578,24 @@ for (const s of SAMPLES) {
   samples.append(b);
 }
 
-// Dragging turns the camera about the board; a double click puts it back.
-let drag = null;
-canvas.addEventListener("pointerdown", (ev) => {
-  drag = { x: ev.clientX, y: ev.clientY, yaw: camera.yaw, pitch: camera.pitch };
-  canvas.setPointerCapture(ev.pointerId);
-  canvas.classList.add("dragging");
-});
+// A click on a tile next to the cube rolls it there; so does a drag from
+// the cube that lets go over one. The tile under the pointer is lit up.
+const pointAt = (ev) => {
+  const r = canvas.getBoundingClientRect();
+  return [ev.clientX - r.left, ev.clientY - r.top];
+};
 canvas.addEventListener("pointermove", (ev) => {
-  if (!drag) return;
-  camera.yaw = drag.yaw - (ev.clientX - drag.x) * 0.008;
-  camera.pitch = Math.min(1.45, Math.max(0.3, drag.pitch + (ev.clientY - drag.y) * 0.006));
-  requestDraw();
+  const roll = rollAt(...pointAt(ev));
+  const cell = roll < 0 ? -1 : hits.targets.find((t) => t.roll === roll).cell;
+  canvas.classList.toggle("can-roll", roll >= 0);
+  if (cell !== hover) { hover = cell; requestDraw(); }
 });
-const endDrag = () => { drag = null; canvas.classList.remove("dragging"); };
-canvas.addEventListener("pointerup", endDrag);
-canvas.addEventListener("pointercancel", endDrag);
-canvas.addEventListener("dblclick", () => { camera.yaw = 0.32; camera.pitch = 0.9; requestDraw(); });
+canvas.addEventListener("pointerleave", () => { if (hover >= 0) { hover = -1; requestDraw(); } });
+canvas.addEventListener("pointerdown", (ev) => canvas.releasePointerCapture?.(ev.pointerId));
+canvas.addEventListener("pointerup", (ev) => {
+  const roll = rollAt(...pointAt(ev));
+  if (roll >= 0) { hover = -1; rollNow(roll); }
+});
 window.addEventListener("resize", requestDraw);
 
 showRun();

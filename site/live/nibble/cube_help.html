@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rolling cube help</title>
+<link rel="stylesheet" href="nibble.5a34209f8e3d41b1.css">
+<style>
+  main { max-width: 680px; }
+  section { margin-top: 12px; }
+  section h2 { margin-bottom: 6px; }
+  dt { font-weight: 600; margin-top: 8px; }
+  dd { margin: 2px 0 0 0; color: var(--fg); }
+  code { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <header><h1>Rolling cube</h1><a href="cube.html" id="back-to-cube">Back to the cube</a></header>
+  <section>
+    <h2>The rules</h2>
+    <p>The board is 4 × 4 tiles, all dark. The cube starts on a1, the north-west corner, with its painted face up.</p>
+    <p>A program is a list of rolls: N, E, S or W. Each roll tips the cube over an edge into the next tile. Each time the cube lands with the paint down, the tile under it flips, dark to lit or lit to dark. The program's meaning is the set of tiles lit at the end, wherever the cube stops.</p>
+    <p>A roll off the board halts the machine. The cube stays where it was, the tiles lit so far are the program's set, and the rolls after the halt do nothing.</p>
+    <p>A program is at most <strong id="max-length">45</strong> rolls long. That is just long enough to light any set of tiles but one: lighting every tile takes 47 rolls.</p>
+  </section>
+  <section>
+    <h2>Playing</h2>
+    <p>Type a program, or roll the cube with the arrow buttons or the arrow keys, or click a tile next to the cube (or drag the cube onto it). Play, Back, Forward and Reset move through the run. A roll off the board can only be typed, or made with a button or key, since no tile is there to click.</p>
+    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows your program's set, its par, and your program's length.</p>
+  </section>
+  <section>
+    <h2>The samples</h2>
+    <dl>
+      <dt>ESWN loop</dt><dd><code>ESWN</code>: a loop around a1, b1, b2 and a2. The cube is back on a1 with nothing lit, the paint facing north.</dd>
+      <dt>b2 alone</dt><dd><code>ESENSNWS</code> lights b2 in its par, 8. It lights c2 and puts it out again on the way.</dd>
+      <dt>the diagonal</dt><dd><code>ESSENNWWESESESNNWW</code> lights a1, b2, c3 and d4 in their par, 18.</dd>
+      <dt>a halt</dt><dd><code>ESENNSSS</code>: the fifth roll, N from c1, leaves the board, so the machine halts with c2 lit. The three S rolls after it do nothing.</dd>
+      <dt>the longest</dt><dd><code>EEESWNESWNESSWWENWENWSWNESWESWESWNESNESENWNES</code> lights every tile but d4 in its par, 45, the longest program there is.</dd>
+    </dl>
+  </section>
+</main>
+</body>
+</html>
