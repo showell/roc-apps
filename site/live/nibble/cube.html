@@ -8,15 +8,17 @@
 <style>
   /* Three panes side by side on a wide screen, the canvas as tall as the
      window allows; one column on a narrow one. */
-  main.cube { max-width: none; padding: 6px 16px 8px; }
-  main.cube header { align-items: center; height: 32px; }
-  main.cube h1 { margin: 0; font-size: 1.15rem; }
-  .panes { display: grid; grid-template-columns: clamp(230px, 22vw, 320px) minmax(0, 1fr) clamp(210px, 19vw, 300px); gap: 14px; margin-top: 4px; }
+  main.cube { max-width: none; padding: 8px 16px; }
+  main.cube header { align-items: baseline; margin-bottom: 4px; }
+  main.cube h1 { margin: 0; font-size: 1.05rem; }
+  .panes { display: grid; grid-template-columns: clamp(230px, 22vw, 320px) minmax(0, 1fr) clamp(210px, 19vw, 300px); gap: 14px; }
   .pane { min-width: 0; }
-  #scene { display: block; width: 100%; height: calc(100vh - 54px); min-height: 260px; border-radius: 8px; background: #1b1d22; touch-action: none; }
+  #scene { display: block; width: 100%; height: calc(100vh - 16px); min-height: 260px; border-radius: 8px; background: #1b1d22; touch-action: none; }
   #scene.can-roll { cursor: pointer; }
   .pane h2 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
   .pane h2:not(:first-child) { margin-top: 12px; }
+  .pane header + h2 { margin-top: 2px; }
+  .pane h2 small { font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; }
   #program { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
   #program.bad { border-color: var(--bad); }
   #said { margin: 4px 0 0; font-size: 0.88rem; min-height: 0; }
@@ -35,13 +37,27 @@
   .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1; min-width: 0; }
   .steps button, .samples button { padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; font-size: 0.9rem; cursor: pointer; }
   .steps button:disabled { opacity: 0.45; cursor: default; }
-  .samples { display: flex; flex-wrap: wrap; gap: 4px; }
+  .samples, .questions { display: flex; flex-wrap: wrap; gap: 4px; }
   .samples button { background: transparent; font-size: 0.86rem; padding: 3px 7px; }
+  .questions button { padding: 3px 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); font: 0.84rem ui-monospace, Menlo, Consolas, monospace; cursor: pointer; }
+  .questions button small { color: var(--muted); font-family: system-ui, sans-serif; }
+  .questions button.on { border-color: #ffb347; box-shadow: inset 0 0 0 1px #ffb347; }
+  .questions button.answered { background: var(--good-bg); }
   #length, #par { font-size: 1.05rem; }
   #par { margin-top: 2px; }
-  #lit-map { display: grid; grid-template-columns: repeat(4, 22px); gap: 3px; }
-  #lit-map div { width: 22px; height: 22px; border-radius: 3px; background: #2b2d33; border: 1px solid var(--line); }
-  #lit-map div.lit { background: #ffb347; border-color: #ffb347; box-shadow: 0 0 6px #ffb34799; }
+  .result { display: flex; gap: 10px; align-items: flex-start; }
+  #lit-map { display: grid; grid-template-columns: repeat(4, 24px); gap: 3px; flex: none; }
+  #lit-map div { width: 24px; height: 24px; border-radius: 3px; background: #2b2d33; border: 1px solid var(--line); color: #9a9aa2; font: 10px/22px ui-monospace, Menlo, monospace; text-align: center; }
+  #lit-map div.lit { background: #ffb347; border-color: #ffb347; box-shadow: 0 0 6px #ffb34799; color: #3a2a10; }
+  #lit-map div.want:not(.lit) { outline: 2px dashed #ffb347; outline-offset: -1px; }
+  #number { margin: 0; font: 0.9rem/1.5 ui-monospace, Menlo, Consolas, monospace; min-width: 0; }
+  #number b { font-size: 1.15rem; }
+  #number small, #binary-line small { color: var(--muted); font-family: system-ui, sans-serif; font-size: 0.8rem; }
+  #binary-line { margin: 4px 0 0; font: 0.9rem ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  #answers, #question { margin: 4px 0 0; font-size: 0.92rem; }
+  #answers:empty, #question:empty { display: none; }
+  #answers code, #question code { font-weight: 600; }
+  #question.good { color: var(--good); }
   #status { margin: 0; color: var(--muted); font-size: 0.92rem; }
   #rolls { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; letter-spacing: 0.08em; font-size: 0.92rem; }
   #rolls span.done { color: var(--fg); }
@@ -58,11 +74,11 @@
 </head>
 <body>
 <main class="cube">
-  <header><h1>Rolling cube</h1><a href="cube_help.html" id="help">Help</a></header>
   <p id="loading">Loading the cube...</p>
   <div class="panes">
     <div class="pane write">
-      <h2><label for="program">Program</label></h2>
+      <header><h1>Rolling cube</h1><a href="cube_help.html" id="help">Help</a></header>
+      <h2><label for="program">A RollScript program</label></h2>
       <input id="program" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="" placeholder="rolls: N E S W">
       <p id="said"></p>
       <div class="drive">
@@ -80,6 +96,8 @@
           <button type="button" id="clear" title="An empty program">Clear</button>
         </div>
       </div>
+      <h2 title="A program answers a question about the numbers 0 to 15 by lighting the tiles of the numbers whose answer is yes">Questions <small>(par)</small></h2>
+      <div class="questions" id="questions"></div>
       <h2>Samples</h2>
       <div class="samples" id="samples"></div>
     </div>
@@ -89,15 +107,21 @@
     <div class="pane read">
       <h2>Length</h2>
       <div id="length"></div>
-      <h2>Lit at the end</h2>
-      <div id="lit-map" aria-label="The tiles the program lights"></div>
+      <h2>The lit set, its result</h2>
+      <div class="result">
+        <div id="lit-map" aria-label="The tiles the program lights, numbered 0 to 15"></div>
+        <p id="number" title="The lit set as a 16-bit number: tile n is bit n, so a1 (tile 0) is the last binary digit"><b id="decimal"></b><br><small>decimal</small></p>
+      </div>
+      <p id="binary-line" title="The lit set in binary: tile 15 (d4) is the first digit, tile 0 (a1) the last"><span id="binary"></span> <small>binary</small></p>
       <div id="par" title="par: the fewest rolls that end with this set lit"></div>
+      <p id="answers"></p>
+      <p id="question"></p>
       <h2>The run</h2>
       <p id="status"></p>
       <p id="rolls"></p>
     </div>
   </div>
 </main>
-<script type="module" src="cube.34a0dadc537d689e.js"></script>
+<script type="module" src="cube.5c8f86eca7fe1183.js"></script>
 </body>
 </html>

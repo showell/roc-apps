@@ -16,6 +16,14 @@
 // A program is at most L rolls, the wasm's `max_length()`. Rolls come from
 // the arrow buttons, the arrow keys, the text box, or a click on a tile next
 // to the cube (or a drag from the cube onto one); the camera is fixed.
+//
+// The language is RollScript. The tiles are numbered 0 to 15 row by row, a1
+// to d1 then a2 to d4, as Cube.roc's bits are, so a lit set, a program's
+// result, is a 16-bit number: tile n lit is bit n set. A program so answers
+// a question about the numbers 0 to 15, lighting the tiles whose answer is
+// yes, as a Nibble++ program decides a language. The page's questions are
+// QUESTIONS, each a rule over n; its target set is the rule's yeses and its
+// par the census's.
 
 const ROLLS = "NESW";
 // CubeWasm.roc's state: the lit set in bits 0-15, the cell in 16-19, the
@@ -26,6 +34,24 @@ const cellOf = (w) => (w >> 16) & 15;
 const faceOf = (w) => (w >> 20) & 7;
 const FACE_NAMES = ["up", "down", "north", "south", "east", "west"];
 const cellName = (cell) => "abcd"[cell % 4] + String(Math.floor(cell / 4) + 1);
+const cellLabel = (cell) => `${cell} (${cellName(cell)})`;
+const binaryOf = (lit) => lit.toString(2).padStart(16, "0").replace(/(.{4})(?=.)/g, "$1 ");
+
+// The questions, from Nibble++'s vocabulary (docs/NIBBLE_PLUS_NAMES.md):
+// each a name, its rule over n, and the rule as a function. A question's
+// target is the set of n from 0 to 15 that the rule says yes to.
+const QUESTIONS = [
+  { name: "is_even", rule: "n % 2 == 0", yes: (n) => n % 2 === 0 },
+  { name: "is_odd", rule: "n % 2 == 1", yes: (n) => n % 2 === 1 },
+  { name: "is_small", rule: "n < 8", yes: (n) => n < 8 },
+  { name: "is_small_even", rule: "n < 8 and n % 2 == 0", yes: (n) => n < 8 && n % 2 === 0 },
+  { name: "is_mult_of_4", rule: "n % 4 == 0", yes: (n) => n % 4 === 0 },
+  { name: "is_mult_of_5", rule: "n % 5 == 0", yes: (n) => n % 5 === 0 },
+  { name: "is_square", rule: "n is 0, 1, 4 or 9", yes: (n) => Number.isInteger(Math.sqrt(n)) },
+  { name: "is_prime", rule: "n is 2, 3, 5, 7, 11 or 13", yes: (n) => n > 1 && [2, 3, 5, 7, 11, 13].every((d) => d === n || n % d !== 0) },
+  { name: "is_fib", rule: "n is 1, 2, 3, 5, 8 or 13", yes: (n) => [1, 2, 3, 5, 8, 13].includes(n) },
+  { name: "is_not_14", rule: "n != 14", yes: (n) => n !== 14 },
+].map((q) => ({ ...q, target: Array.from({ length: 16 }, (_, n) => n).reduce((set, n) => set | (q.yes(n) ? 1 << n : 0), 0) }));
 
 // The world: x east, y up, z south; tile (row r, column c) is centred at
 // (c - 1.5, 0, r - 1.5), a1 the north-west corner.
@@ -60,6 +86,7 @@ const [machine, pars] = await Promise.all([
 });
 document.getElementById("loading").remove();
 const L = machine.max_length(0);
+for (const q of QUESTIONS) q.par = pars[q.target];
 
 // ── the program and its run ──────────────────────────────────────────
 
@@ -73,6 +100,7 @@ const view = {
   at: 0,            // the frame shown
   anim: null,       // { from, roll, dir, halt, target, start, ms }
   playing: false,
+  question: null,   // the question chosen, or null
 };
 
 function runProgram() {
@@ -240,6 +268,7 @@ function draw(now) {
   const lit = litOf(word);
   const halted = !view.anim && isHalt(view.at);
   const targets = view.anim ? [] : rollTargets(word);
+  const wanted = view.question ? view.question.target : 0;
 
   // The base, then the tiles far to near, each with its back faces culled.
   for (const f of boxFaces(-2.15, 2.15, -0.32, -0.12, -2.15, 2.15)) {
@@ -269,14 +298,37 @@ function draw(now) {
         fillFace(proj, f.pts, shaded(rgb, f.n));
       }
     }
+    // A tile the chosen question wants lit and that isn't: an amber ring.
+    if (!on && (wanted >> t.cell) & 1) {
+      const r = 0.36, ring = [[t.x - r, 0.003, t.z - r], [t.x + r, 0.003, t.z - r], [t.x + r, 0.003, t.z + r], [t.x - r, 0.003, t.z + r]];
+      ctx.save();
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = "rgba(255, 179, 71, 0.8)";
+      ctx.beginPath();
+      ring.forEach((p, i) => { const [x, y] = proj.point(p); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      ctx.closePath();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // Each tile's number, 0 to 15, on its top; the cube, drawn after, covers
+  // the one under it.
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  for (const t of tiles) {
+    const [x, y] = proj.point([t.x, 0, t.z]);
+    const size = Math.max(10, Math.round(proj.point([t.x + 0.5, 0, t.z])[0] - x) * 0.55);
+    ctx.font = `600 ${Math.min(size, 26)}px system-ui, sans-serif`;
+    ctx.fillStyle = (lit >> t.cell) & 1 ? "rgba(90, 52, 10, 0.75)" : "rgba(150, 154, 168, 0.55)";
+    ctx.fillText(String(t.cell), x, y);
   }
 
   // The board's names: columns a to d along the south edge, rows 1 to 4
   // along the west, and north.
-  ctx.fillStyle = "#9a9aa2";
-  ctx.font = "13px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#7d7d86";
+  ctx.font = "12px system-ui, sans-serif";
   for (let c = 0; c < 4; c++) label(proj, [c - 1.5, -0.12, 2.45], "abcd"[c]);
   for (let r = 0; r < 4; r++) label(proj, [-2.45, -0.12, r - 1.5], String(r + 1));
   label(proj, [0, -0.12, -2.55], "north");
@@ -427,14 +479,21 @@ const map = document.getElementById("lit-map");
 const lengthLine = document.getElementById("length");
 const parLine = document.getElementById("par");
 const playButton = document.getElementById("play");
+const decimalLine = document.getElementById("decimal");
+const binaryLine = document.getElementById("binary");
+const answersLine = document.getElementById("answers");
+const questionLine = document.getElementById("question");
 const mapCells = Array.from({ length: 16 }, (_, cell) => {
   const d = document.createElement("div");
-  d.title = cellName(cell);
+  d.textContent = String(cell);
+  d.title = `tile ${cellLabel(cell)}, bit ${cell}`;
+  d.dataset.name = cellName(cell);
   map.append(d);
   return d;
 });
 
 const programText = () => view.program.map((r) => ROLLS[r]).join("");
+const el = (tag, text) => { const e = document.createElement(tag); e.textContent = text; return e; };
 
 function showRun() {
   const shown = view.anim ? view.anim.target : view.at;
@@ -447,11 +506,11 @@ function showRun() {
     return span;
   }));
   const word = wordAt(shown);
-  const where = `on ${cellName(cellOf(word))}, the paint ${FACE_NAMES[faceOf(word)]}`;
+  const where = `on ${cellLabel(cellOf(word))}, the paint ${FACE_NAMES[faceOf(word)]}`;
   if (isHalt(shown)) {
     status.className = "err";
     const after = view.program.length - view.haltAt - 1;
-    status.textContent = `Halted at roll ${view.haltAt + 1}: ${ROLLS[view.program[view.haltAt]]} from ${cellName(cellOf(word))} leaves the board.` +
+    status.textContent = `Halted at roll ${view.haltAt + 1}: ${ROLLS[view.program[view.haltAt]]} from ${cellLabel(cellOf(word))} leaves the board.` +
       (after > 0 ? ` The ${after} roll${after === 1 ? "" : "s"} after it do nothing.` : "");
   } else {
     status.className = "";
@@ -460,9 +519,23 @@ function showRun() {
   const n = view.program.length;
   lengthLine.textContent = `${n} of ${L} rolls`;
   const lit = litOf(view.frames[view.frames.length - 1]);
-  mapCells.forEach((d, cell) => d.classList.toggle("lit", ((lit >> cell) & 1) === 1));
+  const wanted = view.question ? view.question.target : 0;
+  mapCells.forEach((d, cell) => {
+    d.classList.toggle("lit", ((lit >> cell) & 1) === 1);
+    d.classList.toggle("want", ((wanted >> cell) & 1) === 1);
+  });
+  decimalLine.textContent = String(lit);
+  binaryLine.textContent = binaryOf(lit);
   parLine.textContent = `par ${pars[lit]}; yours is ${n}`;
   parLine.dataset.lit = String(lit);
+  const answered = QUESTIONS.filter((q) => q.target === lit);
+  answersLine.replaceChildren(...(answered.length ? ["It answers ", el("code", answered[0].name), `: ${answered[0].rule}.`] : []));
+  for (const b of questionButtons) b.classList.toggle("answered", Number(b.dataset.target) === lit);
+  const q = view.question;
+  questionLine.className = q && q.target === lit ? "good" : "";
+  questionLine.replaceChildren(...(!q ? [] : q.target === lit
+    ? ["Answered ", el("code", q.name), ` in ${n} roll${n === 1 ? "" : "s"}; its par is ${q.par}.`]
+    : ["The question ", el("code", q.name), `: light ${q.rule}, the set ${q.target}, in par ${q.par}.`]));
   playButton.textContent = view.playing ? "Pause" : "Play";
   document.getElementById("back").disabled = shown === 0;
   document.getElementById("reset").disabled = shown === 0 && !view.anim;
@@ -561,6 +634,27 @@ document.addEventListener("keydown", (ev) => {
   ev.preventDefault();
   pressed(KEYS[ev.key]);
   rollNow(KEYS[ev.key]);
+});
+
+// A question's button chooses it, and a second click lets it go: the tiles
+// it wants are ringed on the board and on the map.
+const questions = document.getElementById("questions");
+const questionButtons = QUESTIONS.map((q) => {
+  const b = document.createElement("button");
+  b.type = "button";
+  b.append(q.name, " ", el("small", String(q.par)));
+  b.title = `${q.rule}: the set ${q.target}, binary ${binaryOf(q.target)}; par ${q.par}`;
+  b.dataset.question = q.name;
+  b.dataset.target = String(q.target);
+  b.dataset.par = String(q.par);
+  b.addEventListener("click", () => {
+    view.question = view.question === q ? null : q;
+    for (const x of questionButtons) x.classList.toggle("on", x.dataset.question === view.question?.name);
+    showRun();
+    requestDraw();
+  });
+  questions.append(b);
+  return b;
 });
 
 const samples = document.getElementById("samples");

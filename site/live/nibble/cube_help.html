@@ -12,6 +12,11 @@
   dt { font-weight: 600; margin-top: 8px; }
   dd { margin: 2px 0 0 0; color: var(--fg); }
   code { overflow-wrap: anywhere; }
+  table.grid { width: auto; table-layout: auto; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  table.grid td { padding: 2px 10px; border: 1px solid var(--line); }
+  table.questions { table-layout: auto; font-size: 0.9rem; }
+  table.questions td, table.questions th { text-align: left; white-space: normal; }
+  table.questions td:nth-child(n+3), table.questions th:nth-child(n+3) { text-align: right; }
 </style>
 </head>
 <body>
@@ -20,22 +25,52 @@
   <section>
     <h2>The rules</h2>
     <p>The board is 4 × 4 tiles, all dark. The cube starts on a1, the north-west corner, with its painted face up.</p>
-    <p>A program is a list of rolls: N, E, S or W. Each roll tips the cube over an edge into the next tile. Each time the cube lands with the paint down, the tile under it flips, dark to lit or lit to dark. The program's meaning is the set of tiles lit at the end, wherever the cube stops.</p>
-    <p>A roll off the board halts the machine. The cube stays where it was, the tiles lit so far are the program's set, and the rolls after the halt do nothing.</p>
+    <p>The language is <strong>RollScript</strong>. A program is a list of rolls: N, E, S or W. Each roll tips the cube over an edge into the next tile. Each time the cube lands with the paint down, the tile under it flips, dark to lit or lit to dark. The program's meaning is the set of tiles lit at the end, wherever the cube stops.</p>
+    <p>A roll off the board halts the program. The cube stays where it was, the tiles lit so far are the program's set, and the rolls after the halt do nothing.</p>
     <p>A program is at most <strong id="max-length">45</strong> rolls long. That is just long enough to light any set of tiles but one: lighting every tile takes 47 rolls.</p>
+  </section>
+  <section>
+    <h2>The lit set is a number</h2>
+    <p>The tiles are numbered 0 to 15, row by row from the north-west corner. Each also has a chess name, its column a to d and its row 1 to 4:</p>
+    <table class="grid" id="numbering">
+      <tr><td>0 a1</td><td>1 b1</td><td>2 c1</td><td>3 d1</td></tr>
+      <tr><td>4 a2</td><td>5 b2</td><td>6 c2</td><td>7 d2</td></tr>
+      <tr><td>8 a3</td><td>9 b3</td><td>10 c3</td><td>11 d3</td></tr>
+      <tr><td>12 a4</td><td>13 b4</td><td>14 c4</td><td>15 d4</td></tr>
+    </table>
+    <p>Tile n lit is bit n of a 16-bit number, so a program's lit set, its result, is one of 65,536 numbers. b2 alone is tile 5, 2<sup>5</sup> = 32, binary 0000 0000 0010 0000; tile 0, a1, is the last binary digit.</p>
+    <p>So a program answers a question about the numbers 0 to 15: it lights tile n when the answer for n is yes. The program that lights 0, 5, 10 and 15 answers <code>is_mult_of_5</code>, "is n a multiple of 5?", and the program that lights every tile but 14 answers <code>is_not_14</code>. These are the questions of Nibble++, whose programs decide the same 65,536 sets of numbers.</p>
+  </section>
+  <section>
+    <h2>The questions</h2>
+    <p>Choose a question and the tiles it wants are ringed. Its par is the fewest rolls that light exactly those tiles.</p>
+    <table class="questions" id="question-table">
+      <tr><th>question</th><th>yes for</th><th>the number</th><th>par</th></tr>
+      <tr><td><code>is_even</code></td><td>n % 2 == 0</td><td>21845</td><td>24</td></tr>
+      <tr><td><code>is_odd</code></td><td>n % 2 == 1</td><td>43690</td><td>26</td></tr>
+      <tr><td><code>is_small</code></td><td>n &lt; 8</td><td>255</td><td>23</td></tr>
+      <tr><td><code>is_small_even</code></td><td>n &lt; 8 and n % 2 == 0</td><td>85</td><td>12</td></tr>
+      <tr><td><code>is_mult_of_4</code></td><td>n % 4 == 0</td><td>4369</td><td>12</td></tr>
+      <tr><td><code>is_mult_of_5</code></td><td>n % 5 == 0</td><td>33825</td><td>18</td></tr>
+      <tr><td><code>is_square</code></td><td>0, 1, 4, 9</td><td>531</td><td>13</td></tr>
+      <tr><td><code>is_prime</code></td><td>2, 3, 5, 7, 11, 13</td><td>10412</td><td>20</td></tr>
+      <tr><td><code>is_fib</code></td><td>1, 2, 3, 5, 8, 13</td><td>8494</td><td>20</td></tr>
+      <tr><td><code>is_not_14</code></td><td>n != 14</td><td>49151</td><td>44</td></tr>
+    </table>
+    <p>The even numbers are columns a and c, and the odd ones b and d, yet the odd ones cost two rolls more. <code>is_not_14</code> was the hardest question for Nibble++. Here it costs 44, against the 45 for <code>is_not_13</code>: 14 is c4, on the other colour from a1.</p>
   </section>
   <section>
     <h2>Playing</h2>
     <p>Type a program, or roll the cube with the arrow buttons or the arrow keys, or click a tile next to the cube (or drag the cube onto it). Play, Back, Forward and Reset move through the run. A roll off the board can only be typed, or made with a button or key, since no tile is there to click.</p>
-    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows your program's set, its par, and your program's length.</p>
+    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows your program's lit set, as tiles and as a number in decimal and binary, its par, and your program's length.</p>
   </section>
   <section>
     <h2>The samples</h2>
     <dl>
       <dt>ESWN loop</dt><dd><code>ESWN</code>: a loop around a1, b1, b2 and a2. The cube is back on a1 with nothing lit, the paint facing north.</dd>
       <dt>b2 alone</dt><dd><code>ESENSNWS</code> lights b2 in its par, 8. It lights c2 and puts it out again on the way.</dd>
-      <dt>the diagonal</dt><dd><code>ESSENNWWESESESNNWW</code> lights a1, b2, c3 and d4 in their par, 18.</dd>
-      <dt>a halt</dt><dd><code>ESENNSSS</code>: the fifth roll, N from c1, leaves the board, so the machine halts with c2 lit. The three S rolls after it do nothing.</dd>
+      <dt>the diagonal</dt><dd><code>ESSENNWWESESESNNWW</code> lights a1, b2, c3 and d4, tiles 0, 5, 10 and 15, in their par, 18: it answers <code>is_mult_of_5</code>.</dd>
+      <dt>a halt</dt><dd><code>ESENNSSS</code>: the fifth roll, N from c1, leaves the board, so the program halts with c2, tile 6, lit. The three S rolls after it do nothing.</dd>
       <dt>the longest</dt><dd><code>EEESWNESWNESSWWENWENWSWNESWESWESWNESNESENWNES</code> lights every tile but d4 in its par, 45, the longest program there is.</dd>
     </dl>
   </section>
