@@ -13,6 +13,8 @@
   main.cube h1 { margin: 0; font-size: 1.05rem; }
   .panes { display: grid; grid-template-columns: clamp(230px, 22vw, 320px) minmax(0, 1fr) clamp(210px, 19vw, 300px); gap: 14px; }
   .pane { min-width: 0; }
+  .pane.write { display: flex; flex-direction: column; height: calc(100vh - 16px); }
+  .pane.view { position: relative; }
   #scene { display: block; width: 100%; height: calc(100vh - 16px); min-height: 260px; border-radius: 8px; background: #1b1d22; touch-action: none; }
   #scene.can-roll { cursor: pointer; }
   .pane h2 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
@@ -37,36 +39,57 @@
   .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1; min-width: 0; }
   .steps button, .samples button { padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; font-size: 0.9rem; cursor: pointer; }
   .steps button:disabled { opacity: 0.45; cursor: default; }
-  .samples, .questions { display: flex; flex-wrap: wrap; gap: 4px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 4px; }
   .samples button { background: transparent; font-size: 0.86rem; padding: 3px 7px; }
-  .questions button { padding: 3px 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); font: 0.84rem ui-monospace, Menlo, Consolas, monospace; cursor: pointer; }
-  .questions button small { color: var(--muted); font-family: system-ui, sans-serif; }
-  .questions button.on { border-color: #ffb347; box-shadow: inset 0 0 0 1px #ffb347; }
-  .questions button.answered { background: var(--good-bg); }
+  /* The listing: the program a line a roll, filling the pane, scrolling in it. */
+  .listing-head, #listing li { display: grid; grid-template-columns: 1.8em 1.4em 8.6em 1.2em minmax(0, 1fr); gap: 6px; align-items: baseline; }
+  #listing li .code { color: var(--muted); opacity: 0.7; font-size: 0.78rem; }
+  #machine-code { margin: 3px 0 0; font: 0.72rem ui-monospace, Menlo, Consolas, monospace; color: var(--muted); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #machine-code:empty { display: none; }
+  .listing-head { font-size: 0.75rem; color: var(--muted); padding: 0 6px; }
+  #listing { flex: 1; min-height: 60px; overflow-y: auto; margin: 2px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 6px; font: 0.9rem/1.55 ui-monospace, Menlo, Consolas, monospace; }
+  #listing li { padding: 0 6px; cursor: pointer; }
+  #listing li .num { color: var(--muted); text-align: right; }
+  #listing li .op { white-space: nowrap; }
+  #listing li .op small { color: var(--muted); }
+  #listing li .paint { font-weight: 600; color: #7aa2ff; text-align: center; }
+  #listing li .mark { font-family: system-ui, sans-serif; font-size: 0.8rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #listing li.lit .mark { color: #ffb347; }
+  #listing li.unlit .mark { color: #9aa6c8; }
+  #listing li.halt .mark { color: var(--bad); }
+  #listing li.dead { opacity: 0.45; text-decoration: line-through; }
+  #listing li.now { background: var(--accent); color: var(--accent-fg); }
+  #listing li.now .num, #listing li.now .code, #listing li.now small, #listing li.now .paint, #listing li.now .mark { color: var(--accent-fg); }
+  /* The compass: where the paint points, over the canvas's corner. */
+  #compass { position: absolute; top: 8px; right: 8px; display: grid; grid-template-columns: repeat(3, 20px); grid-template-rows: repeat(3, 20px) auto; gap: 1px;
+    padding: 5px; border-radius: 8px; background: rgba(20, 21, 26, 0.72); font: 600 11px/20px ui-monospace, Menlo, monospace; text-align: center; color: #6b6f7c; pointer-events: none; }
+  #compass [data-dir] { border-radius: 4px; }
+  #compass [data-dir="N"] { grid-column: 2; grid-row: 1; }
+  #compass [data-dir="W"] { grid-column: 1; grid-row: 2; }
+  #compass .mid { grid-column: 2; grid-row: 2; border: 1px solid #44485a; border-radius: 50%; }
+  #compass [data-dir="E"] { grid-column: 3; grid-row: 2; }
+  #compass [data-dir="S"] { grid-column: 2; grid-row: 3; }
+  #compass .mid [data-dir] { display: none; }
+  #compass .mid [data-dir].on { display: block; border-radius: 50%; }
+  #compass [data-dir].on { background: #3a7bff; color: #fff; }
+  #compass small { grid-column: 1 / 4; grid-row: 4; font: 10px/1.2 system-ui, sans-serif; color: #8a8e9a; }
   #length, #par { font-size: 1.05rem; }
   #par { margin-top: 2px; }
   .result { display: flex; gap: 10px; align-items: flex-start; }
   #lit-map { display: grid; grid-template-columns: repeat(4, 24px); gap: 3px; flex: none; }
   #lit-map div { width: 24px; height: 24px; border-radius: 3px; background: #2b2d33; border: 1px solid var(--line); color: #9a9aa2; font: 10px/22px ui-monospace, Menlo, monospace; text-align: center; }
   #lit-map div.lit { background: #ffb347; border-color: #ffb347; box-shadow: 0 0 6px #ffb34799; color: #3a2a10; }
-  #lit-map div.want:not(.lit) { outline: 2px dashed #ffb347; outline-offset: -1px; }
   #number { margin: 0; font: 0.9rem/1.5 ui-monospace, Menlo, Consolas, monospace; min-width: 0; }
   #number b { font-size: 1.15rem; }
   #number small, #binary-line small { color: var(--muted); font-family: system-ui, sans-serif; font-size: 0.8rem; }
   #binary-line { margin: 4px 0 0; font: 0.9rem ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-  #answers, #question { margin: 4px 0 0; font-size: 0.92rem; }
-  #answers:empty, #question:empty { display: none; }
-  #answers code, #question code { font-weight: 600; }
-  #question.good { color: var(--good); }
+  #name { margin: 0; font: 600 1rem ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  #name[data-named="0"] { color: var(--muted); }
   #status { margin: 0; color: var(--muted); font-size: 0.92rem; }
-  #rolls { margin: 0; font-family: ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; letter-spacing: 0.08em; font-size: 0.92rem; }
-  #rolls span.done { color: var(--fg); }
-  #rolls span.todo { color: var(--muted); opacity: 0.6; }
-  #rolls span.now { background: var(--accent); color: var(--accent-fg); border-radius: 3px; }
-  #rolls span.halt { background: var(--bad); color: var(--bg); border-radius: 3px; }
-  #rolls span.dead { color: var(--muted); opacity: 0.45; text-decoration: line-through; }
   @media (max-width: 899px) {
     .panes { grid-template-columns: minmax(0, 1fr); }
+    .pane.write { height: auto; }
+    #listing { flex: none; max-height: 40vh; }
     .pane.view { order: -1; }
     #scene { height: min(72vw, 52vh); min-height: 220px; }
   }
@@ -81,6 +104,7 @@
       <h2><label for="program">A RollScript program</label></h2>
       <input id="program" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="" placeholder="rolls: N E S W">
       <p id="said"></p>
+      <p id="machine-code"></p>
       <div class="drive">
         <div class="keys" role="group" aria-label="Roll the cube (the arrow keys work too)">
           <button type="button" data-roll="N" title="Roll north (the up arrow key)">▲<small>N</small></button>
@@ -96,13 +120,15 @@
           <button type="button" id="clear" title="An empty program">Clear</button>
         </div>
       </div>
-      <h2 title="A program answers a question about the numbers 0 to 15 by lighting the tiles of the numbers whose answer is yes">Questions <small>(par)</small></h2>
-      <div class="questions" id="questions"></div>
       <h2>Samples</h2>
       <div class="samples" id="samples"></div>
+      <h2 title="The program a line a roll: what it rolls, where the paint points after it, and the tile it lights or darkens when the paint lands face down">The listing</h2>
+      <div class="listing-head" aria-hidden="true"><span>line</span><span>op</span><span>roll</span><span>paint</span><span></span></div>
+      <ol id="listing" aria-label="The program, a line a roll"></ol>
     </div>
     <div class="pane view">
       <canvas id="scene" width="720" height="500" aria-label="The board and the cube, in 3D; click a tile beside the cube to roll onto it"></canvas>
+      <div id="compass" aria-label="Where the paint points"><span data-dir="N">N</span><span data-dir="W">W</span><span class="mid"><span data-dir="U">U</span><span data-dir="D">D</span></span><span data-dir="E">E</span><span data-dir="S">S</span><small>the paint</small></div>
     </div>
     <div class="pane read">
       <h2>Length</h2>
@@ -114,14 +140,13 @@
       </div>
       <p id="binary-line" title="The lit set in binary: tile 15 (d4) is the first digit, tile 0 (a1) the last"><span id="binary"></span> <small>binary</small></p>
       <div id="par" title="par: the fewest rolls that end with this set lit"></div>
-      <p id="answers"></p>
-      <p id="question"></p>
+      <h2 title="The question the lit set answers about the numbers 0 to 15, named as Nibble++ names its languages; a set with no short name shows its number">Its name</h2>
+      <p id="name"></p>
       <h2>The run</h2>
       <p id="status"></p>
-      <p id="rolls"></p>
     </div>
   </div>
 </main>
-<script type="module" src="cube.5c8f86eca7fe1183.js"></script>
+<script type="module" src="cube.0275aeb244614149.js"></script>
 </body>
 </html>

@@ -14,9 +14,9 @@
   code { overflow-wrap: anywhere; }
   table.grid { width: auto; table-layout: auto; font-family: ui-monospace, Menlo, Consolas, monospace; }
   table.grid td { padding: 2px 10px; border: 1px solid var(--line); }
-  table.questions { table-layout: auto; font-size: 0.9rem; }
-  table.questions td, table.questions th { text-align: left; white-space: normal; }
-  table.questions td:nth-child(n+3), table.questions th:nth-child(n+3) { text-align: right; }
+  table.names { table-layout: auto; font-size: 0.9rem; }
+  table.names td, table.names th { text-align: left; white-space: normal; }
+  table.names td:nth-child(n+3), table.names th:nth-child(n+3) { text-align: right; }
 </style>
 </head>
 <body>
@@ -39,30 +39,33 @@
       <tr><td>12 a4</td><td>13 b4</td><td>14 c4</td><td>15 d4</td></tr>
     </table>
     <p>Tile n lit is bit n of a 16-bit number, so a program's lit set, its result, is one of 65,536 numbers. b2 alone is tile 5, 2<sup>5</sup> = 32, binary 0000 0000 0010 0000; tile 0, a1, is the last binary digit.</p>
-    <p>So a program answers a question about the numbers 0 to 15: it lights tile n when the answer for n is yes. The program that lights 0, 5, 10 and 15 answers <code>is_mult_of_5</code>, "is n a multiple of 5?", and the program that lights every tile but 14 answers <code>is_not_14</code>. These are the questions of Nibble++, whose programs decide the same 65,536 sets of numbers.</p>
+    <p>So a program answers a question about the numbers 0 to 15: it lights tile n when the answer for n is yes. As you roll, the page names the question the lit set answers, the way the Nibble++ sandbox names the language a program decides, from the same table of names (cost 4 or less, the cheapest for each set). The program that lights 0, 5, 10 and 15 answers <code>is_mult_of_5</code>, and the program that lights every tile but 14 answers <code>is_not_14</code>. A set with no short name, such as most sets of scattered tiles, shows its number alone.</p>
   </section>
   <section>
-    <h2>The questions</h2>
-    <p>Choose a question and the tiles it wants are ringed. Its par is the fewest rolls that light exactly those tiles.</p>
-    <table class="questions" id="question-table">
-      <tr><th>question</th><th>yes for</th><th>the number</th><th>par</th></tr>
-      <tr><td><code>is_even</code></td><td>n % 2 == 0</td><td>21845</td><td>24</td></tr>
-      <tr><td><code>is_odd</code></td><td>n % 2 == 1</td><td>43690</td><td>26</td></tr>
-      <tr><td><code>is_small</code></td><td>n &lt; 8</td><td>255</td><td>23</td></tr>
-      <tr><td><code>is_small_even</code></td><td>n &lt; 8 and n % 2 == 0</td><td>85</td><td>12</td></tr>
-      <tr><td><code>is_mult_of_4</code></td><td>n % 4 == 0</td><td>4369</td><td>12</td></tr>
-      <tr><td><code>is_mult_of_5</code></td><td>n % 5 == 0</td><td>33825</td><td>18</td></tr>
+    <h2>Some names</h2>
+    <p>A name's par is the fewest rolls that light exactly its tiles.</p>
+    <table class="names" id="name-table">
+      <tr><th>name</th><th>yes for</th><th>the number</th><th>par</th></tr>
+      <tr><td><code>grumpy</code></td><td>nothing lit</td><td>0</td><td>0</td></tr>
+      <tr><td><code>is_5</code></td><td>5 (b2)</td><td>32</td><td>8</td></tr>
+      <tr><td><code>is_6</code></td><td>6 (c2)</td><td>64</td><td>3</td></tr>
+      <tr><td><code>is_even</code></td><td>0, 2, 4, ..., 14: columns a and c</td><td>21845</td><td>24</td></tr>
+      <tr><td><code>is_small_even</code></td><td>0, 2, 4, 6</td><td>85</td><td>12</td></tr>
+      <tr><td><code>is_mult_of_4</code></td><td>0, 4, 8, 12: column a</td><td>4369</td><td>12</td></tr>
+      <tr><td><code>is_mult_of_5</code></td><td>0, 5, 10, 15: the diagonal</td><td>33825</td><td>18</td></tr>
       <tr><td><code>is_square</code></td><td>0, 1, 4, 9</td><td>531</td><td>13</td></tr>
       <tr><td><code>is_prime</code></td><td>2, 3, 5, 7, 11, 13</td><td>10412</td><td>20</td></tr>
       <tr><td><code>is_fib</code></td><td>1, 2, 3, 5, 8, 13</td><td>8494</td><td>20</td></tr>
-      <tr><td><code>is_not_14</code></td><td>n != 14</td><td>49151</td><td>44</td></tr>
+      <tr><td><code>is_not_14</code></td><td>every n but 14</td><td>49151</td><td>44</td></tr>
     </table>
     <p>The even numbers are columns a and c, and the odd ones b and d, yet the odd ones cost two rolls more. <code>is_not_14</code> was the hardest question for Nibble++. Here it costs 44, against the 45 for <code>is_not_13</code>: 14 is c4, on the other colour from a1.</p>
   </section>
   <section>
     <h2>Playing</h2>
     <p>Type a program, or roll the cube with the arrow buttons or the arrow keys, or click a tile next to the cube (or drag the cube onto it). Play, Back, Forward and Reset move through the run. A roll off the board can only be typed, or made with a button or key, since no tile is there to click.</p>
-    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows your program's lit set, as tiles and as a number in decimal and binary, its par, and your program's length.</p>
+    <p>The <strong>listing</strong> under the program is the program a line a roll, as a Nibble++ program is a line an instruction: the line's number, its opcode (a roll's two bits: N 00, E 01, S 10, W 11), the roll, where the paint points after it (U, D, N, S, E or W), and what it did: the tile it lit or darkened, or the halt. The current line is highlighted; a click on a line shows the run there. Under the text box is the program's machine code, its opcodes line 1 first and the number they make read as one binary number.</p>
+    <p>When the paint lands face down, the tile under the cube flashes and the cube dips, and the tile keeps a blue frame, its stamp, for the rest of the run. When the paint faces a side, the floor glows blue on that side of the cube, so a face turned away from you still shows. The compass in the canvas's corner says where the paint points: N, E, S or W, or U and D in its middle.</p>
+    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows your program's lit set, as tiles and as a number in decimal and binary, its par, its name, and your program's length.</p>
   </section>
   <section>
     <h2>The samples</h2>

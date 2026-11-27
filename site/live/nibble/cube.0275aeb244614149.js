@@ -21,9 +21,17 @@
 // to d1 then a2 to d4, as Cube.roc's bits are, so a lit set, a program's
 // result, is a 16-bit number: tile n lit is bit n set. A program so answers
 // a question about the numbers 0 to 15, lighting the tiles whose answer is
-// yes, as a Nibble++ program decides a language. The page's questions are
-// QUESTIONS, each a rule over n; its target set is the rule's yeses and its
-// par the census's.
+// yes, as a Nibble++ program decides a language, and the page names it as
+// the Nibble++ sandbox does: from Nibble++'s own table, plus_names.bin
+// (web/plus_names.c; docs/NIBBLE_PLUS_NAMES.md), a set's cheapest name of
+// cost 4 or less. A set with none is shown as its number alone.
+//
+// What the canvas adds to the bare state: a landing (the paint face down,
+// the tile under it flipped) flashes that tile and dips the cube, and leaves
+// the tile stamped for the rest of the run; a glow of the paint's colour on
+// the floor beside the cube on the side the paint faces; and a compass of
+// where the paint points. The listing beside the program is its run, a line
+// a roll, as a Nibble++ program is a line an instruction.
 
 const ROLLS = "NESW";
 // CubeWasm.roc's state: the lit set in bits 0-15, the cell in 16-19, the
@@ -33,25 +41,17 @@ const litOf = (w) => w & 0xffff;
 const cellOf = (w) => (w >> 16) & 15;
 const faceOf = (w) => (w >> 20) & 7;
 const FACE_NAMES = ["up", "down", "north", "south", "east", "west"];
+// Where the paint points, a letter: up, down, then the four sides.
+const FACE_LETTERS = "UDNSEW";
+const ROLL_WORDS = ["north", "east", "south", "west"];
+// RollScript's opcodes, a roll's two bits as cube/README.md gives them.
+const BITS = ["00", "01", "10", "11"];
+// The program as machine code, as Nibble's pages show theirs: two bits a
+// roll, line 1 first, and its number, the bits read as one binary number.
+const machineCode = (program) => `#${program.reduce((sum, r) => sum * 4n + BigInt(r), 0n)}  ${program.map((r) => BITS[r]).join(" ")}`;
 const cellName = (cell) => "abcd"[cell % 4] + String(Math.floor(cell / 4) + 1);
 const cellLabel = (cell) => `${cell} (${cellName(cell)})`;
 const binaryOf = (lit) => lit.toString(2).padStart(16, "0").replace(/(.{4})(?=.)/g, "$1 ");
-
-// The questions, from Nibble++'s vocabulary (docs/NIBBLE_PLUS_NAMES.md):
-// each a name, its rule over n, and the rule as a function. A question's
-// target is the set of n from 0 to 15 that the rule says yes to.
-const QUESTIONS = [
-  { name: "is_even", rule: "n % 2 == 0", yes: (n) => n % 2 === 0 },
-  { name: "is_odd", rule: "n % 2 == 1", yes: (n) => n % 2 === 1 },
-  { name: "is_small", rule: "n < 8", yes: (n) => n < 8 },
-  { name: "is_small_even", rule: "n < 8 and n % 2 == 0", yes: (n) => n < 8 && n % 2 === 0 },
-  { name: "is_mult_of_4", rule: "n % 4 == 0", yes: (n) => n % 4 === 0 },
-  { name: "is_mult_of_5", rule: "n % 5 == 0", yes: (n) => n % 5 === 0 },
-  { name: "is_square", rule: "n is 0, 1, 4 or 9", yes: (n) => Number.isInteger(Math.sqrt(n)) },
-  { name: "is_prime", rule: "n is 2, 3, 5, 7, 11 or 13", yes: (n) => n > 1 && [2, 3, 5, 7, 11, 13].every((d) => d === n || n % d !== 0) },
-  { name: "is_fib", rule: "n is 1, 2, 3, 5, 8 or 13", yes: (n) => [1, 2, 3, 5, 8, 13].includes(n) },
-  { name: "is_not_14", rule: "n != 14", yes: (n) => n !== 14 },
-].map((q) => ({ ...q, target: Array.from({ length: 16 }, (_, n) => n).reduce((set, n) => set | (q.yes(n) ? 1 << n : 0), 0) }));
 
 // The world: x east, y up, z south; tile (row r, column c) is centred at
 // (c - 1.5, 0, r - 1.5), a1 the north-west corner.
@@ -71,13 +71,43 @@ const fetched = (url) => fetch(url).then((r) => {
   return r.arrayBuffer();
 });
 
-const [machine, pars] = await Promise.all([
+// Nibble++'s names table, read as web/plus.js reads it: its tokens, each
+// ended by a newline, then a 0 byte; then each set's name as its tokens'
+// numbers (from 1), a byte each, ended by a 0 byte, none for a set with no
+// name. A name is its tokens joined by `_`, after `is_` unless it starts
+// with has_, lacks_, grumpy or always_true. The reader gives a set's name,
+// or null.
+function readNames(bytes) {
+  const SETS = 65536;
+  const end = bytes.indexOf(0);
+  if (end < 0) throw new Error("plus_names.bin has no vocabulary");
+  const tokens = [null, ...new TextDecoder().decode(bytes.subarray(0, end)).split("\n").slice(0, -1)];
+  const starts = new Uint32Array(SETS + 1);
+  let at = end + 1;
+  for (let set = 0; set < SETS; set++) {
+    starts[set] = at;
+    at = bytes.indexOf(0, at) + 1;
+    if (at === 0) throw new Error(`plus_names.bin ends at set ${set}`);
+  }
+  starts[SETS] = at;
+  if (at !== bytes.length) throw new Error("plus_names.bin runs past its last set");
+  return (set) => {
+    const words = Array.from(bytes.subarray(starts[set], starts[set + 1] - 1), (t) => tokens[t]);
+    if (words.length === 0) return null;
+    if (words.includes(undefined)) throw new Error(`plus_names.bin's set ${set} has a token past its vocabulary`);
+    const bare = /^(has_|lacks_|grumpy$|always_true$)/.test(words[0]);
+    return (bare ? "" : "is_") + words.join("_");
+  };
+}
+
+const [machine, pars, nameOf] = await Promise.all([
   fetched("cube.b73e3a49a51f81a3.wasm").then((b) => WebAssembly.instantiate(b)).then((w) => w.instance.exports),
   fetched("cube_pars.ae6c160fdee15462.bin").then((b) => {
     const bytes = new Uint8Array(b);
     if (bytes.length !== 65536) throw new Error(`cube_pars.bin has ${bytes.length} bytes, not 65,536`);
     return bytes;
   }),
+  fetched("plus_names.e25f4cc7f9e84c31.bin").then((b) => readNames(new Uint8Array(b))),
 ]).catch((e) => {
   const said = document.getElementById("loading");
   said.className = "err";
@@ -86,7 +116,6 @@ const [machine, pars] = await Promise.all([
 });
 document.getElementById("loading").remove();
 const L = machine.max_length(0);
-for (const q of QUESTIONS) q.par = pars[q.target];
 
 // ── the program and its run ──────────────────────────────────────────
 
@@ -100,7 +129,8 @@ const view = {
   at: 0,            // the frame shown
   anim: null,       // { from, roll, dir, halt, target, start, ms }
   playing: false,
-  question: null,   // the question chosen, or null
+  flash: null,      // the landing just made: { cell, start }
+  flashes: 0,       // how many landings have flashed, for the check
 };
 
 function runProgram() {
@@ -117,6 +147,34 @@ function runProgram() {
 const lastFrame = () => view.frames.length - 1 + (view.haltAt >= 0 ? 1 : 0);
 const isHalt = (frame) => view.haltAt >= 0 && frame === view.frames.length;
 const wordAt = (frame) => view.frames[Math.min(frame, view.frames.length - 1)];
+// Frame i (from 1) is a landing when roll i put the paint face down: the
+// tile under the cube flipped.
+const isLanding = (frame) => frame > 0 && frame < view.frames.length && faceOf(view.frames[frame]) === 1;
+// The tiles landed on in frames 1 to `frame`: each stays stamped.
+function stampedBy(frame) {
+  const cells = new Set();
+  for (let i = 1; i <= Math.min(frame, view.frames.length - 1); i++) if (isLanding(i)) cells.add(cellOf(view.frames[i]));
+  return [...cells].sort((a, b) => a - b);
+}
+
+// The listing: the program as lines, one a roll, as a Nibble++ program is
+// one instruction a line. Line 0 is the start. Each line says its roll and
+// where the paint points after it, and what it did: `lit` or `unlit` for a
+// landing (the tile under it now lit or dark), `halt` for the roll off the
+// board, `dead` for a roll after the halt.
+function listingRows() {
+  const rows = [{ line: 0, roll: -1, paint: FACE_LETTERS[0], mark: "", cell: 0 }];
+  view.program.forEach((roll, i) => {
+    const line = i + 1;
+    if (view.haltAt >= 0 && i > view.haltAt) { rows.push({ line, roll, paint: "", mark: "dead", cell: -1 }); return; }
+    if (i === view.haltAt) { const w = view.frames[i]; rows.push({ line, roll, paint: FACE_LETTERS[faceOf(w)], mark: "halt", cell: cellOf(w) }); return; }
+    const w = view.frames[line];
+    const cell = cellOf(w);
+    const mark = isLanding(line) ? ((litOf(w) >> cell) & 1 ? "lit" : "unlit") : "";
+    rows.push({ line, roll, paint: FACE_LETTERS[faceOf(w)], mark, cell });
+  });
+  return rows;
+}
 
 // ── the 3D scene ─────────────────────────────────────────────────────
 
@@ -259,7 +317,7 @@ function draw(now) {
   // cube toward the edge and back.
   let word = wordAt(view.at), roll = -1, angle = 0;
   if (view.anim) {
-    const t = Math.min(1, (now - view.anim.start) / view.anim.ms);
+    const t = Math.max(0, Math.min(1, (now - view.anim.start) / view.anim.ms));
     const eased = t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
     word = view.anim.from;
     roll = view.anim.roll;
@@ -268,7 +326,10 @@ function draw(now) {
   const lit = litOf(word);
   const halted = !view.anim && isHalt(view.at);
   const targets = view.anim ? [] : rollTargets(word);
-  const wanted = view.question ? view.question.target : 0;
+  // The landings so far stay stamped; the one just made flashes, fading.
+  const stamped = new Set(stampedBy(view.anim ? Math.min(view.at, view.anim.target) : view.at));
+  const flash = view.flash && now - view.flash.start < FLASH_MS ? view.flash : null;
+  const flashK = flash ? 1 - (now - flash.start) / FLASH_MS : 0;
 
   // The base, then the tiles far to near, each with its back faces culled.
   for (const f of boxFaces(-2.15, 2.15, -0.32, -0.12, -2.15, 2.15)) {
@@ -298,19 +359,36 @@ function draw(now) {
         fillFace(proj, f.pts, shaded(rgb, f.n));
       }
     }
-    // A tile the chosen question wants lit and that isn't: an amber ring.
-    if (!on && (wanted >> t.cell) & 1) {
-      const r = 0.36, ring = [[t.x - r, 0.003, t.z - r], [t.x + r, 0.003, t.z - r], [t.x + r, 0.003, t.z + r], [t.x - r, 0.003, t.z + r]];
+    // A tile the paint has landed on: a stamp of the paint's colour, a
+    // frame inset on its top, for the rest of the run.
+    if (stamped.has(t.cell)) {
+      const r = 0.38, q = [[t.x - r, 0.003, t.z - r], [t.x + r, 0.003, t.z - r], [t.x + r, 0.003, t.z + r], [t.x - r, 0.003, t.z + r]];
       ctx.save();
-      ctx.setLineDash([5, 4]);
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = "rgba(255, 179, 71, 0.8)";
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = `rgba(${PAINT.join(", ")}, 0.9)`;
       ctx.beginPath();
-      ring.forEach((p, i) => { const [x, y] = proj.point(p); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+      q.forEach((p, i) => { const [x, y] = proj.point(p); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
       ctx.closePath();
       ctx.stroke();
       ctx.restore();
     }
+  }
+  // The landing just made: the tile under the cube flashes white-blue, and
+  // a ring of the paint's colour spreads out from it past the cube, fading.
+  if (flash) {
+    const t = { x: (flash.cell % 4) - 1.5, z: Math.floor(flash.cell / 4) - 1.5 };
+    const square = (r) => [[t.x - r, 0.004, t.z - r], [t.x + r, 0.004, t.z - r], [t.x + r, 0.004, t.z + r], [t.x - r, 0.004, t.z + r]];
+    ctx.save();
+    ctx.shadowColor = `rgba(150, 190, 255, ${flashK})`;
+    ctx.shadowBlur = 36 * flashK;
+    fillFace(proj, square(0.48), `rgba(205, 222, 255, ${0.9 * flashK})`);
+    ctx.lineWidth = 2 + 4 * flashK;
+    ctx.strokeStyle = `rgba(${PAINT.join(", ")}, ${flashK})`;
+    ctx.beginPath();
+    square(0.52 + 0.5 * (1 - flashK)).forEach((p, i) => { const [x, y] = proj.point(p); if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); });
+    ctx.closePath();
+    ctx.stroke();
+    ctx.restore();
   }
 
   // Each tile's number, 0 to 15, on its top; the cube, drawn after, covers
@@ -334,8 +412,28 @@ function draw(now) {
   label(proj, [0, -0.12, -2.55], "north");
 
   // The cube's shadow, then the cube: convex and above the board, so its
-  // front faces, in any order, are all it needs.
-  const cube = cubeFaces(word, roll, angle);
+  // front faces, in any order, are all it needs. A landing just made dips
+  // it, while it stands.
+  const dip = flash && angle === 0 ? -0.11 * Math.sin(Math.PI * Math.min(1, 2 * (1 - flashK))) : 0;
+  const cube = dipped(cubeFaces(word, roll, angle), dip);
+
+  // The floor's glow on the side the paint faces, as strong as the paint
+  // is turned that way, so a hidden side face shows.
+  const painted = cube.faces.find((f) => f.painted);
+  const side = Math.hypot(painted.n[0], painted.n[2]);
+  if (side > 0.05) {
+    const g = [cube.centre[0] + (0.95 * painted.n[0]) / side, 0.002, cube.centre[2] + (0.95 * painted.n[2]) / side];
+    const [gx, gy] = proj.point(g);
+    const reach = Math.hypot(...[0, 1].map((k) => proj.point([g[0] + 0.6, 0, g[2]])[k] - proj.point(g)[k]));
+    const glow = ctx.createRadialGradient(gx, gy, 0, gx, gy, reach);
+    glow.addColorStop(0, `rgba(${PAINT.join(", ")}, ${0.75 * side})`);
+    glow.addColorStop(1, `rgba(${PAINT.join(", ")}, 0)`);
+    ctx.save();
+    ctx.globalCompositeOperation = "lighter";
+    ctx.fillStyle = glow;
+    ctx.fillRect(gx - reach, gy - reach, 2 * reach, 2 * reach);
+    ctx.restore();
+  }
   const lift = Math.max(0, cube.centre[1] - 0.5);
   const s = 0.5 + lift * 0.25;
   fillFace(proj, [[cube.centre[0] - s, 0.002, cube.centre[2] - s], [cube.centre[0] + s, 0.002, cube.centre[2] - s],
@@ -389,6 +487,22 @@ function draw(now) {
   canvas.dataset.frame = String(view.at);
   canvas.dataset.animating = view.anim ? "1" : "0";
   canvas.dataset.halted = halted ? "1" : "0";
+  // The state the views show, for the check: where the paint points, the
+  // side the floor glows on (none with the paint up or down), the stamped
+  // tiles, and the tile flashing.
+  const shownFace = faceOf(word);
+  canvas.dataset.paint = view.anim ? "" : FACE_LETTERS[shownFace];
+  canvas.dataset.glow = view.anim || shownFace < 2 ? "" : FACE_LETTERS[shownFace];
+  canvas.dataset.stamped = [...stamped].sort((a, b) => a - b).join(",");
+  canvas.dataset.flash = flash ? String(flash.cell) : "";
+  canvas.dataset.flashes = String(view.flashes);
+}
+
+// The cube's faces moved `dy` up (a dip when negative).
+function dipped(cube, dy) {
+  if (dy === 0) return cube;
+  const up = (p) => [p[0], p[1] + dy, p[2]];
+  return { faces: cube.faces.map((f) => ({ ...f, pts: f.pts.map(up) })), centre: up(cube.centre) };
 }
 
 // The tiles a roll from `word` lands on: the cube's neighbours on the board.
@@ -431,35 +545,49 @@ function requestDraw() {
     drawQueued = false;
     if (view.anim && now - view.anim.start >= view.anim.ms) finishAnim();
     draw(now);
-    if (view.anim) requestDraw();
+    if (view.anim || (view.flash && now - view.flash.start < FLASH_MS)) requestDraw();
+    else view.flash = null;
   });
 }
 
 // ── moving through the run ───────────────────────────────────────────
 
 const STEP_MS = 260;
+// A landing's flash and dip, and how long Play holds still on one.
+const FLASH_MS = 700;
+const LANDING_HOLD_MS = 320;
+
+// The paint has landed face down on `cell`, flipping its tile: the event
+// the canvas shows as a flash and a dip.
+function landed(cell) {
+  view.flash = { cell, start: performance.now() };
+  view.flashes++;
+  // The ding goes here, when the page has sound.
+}
 
 function finishAnim() {
   const a = view.anim;
   if (!a) return;
   view.anim = null;
   view.at = a.target;
+  const landing = a.dir > 0 && isLanding(view.at);
+  if (landing) landed(cellOf(view.frames[view.at]));
   showRun();
   if (view.playing) {
-    if (view.at < lastFrame()) stepTo(view.at + 1);
+    if (view.at < lastFrame()) stepTo(view.at + 1, landing ? LANDING_HOLD_MS : 0);
     else { view.playing = false; showRun(); }
   }
 }
 
 // Animates from the shown frame to the one next to it; to or from the halt,
 // the cube tips toward the edge and settles back.
-function stepTo(target) {
+function stepTo(target, hold = 0) {
   if (view.anim) { const keep = view.playing; view.playing = false; finishAnim(); view.playing = keep; }
   if (target < 0 || target > lastFrame() || target === view.at) return;
   const dir = target > view.at ? 1 : -1;
   const before = dir > 0 ? view.at : target;
   const halt = isHalt(Math.max(view.at, target));
-  view.anim = { from: view.frames[before], roll: view.program[before], dir, halt, target, start: performance.now(), ms: halt ? STEP_MS * 1.4 : STEP_MS };
+  view.anim = { from: view.frames[before], roll: view.program[before], dir, halt, target, start: performance.now() + hold, ms: halt ? STEP_MS * 1.4 : STEP_MS };
   showRun();
   requestDraw();
 }
@@ -473,7 +601,7 @@ function stop() {
 
 const input = document.getElementById("program");
 const said = document.getElementById("said");
-const rollsLine = document.getElementById("rolls");
+const listing = document.getElementById("listing");
 const status = document.getElementById("status");
 const map = document.getElementById("lit-map");
 const lengthLine = document.getElementById("length");
@@ -481,8 +609,9 @@ const parLine = document.getElementById("par");
 const playButton = document.getElementById("play");
 const decimalLine = document.getElementById("decimal");
 const binaryLine = document.getElementById("binary");
-const answersLine = document.getElementById("answers");
-const questionLine = document.getElementById("question");
+const nameLine = document.getElementById("name");
+const machineLine = document.getElementById("machine-code");
+const compass = document.getElementById("compass");
 const mapCells = Array.from({ length: 16 }, (_, cell) => {
   const d = document.createElement("div");
   d.textContent = String(cell);
@@ -493,19 +622,54 @@ const mapCells = Array.from({ length: 16 }, (_, cell) => {
 });
 
 const programText = () => view.program.map((r) => ROLLS[r]).join("");
-const el = (tag, text) => { const e = document.createElement(tag); e.textContent = text; return e; };
+const el = (tag, text, cls) => { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; return e; };
+
+// One line of the listing, as the page shows it: its number, its
+// instruction (a word, with the typed letter beside it), where the paint
+// points after it, and what it did. Change how a line reads here alone.
+const MARK_WORDS = { lit: "lights", unlit: "darkens", halt: "halts", dead: "skipped" };
+function listingLine(row) {
+  const li = document.createElement("li");
+  li.dataset.line = String(row.line);
+  li.dataset.roll = row.roll < 0 ? "" : ROLLS[row.roll];
+  li.dataset.paint = row.paint;
+  li.dataset.mark = row.mark;
+  if (row.mark) li.classList.add(row.mark);
+  const code = el("span", row.roll < 0 ? "" : BITS[row.roll], "code");
+  const op = row.roll < 0 ? el("span", "start", "op") : el("span", `roll ${ROLL_WORDS[row.roll]} `, "op");
+  if (row.roll >= 0) op.append(el("small", ROLLS[row.roll]));
+  const paint = el("span", row.paint, "paint");
+  if (row.paint) paint.title = `the paint points ${FACE_NAMES[FACE_LETTERS.indexOf(row.paint)]} after it`;
+  const what = row.line === 0 ? `on ${cellName(row.cell)}`
+    : row.mark === "lit" || row.mark === "unlit" ? `${MARK_WORDS[row.mark]} ${cellName(row.cell)}`
+    : row.mark ? MARK_WORDS[row.mark] : "";
+  li.append(el("span", String(row.line), "num"), code, op, paint, el("span", what, "mark"));
+  return li;
+}
+
+function showListing(shown) {
+  const rows = listingRows();
+  listing.replaceChildren(...rows.map(listingLine));
+  const now = listing.children[Math.min(shown, rows.length - 1)];
+  now.classList.add("now");
+  // The current line kept in view, scrolling the listing alone.
+  const top = now.offsetTop - listing.offsetTop, bottom = top + now.offsetHeight;
+  if (top < listing.scrollTop) listing.scrollTop = top;
+  else if (bottom > listing.scrollTop + listing.clientHeight) listing.scrollTop = bottom - listing.clientHeight;
+}
+
+// The compass: where the paint points, one of its six marks lit.
+function showCompass(face) {
+  compass.dataset.points = FACE_LETTERS[face];
+  for (const m of compass.querySelectorAll("[data-dir]")) m.classList.toggle("on", m.dataset.dir === FACE_LETTERS[face]);
+  compass.title = `The paint points ${FACE_NAMES[face]}`;
+}
 
 function showRun() {
   const shown = view.anim ? view.anim.target : view.at;
-  rollsLine.replaceChildren(...view.program.map((r, i) => {
-    const span = document.createElement("span");
-    span.textContent = ROLLS[r];
-    if (view.haltAt >= 0 && i > view.haltAt) span.className = "dead";
-    else if (i === view.haltAt && shown > i) span.className = "halt";
-    else span.className = i < shown ? (i === shown - 1 ? "now" : "done") : "todo";
-    return span;
-  }));
+  showListing(shown);
   const word = wordAt(shown);
+  showCompass(faceOf(word));
   const where = `on ${cellLabel(cellOf(word))}, the paint ${FACE_NAMES[faceOf(word)]}`;
   if (isHalt(shown)) {
     status.className = "err";
@@ -518,24 +682,19 @@ function showRun() {
   }
   const n = view.program.length;
   lengthLine.textContent = `${n} of ${L} rolls`;
+  machineLine.textContent = n === 0 ? "" : machineCode(view.program);
+  machineLine.title = n === 0 ? "" : `The machine code: each roll's opcode in two bits (N 00, E 01, S 10, W 11), line 1 first, and the bits as one binary number: ${machineLine.textContent}`;
   const lit = litOf(view.frames[view.frames.length - 1]);
-  const wanted = view.question ? view.question.target : 0;
-  mapCells.forEach((d, cell) => {
-    d.classList.toggle("lit", ((lit >> cell) & 1) === 1);
-    d.classList.toggle("want", ((wanted >> cell) & 1) === 1);
-  });
+  mapCells.forEach((d, cell) => d.classList.toggle("lit", ((lit >> cell) & 1) === 1));
   decimalLine.textContent = String(lit);
   binaryLine.textContent = binaryOf(lit);
   parLine.textContent = `par ${pars[lit]}; yours is ${n}`;
   parLine.dataset.lit = String(lit);
-  const answered = QUESTIONS.filter((q) => q.target === lit);
-  answersLine.replaceChildren(...(answered.length ? ["It answers ", el("code", answered[0].name), `: ${answered[0].rule}.`] : []));
-  for (const b of questionButtons) b.classList.toggle("answered", Number(b.dataset.target) === lit);
-  const q = view.question;
-  questionLine.className = q && q.target === lit ? "good" : "";
-  questionLine.replaceChildren(...(!q ? [] : q.target === lit
-    ? ["Answered ", el("code", q.name), ` in ${n} roll${n === 1 ? "" : "s"}; its par is ${q.par}.`]
-    : ["The question ", el("code", q.name), `: light ${q.rule}, the set ${q.target}, in par ${q.par}.`]));
+  // The lit set's name, Nibble++'s; a set with none in the table, its number.
+  const named = nameOf(lit);
+  nameLine.textContent = named ?? String(lit);
+  nameLine.dataset.named = named === null ? "0" : "1";
+  nameLine.title = named === null ? `No name of cost 4 or less: the set ${lit}` : `The set ${lit}, named as Nibble++ names it`;
   playButton.textContent = view.playing ? "Pause" : "Play";
   document.getElementById("back").disabled = shown === 0;
   document.getElementById("reset").disabled = shown === 0 && !view.anim;
@@ -636,25 +795,15 @@ document.addEventListener("keydown", (ev) => {
   rollNow(KEYS[ev.key]);
 });
 
-// A question's button chooses it, and a second click lets it go: the tiles
-// it wants are ringed on the board and on the map.
-const questions = document.getElementById("questions");
-const questionButtons = QUESTIONS.map((q) => {
-  const b = document.createElement("button");
-  b.type = "button";
-  b.append(q.name, " ", el("small", String(q.par)));
-  b.title = `${q.rule}: the set ${q.target}, binary ${binaryOf(q.target)}; par ${q.par}`;
-  b.dataset.question = q.name;
-  b.dataset.target = String(q.target);
-  b.dataset.par = String(q.par);
-  b.addEventListener("click", () => {
-    view.question = view.question === q ? null : q;
-    for (const x of questionButtons) x.classList.toggle("on", x.dataset.question === view.question?.name);
-    showRun();
-    requestDraw();
-  });
-  questions.append(b);
-  return b;
+// A click on a line of the listing shows the run there; a line after the
+// halt shows the halt.
+listing.addEventListener("click", (ev) => {
+  const li = ev.target.closest("li[data-line]");
+  if (!li) return;
+  stop();
+  view.at = Math.min(Number(li.dataset.line), lastFrame());
+  showRun();
+  requestDraw();
 });
 
 const samples = document.getElementById("samples");
