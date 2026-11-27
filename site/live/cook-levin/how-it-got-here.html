@@ -87,7 +87,64 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p>Five commits marked &quot;wip&quot; followed on 2026-01-28. On 2026-04-16 a measuring harness, <code>compose.py</code>, was added with Claude as co-author (<a href="https://github.com/showell/virtual-machine/commit/1a5f6fa">1a5f6fa</a>). Its message says that step 1 composed in about 0.9 s and that step 2 ran past 30 s in Python, and that those numbers motivated a port to Go. The same afternoon <code>compose.py</code> was removed, &quot;porting six-step composition to Go instead&quot; (<a href="https://github.com/showell/virtual-machine/commit/a2406b5">a2406b5</a>). The next day an essay Claude had written about the project was parked as <code>DEEP_READ.md</code> (<a href="https://github.com/showell/virtual-machine/commit/94c3d31">94c3d31</a>); it lists the six-step composition as the step the project stops before.</p>
 <p>The Go port lives in a repository of its own, outside this record. By Steve&#39;s account it drowned in big integers; that account is unchecked here.</p>
 <h2 id="the-finish-2026-11-25">The finish, 2026-11-25 <a class="section-link" href="#the-finish-2026-11-25" aria-label="Link to this section">§</a></h2>
-<p>The cook-levin-riff log opens on 2026-11-25 with the C port of the machine and the search, stamped 15:32 (<code>8051ce2</code>), then the general polynomial (<code>ccde4f8</code>) and the stepper (<code>5b14d74</code>). The Boolean ring, where x² = x, came at 15:59 (<code>0c233e3</code>), reached for to make the calculation tractable, and all six steps composed, proved on all 2^14 points, at 16:23 (<code>1146d43</code>). The Nibble page (<code>b1fe11f</code>), the Roc port (<code>6206236</code>), the SAT encoding (<code>8de51b7</code>) and rocsat as an oracle (<code>f977bcc</code>) followed the same day.</p>
+<p>The cook-levin-riff log opens on 2026-11-25. The Boolean ring was reached for to make the calculation tractable:</p>
+<table>
+<thead>
+<tr>
+<th>2026-11-25</th>
+<th>what landed</th>
+<th>commit</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15:32</td>
+<td>the C port of the machine and the search</td>
+<td><code>8051ce2</code></td>
+</tr>
+<tr>
+<td>then</td>
+<td>the general polynomial</td>
+<td><code>ccde4f8</code></td>
+</tr>
+<tr>
+<td>then</td>
+<td>the stepper</td>
+<td><code>5b14d74</code></td>
+</tr>
+<tr>
+<td>15:59</td>
+<td>the Boolean ring, where x² = x</td>
+<td><code>0c233e3</code></td>
+</tr>
+<tr>
+<td>16:23</td>
+<td>all six steps composed, proved on all 2^14 points</td>
+<td><code>1146d43</code></td>
+</tr>
+<tr>
+<td>later that day</td>
+<td>the Nibble page</td>
+<td><code>b1fe11f</code></td>
+</tr>
+<tr>
+<td>later that day</td>
+<td>the Roc port</td>
+<td><code>6206236</code></td>
+</tr>
+<tr>
+<td>later that day</td>
+<td>the SAT encoding</td>
+<td><code>8de51b7</code></td>
+</tr>
+<tr>
+<td>later that day</td>
+<td>rocsat as an oracle</td>
+<td><code>f977bcc</code></td>
+</tr>
+</tbody>
+</table>
+<p>Fifty-one minutes after the C port&#39;s first commit, the composition Steve had stopped short of in 2023 was done.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

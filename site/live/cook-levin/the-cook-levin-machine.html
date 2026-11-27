@@ -172,7 +172,7 @@ settings that light decides: 1
     Lit hb_set = <span class="syn-name">OR</span>(becomes_3, becomes_2);
     Lit lb_set = <span class="syn-name">OR</span>(becomes_3, becomes_1);
 </code></pre></figure><p><code>tests/test_sat.c</code> holds these gates to the machine&#39;s step on all 64 settings of the stepper&#39;s six input wires. The whole circuit comes to 404 gates over the 12 unknown program bits, fewer than 24 steppers&#39; 816, for the reasons <a class="chapter-link" href="the-steps-encodings.html">“The step&#39;s encodings”</a> gives.</p>
-<p><a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> takes the last step: each gate becomes three clauses, the required output becomes four more, and the circuit becomes one formula for a SAT solver.</p>
+<p>The tableau is still empty here; filling it in, for one program and then for all of them, comes next.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

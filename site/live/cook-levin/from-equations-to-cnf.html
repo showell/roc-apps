@@ -146,7 +146,8 @@ core3.step6.accepted&#39;: 1,223 clauses
 decides: 3,869 clauses
 decides by distribution equals the circuit at all 65,536 points
 </code></pre>
-<p><code>decides</code> comes to 3,869 clauses over the 16 inputs alone. Core 3&#39;s <code>accepted</code> multiplies by 3.4 to 3.8 with each of the last three lines, so the expansion grows exponentially in the steps; it stays small here because the machine has six lines and 16 inputs. Tseitin&#39;s encoding grows linearly instead, one stepper&#39;s gates a step. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> takes the same encoding with the program&#39;s bits left free, where the solver has to search.</p>
+<p><code>decides</code> comes to 3,869 clauses over the 16 inputs alone. Core 3&#39;s <code>accepted</code> multiplies by 3.4 to 3.8 with each of the last three lines, so the expansion grows exponentially in the steps; it stays small here because the machine has six lines and 16 inputs. Tseitin&#39;s encoding grows linearly instead, one stepper&#39;s gates a step, and <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> keeps it when the program&#39;s bits are left free and the solver has to search.</p>
+<p>Named, the decider is 1,400 clauses; multiplied out, it is 3,869, and the gap widens with every step.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

@@ -182,7 +182,8 @@ the certificate P:     01 10 10 01 10 01
 (P, W) as one string:  01 10 10 01 10 01 1011
 the verifier runs P on 0 to 3: it decides {0, 2, 3}, so (P, W) is in DECIDES: yes
 a false certificate, 10 10 10 01 00 00 (program 2704): it decides {3}, so the verifier refuses it
-</code></pre></figure><p>Finding the program is the costly part. Trying every program tries 4^k of them, exponential in k. For a fixed n, though, SOLVABLE is in P, trivially: the machine has finitely many states, so one search of them, as <a class="chapter-link" href="nibble.html">“Nibble++”</a>&#39;s census does, gives every W its shortest length, and a table answers each (W, k). The open question is about n growing: whether SOLVABLE over every n is in P is a question this book leaves open. <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> answers SOLVABLE&#39;s questions for the toy, n = 2 and k = 6, by Cook and Levin&#39;s route: the verifier becomes a formula, and a SAT solver finds the certificate.</p>
+</code></pre></figure><p>Finding the program is the costly part. Trying every program tries 4^k of them, exponential in k. For a fixed n, though, SOLVABLE is in P, trivially: the machine has finitely many states, so one search of them, as <a class="chapter-link" href="nibble.html">“Nibble++”</a>&#39;s census does, gives every W its shortest length, and a table answers each (W, k). The open question is about n growing: whether SOLVABLE over every n is in P is a question this book leaves open.</p>
+<p>Given two sizes that grow, the toy has a formal language in NP whose certificate is a program, and complexity theory has something to measure.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

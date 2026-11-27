@@ -138,11 +138,69 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <h2 id="one-numbering">One numbering <a class="section-link" href="#one-numbering" aria-label="Link to this section">§</a></h2>
 <p>Wherever a form numbers its variables, v1 to v12 are the program&#39;s bits, line k&#39;s high bit v(2k − 1) and its low bit v(2k), so a model&#39;s first 12 values read as the program&#39;s number. What else is free comes next, the input or the want bits, and the gates after that. The polynomials name their variables instead of numbering them, since they are printed as text.</p>
 <h2 id="why-174-gates-become-146">Why 174 gates become 146 <a class="section-link" href="#why-174-gates-become-146" aria-label="Link to this section">§</a></h2>
-<p>The formula graph counts every node, and 28 of its 174 are complements. Tseitin&#39;s encoding gives a variable only to an AND or an OR and writes a complement as a literal&#39;s minus sign, so f&#39;s CNF has 146 gate variables, v15 to v160, three clauses each, and one clause more for f = 1: 439.</p>
+<p>The formula graph counts every node. Tseitin&#39;s encoding gives a variable only to an AND or an OR and writes a complement as a literal&#39;s minus sign:</p>
+<table>
+<thead>
+<tr>
+<th>f&#39;s formula graph, as CNF</th>
+<th align="right">count</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>nodes in the graph</td>
+<td align="right">174</td>
+</tr>
+<tr>
+<td>complements, each a literal&#39;s minus sign</td>
+<td align="right">28</td>
+</tr>
+<tr>
+<td>AND and OR gates, each a variable, v15 to v160</td>
+<td align="right">146</td>
+</tr>
+<tr>
+<td>clauses: three a gate, and one for f = 1</td>
+<td align="right">439</td>
+</tr>
+</tbody>
+</table>
 <h2 id="why-the-two-steppers-differ">Why the two steppers differ <a class="section-link" href="#why-the-two-steppers-differ" aria-label="Link to this section">§</a></h2>
 <p>The mux circuit is hardware: it keeps <code>AX</code> as two bits, chooses each output with a multiplexer, and feeds the flag multiplexers their constant 0s, since a chip has wires there. Its AND and OR gates alone number 43, and the two flag multiplexers spend 18 of them. <code>sat_step</code> is written for a formula: it decodes the line and <code>AX</code> into one-hot wires, gates each opcode&#39;s wires with an enable, folds away every constant and spends one AND on each flag, 34 in all.</p>
 <h2 id="why-the-whole-is-smaller-than-its-parts">Why the whole is smaller than its parts <a class="section-link" href="#why-the-whole-is-smaller-than-its-parts" aria-label="Link to this section">§</a></h2>
-<p>Twenty-four steppers of 34 gates would be 816. The top row&#39;s constants fold many away, since each core starts with <code>AX</code> known and both flags 0, and a gate built once from the same two inputs is reused across cores, so a puzzle&#39;s formula has 404. The decider&#39;s 1,439 gates shrink the same way under <code>roc/Cnf.roc</code>: 392 complements become signs, 8 copies become names, and 586 of the 1,047 AND and OR gates fold against a constant, leaving 461.</p>
+<p>Twenty-four steppers of 34 gates would be 816. The top row&#39;s constants fold many away, since each core starts with <code>AX</code> known and both flags 0, and a gate built once from the same two inputs is reused across cores, so a puzzle&#39;s formula has 404. The decider&#39;s 1,439 gates shrink the same way under <code>roc/Cnf.roc</code>:</p>
+<table>
+<thead>
+<tr>
+<th>the decider&#39;s parts</th>
+<th align="right">count</th>
+<th>under <code>roc/Cnf.roc</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>complements</td>
+<td align="right">392</td>
+<td>each becomes a sign</td>
+</tr>
+<tr>
+<td>copies</td>
+<td align="right">8</td>
+<td>each becomes a name</td>
+</tr>
+<tr>
+<td>AND and OR gates</td>
+<td align="right">1,047</td>
+<td>586 fold against a constant</td>
+</tr>
+<tr>
+<td>AND and OR gates left</td>
+<td align="right">461</td>
+<td>each becomes a variable</td>
+</tr>
+</tbody>
+</table>
+<p>Signs, folded constants and shared gates account for every gate that disappears.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

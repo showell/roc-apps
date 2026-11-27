@@ -141,7 +141,7 @@ step 5  decr 10  0  0      0        0
 step 6  zero 01  0  0      0        1
 </code></pre></figure><h2 id="four-inputs-one-verdict">Four inputs, one verdict <a class="section-link" href="#four-inputs-one-verdict" aria-label="Link to this section">§</a></h2>
 <p>Whether a program decides a problem is more gates of the same kind. Run the six ticks once for each input, four copies side by side, and each copy leaves one <code>accepted</code> bit. The problem enters only here, as four more bits, the <em>want</em> bits: input n&#39;s bit is 1 when n is in the problem. Each <code>accepted</code> bit is compared with its want bit, a gate that gives 1 when the two agree, and one AND of the four comparisons is the verdict. For the program above and the problem {1, 2, 3}, the four <code>accepted</code> bits are 0, 1, 1, 1, the want bits are 0, 1, 1, 1, and the verdict is 1. The gates matched bits; what {1, 2, 3} is stayed outside them.</p>
-<p><a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a> keeps the same gates and the same six ticks, and leaves every bit unknown.</p>
+<p>Seen from outside the gates, though, each problem turns out to be a two-input gate of its own.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

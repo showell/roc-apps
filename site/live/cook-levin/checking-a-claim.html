@@ -153,7 +153,7 @@ input 3, program 1689: exit 0: c model ok
 input 1, program 1689: exit 1: c model falsifies clause 438
 </code></pre></figure><p>Clause 438, counted from 0, is the last of the 439, <code>160 0</code>: f = 1. So program 1689 accepts 0, 2 and 3 and rejects 1, the problem {0, 2, 3}, as Theorem 5 says.</p>
 <p>The one complaint is a proof. The first 438 clauses say only that each gate equals its gate&#39;s AND or OR, so once the 14 bits are fixed, exactly one assignment satisfies them, the one the gates compute. At input 1 that assignment has v160 false, so every assignment that keeps the gates&#39; clauses breaks f = 1. <code>python/fourteen_cnf.py</code>, run by <code>build.shale</code>, checks the same at all 16,384 points: the computed assignment keeps every gate&#39;s clauses, and it keeps f = 1 exactly where the machine accepts. The book&#39;s build holds the blocks here to its output, and rocsat&#39;s lines to <code>sat/fourteen/verdicts.txt</code>, which <code>sat/fourteen.shale</code> writes.</p>
-<p>Every bit here was given; the check only computes. A solver that finds the bits when they are left unknown is where <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> takes the same encoding.</p>
+<p>Every bit here was given, so the check only computes: a tool that knows clauses alone read the machine&#39;s verdict on all four inputs.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

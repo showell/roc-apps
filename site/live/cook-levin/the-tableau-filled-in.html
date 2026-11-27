@@ -228,7 +228,44 @@ start        0 0 · 0 0  0 1 · 0 0  1 0 · 0 0  1 1 · 0 0
 </tr>
 </tbody>
 </table>
-<p>Each variable here is a gate&#39;s output, and its three clauses tie it to the cell above and to its row&#39;s two program bits. Some cells are constants the whole way down, and the constants carry facts. Core 0 starts at <code>AX</code> = 0, and every opcode keeps 0 at 0 or halts, so its <code>AX</code> bits are the constant 0 in every row, and the encoder folds them away. Core 1 starts at 1, and its <code>hb</code> stays 0 because <code>AX</code> can only fall. Some literals repeat across cores: <code>v15</code> is core 0&#39;s <code>halted</code> after line 1 and core 2&#39;s <code>lb</code>, since both are the same function of <code>v1</code> and <code>v2</code>: line 1 is <code>decr</code>. The encoder builds that gate once and reuses it. Setting <code>v1</code> to <code>v12</code> to the program above and propagating fills every cell with the first table&#39;s values; the last four clauses then require the bottom row&#39;s <code>accepted</code> literals, <code>v65</code>, <code>v124</code>, <code>v262</code> and <code>v407</code>, to be 0, 1, 1 and 1.</p>
+<p>Each variable here is a gate&#39;s output, and its three clauses tie it to the cell above and to its row&#39;s two program bits. Some cells are constants the whole way down, and the constants carry facts. Core 0 starts at <code>AX</code> = 0, and every opcode keeps 0 at 0 or halts, so its <code>AX</code> bits are the constant 0 in every row, and the encoder folds them away. Core 1 starts at 1, and its <code>hb</code> stays 0 because <code>AX</code> can only fall. Some literals repeat across cores, and the encoder builds each such gate once. Setting <code>v1</code> to <code>v12</code> to program 2916 and propagating fills every cell with the first table&#39;s values. The literals worth a look:</p>
+<table>
+<thead>
+<tr>
+<th>literal</th>
+<th>what it is</th>
+<th>what the formula asks of it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>v15</code></td>
+<td>core 0&#39;s <code>halted</code> after line 1, and core 2&#39;s <code>lb</code>: both are 1 exactly when line 1 is <code>decr</code></td>
+<td>whatever line 1&#39;s bits make it</td>
+</tr>
+<tr>
+<td><code>v65</code></td>
+<td>core 0&#39;s <code>accepted</code> after line 6</td>
+<td>0</td>
+</tr>
+<tr>
+<td><code>v124</code></td>
+<td>core 1&#39;s <code>accepted</code> after line 6</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>v262</code></td>
+<td>core 2&#39;s <code>accepted</code> after line 6</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>v407</code></td>
+<td>core 3&#39;s <code>accepted</code> after line 6</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>Seven rows, four columns and 416 variables: that is Cook&#39;s tableau at the toy&#39;s size.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

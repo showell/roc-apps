@@ -139,7 +139,34 @@ the program: line 1 is `zero`, lines 2 to 6 `nada`
 `55 -65 0`: v55 = 1 (core 0&#39;s accepted after line 5), or v65 = 0 (core 0&#39;s accepted after line 6)
 `56 -66 0`: v56 = 1 (core 0&#39;s halted after line 5), or v66 = 0 (core 0&#39;s halted after line 6)
 </code></pre>
-<p>The first two restate the length bound, and the next four decode line 6 as <code>nada</code>. v61 to v64 say which op core 0 runs on line 6, v56 being its <code>halted</code> after line 5: it runs <code>nada</code>. The last two say that core 0&#39;s flags after line 6 are those after line 5. <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a> prints the whole proof, 286 lemmas, and checks it.</p>
+<p>Read in groups, v56 being core 0&#39;s <code>halted</code> after line 5:</p>
+<table>
+<thead>
+<tr>
+<th>lemmas</th>
+<th>what they say</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>the first two, v11 and v12</td>
+<td>the length bound, restated</td>
+</tr>
+<tr>
+<td>the next four, v57 to v60</td>
+<td>line 6 is <code>nada</code></td>
+</tr>
+<tr>
+<td>v61 to v64</td>
+<td>core 0 runs <code>nada</code> on line 6</td>
+</tr>
+<tr>
+<td>the last two</td>
+<td>core 0&#39;s flags after line 6 are those after line 5</td>
+</tr>
+</tbody>
+</table>
+<p>Each lemma is a plain statement about programs, and 286 of them, printed whole in <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>, rule out every program of five lines.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

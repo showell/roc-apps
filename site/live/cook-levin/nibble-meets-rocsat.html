@@ -231,7 +231,7 @@ lines 22 to 28: decr zero decr zero mod2 decr zero
 the interpreter: it decides {0, ..., 13, 15}: yes
 lines where it differs from the census&#39;s program: 26 (mod2, the census decr) 27 (decr, the census mod2)
 at 27 lines: UNSATISFIABLE
-</code></pre></figure><p>Three methods agree on every case: the census, a breadth-first search over states in <code>src/census.c</code>; rocsat&#39;s search over assignments, in Roc; and <code>src/drat.c</code>&#39;s replay of each refutation. Each is its own code, so each shortest length in the table is confirmed three separate ways.</p>
+</code></pre></figure><p>Each shortest length in the table stands on three separate programs: the census&#39;s breadth-first search over states in <code>src/census.c</code>, rocsat&#39;s search over assignments, in Roc, and <code>src/drat.c</code>&#39;s replay of each refutation.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
