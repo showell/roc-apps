@@ -41,7 +41,9 @@ const fetched = (url) => fetch(url).then((r) => {
 // each language's name as its tokens' numbers (from 1), a byte each, ended
 // by a 0 byte, none for a language with no name. A name is its tokens joined
 // by `_`, after `is_` unless it starts with has_, lacks_, grumpy or
-// always_true.
+// always_true. Its cost is its tokens but `and`, `or` and `except` (whose
+// number counts instead), as web/plus_names_check.c holds it to the C's.
+// The reader gives a language's { name, cost }, or null.
 function readNames(bytes) {
   const end = bytes.indexOf(0);
   if (end < 0) throw new Error("plus_names.bin has no vocabulary");
@@ -60,8 +62,37 @@ function readNames(bytes) {
     if (words.length === 0) return null;
     if (words.includes(undefined)) throw new Error(`plus_names.bin's language ${lang} has a token past its vocabulary`);
     const bare = /^(has_|lacks_|grumpy$|always_true$)/.test(words[0]);
-    return (bare ? "" : "is_") + words.join("_");
+    const cost = words.filter((w) => w !== "and" && w !== "or" && w !== "except").length;
+    return { name: (bare ? "" : "is_") + words.join("_"), cost };
   };
+}
+
+// The elegance rating, a joke with a rule: the stars are the name's cost
+// (cost 1 is five stars, 4 is two), and one star for a language the table
+// doesn't name. The program's own lines don't count. A few languages have a
+// line of their own; the rest get one of their stars' lines, picked by the
+// language's number, so a language always reads the same.
+const VERDICTS = {
+  5: ["Dijkstra would nod.", "Says it in one word.", "Clean as a whistle."],
+  4: ["Clean enough to frame.", "Two words, no wasted breath.", "Neat, with a little flourish."],
+  3: ["It works, and it knows it.", "Respectable. Mostly.", "Fine print, but legible."],
+  2: ["A program only its author could love.", "Reads like a tax form.", "Has strong opinions about some numbers."],
+  1: ["Spaghetti, al dente.", "There's no short way to say this.", "A list pretending to be a rule."],
+};
+const EVEN = 0x5555, ODD = 0xaaaa, PRIME = 0x28ac, ALL = 0xffff;
+function special(lang) {
+  if (lang === 0) return "Accepts nothing. Commitment issues? No: standards.";
+  if (lang === ALL) return "Accepts everything. Not picky, just kind.";
+  if (lang === EVEN) return "Every other number, starting at zero. Textbook.";
+  if (lang === ODD) return "Odd, in the best possible way.";
+  if (lang === PRIME) return "Prime real estate.";
+  if ((lang & (lang - 1)) === 0) return `Only ${31 - Math.clz32(lang)} will do. Picky, and proud of it.`;
+  return null;
+}
+function elegance(lang, named) {
+  const stars = named === null ? 1 : Math.max(1, 6 - named.cost);
+  const lines = VERDICTS[stars];
+  return { stars, line: special(lang) ?? lines[lang % lines.length] };
 }
 
 const [machine, nameOf] = await Promise.all([
@@ -129,6 +160,7 @@ let atEnd = true;
 
 const panel = document.getElementById("sandbox");
 const decided = el("div", { class: "decided", id: "decided" });
+const rating = el("p", { class: "elegance", id: "elegance", title: "Stars for a short name for the language: a joke, with a rule." });
 const reset = el("button", { type: "button", id: "reset", text: "Reset" });
 reset.addEventListener("click", () => { program = START(); atEnd = true; draw(); });
 const addLine = el("button", { type: "button", id: "add-line", text: "+ line" });
@@ -176,6 +208,7 @@ const slots = el("div", { class: "slots", id: "slots" });
 const trace = el("div", { class: "trace", id: "trace" });
 panel.replaceChildren(
   decided,
+  rating,
   el("div", { class: "actions" }, reset, addLine, removeLine, count),
   el("div", { class: "actions" }, load),
   el("p", { class: "machine-line" }, code, " ", codeHelp),
@@ -187,16 +220,21 @@ panel.replaceChildren(
 
 // The language a program decides: its name, when the table has one, its
 // accepted inputs with runs written as ranges, its code (the sum of 2^n over
-// them), and the inputs one by one.
+// them), and the inputs one by one; then its elegance rating.
 function drawDecided(c) {
   const lang = machine.accepts(c, program.length);
   const accepted = INPUTS.filter((n) => (lang >> n) & 1);
-  const name = nameOf(lang);
+  const named = nameOf(lang);
   decided.replaceChildren("This program decides ",
-    ...(name === null ? ["the language "] : [el("code", { id: "decided-name", text: name }), ", "]),
+    ...(named === null ? ["the language "] : [el("code", { id: "decided-name", text: named.name }), ", "]),
     el("code", { id: "decided-range", text: rangeText(accepted) }),
     ", #", el("span", { id: "decided-code", text: String(lang) }), " of 65,536: it accepts ",
     el("span", { id: "decided-set", text: setText(accepted) }), " and rejects the rest.");
+  const r = elegance(lang, named);
+  rating.dataset.stars = String(r.stars);
+  rating.replaceChildren("Elegance: ",
+    el("span", { class: "stars", id: "elegance-stars", role: "img", "aria-label": `${r.stars} of 5 stars`, text: "★".repeat(r.stars) + "☆".repeat(5 - r.stars) }),
+    " ", el("span", { id: "elegance-line", text: r.line }));
 }
 
 // Input n's run: the line it halted at (0 for none) and how it ended.
