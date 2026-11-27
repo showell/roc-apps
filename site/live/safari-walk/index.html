@@ -142,30 +142,30 @@ var WALK_PACE = 6.4 * 1.2;
 // picks up again past it: a copy of game/Camp.roc's slow stretch (`slow_from`,
 // `slow_low`, `slow_high`, `slow_to` and `slow_low_share`), which
 // scripts/build_web.shale checks. walkPaceShare is Camp.pace_share.
-var WALK_SLOW = { slow_from: 238, slow_low: 252, slow_high: 288, slow_to: 320, slow_low_share: 0.25 };
+var WALK_SLOW = { slow_from: 238, slow_low: 252, slow_high: 288, slow_to: 308, slow_low_share: 0.25 };
 function walkPaceShare(walked) {
 	function smooth(t) { var c = Math.max(0, Math.min(1, t)); return c * c * (3 - 2 * c); }
 	var s = WALK_SLOW, low = s.slow_low_share;
 	if (walked < s.slow_low) return low + (1 - low) * (1 - smooth((walked - s.slow_from) / (s.slow_low - s.slow_from)));
-	return low + (1 - low) * smooth((walked - s.slow_high) / (s.slow_to - s.slow_high));
+	return Math.sqrt(low * low + (1 - low * low) * smooth((walked - s.slow_high) / (s.slow_to - s.slow_high)));
 }
 // With the interior on (no ?interior=0 or ?tavern=0), the ride goes on into
 // the Roo's Roost, and the walk starts again at the visit's end, not the
 // road's. As game/Walk.roc places them, in metres on the walk's line: the
-// jeep's stop (7.8 s past the road's end), the cut to the porch that R jumps to, the
+// jeep's stop (10.9 s past the road's end), the cut to the porch that R jumps to, the
 // walker past the doors, and the visit's end. `lights` is how many point
 // lights the room adds (Roost.point_lights), with the bar lamp's shadow
 // light besides.
 var WALK_ROOST = (function () {
 	var query = new URLSearchParams(location.search);
 	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
-	return { on: on, road: 320, stopped: 370, doors: 380, inside: 402, end: on ? 856 : 320, lights: 26 };
+	return { on: on, road: 320, stopped: 390, doors: 400, inside: 422, end: on ? 859 : 320, lights: 26 };
 })();
 // Where each chapter starts, in metres on the walk's line: a copy of
 // game/Chapters.roc's, by the same names, which scripts/build_web.shale
 // checks. The keys B, Z, K, D, W, A, R, O and P jump there (main.roc), and the chapter key
 // marks the last start the walk has passed.
-var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, dust_devil: 135, campfire: 240, approach_tavern: 300, roost_doors: 380, order_drink: 558, prize_fight: 633, roost_sign: 150 };
+var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, dust_devil: 135, campfire: 240, approach_tavern: 300, roost_doors: 400, order_drink: 561, prize_fight: 637, roost_sign: 150 };
 var CHAPTERS = [
 	{ code: "KeyB", letter: "B", name: "Begin", at: CHAPTER_STARTS.begin },
 	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
