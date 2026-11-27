@@ -159,13 +159,13 @@ function walkPaceShare(walked) {
 var WALK_ROOST = (function () {
 	var query = new URLSearchParams(location.search);
 	var on = query.get("interior") !== "0" && query.get("tavern") !== "0" && query.get("pipelines") !== "min";
-	return { on: on, road: 320, stopped: 370, doors: 380, inside: 402, end: on ? 834 : 320, lights: 26 };
+	return { on: on, road: 320, stopped: 370, doors: 380, inside: 402, end: on ? 866 : 320, lights: 26 };
 })();
 // Where each chapter starts, in metres on the walk's line: a copy of
 // game/Chapters.roc's, by the same names, which scripts/build_web.shale
 // checks. The keys B, Z, K, D, W, A, R, O and P jump there (main.roc), and the chapter key
 // marks the last start the walk has passed.
-var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, dust_devil: 135, campfire: 240, approach_tavern: 300, roost_doors: 380, order_drink: 569, prize_fight: 613, roost_sign: 150 };
+var CHAPTER_STARTS = { begin: 0, zebra_and_ducks: 36, kangaroo: 83, dust_devil: 135, campfire: 240, approach_tavern: 300, roost_doors: 380, order_drink: 569, prize_fight: 645, roost_sign: 150 };
 var CHAPTERS = [
 	{ code: "KeyB", letter: "B", name: "Begin", at: CHAPTER_STARTS.begin },
 	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
