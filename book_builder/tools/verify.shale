@@ -31,7 +31,7 @@
 --     exactly its expected.txt; and a folder with no book.md
 
 const one_page_tests = 10
-const full_tests = 248
+const full_tests = 249
 const zig_tests_expected = 10
 const copy_checks_expected = 14
 const here = "book_builder"
