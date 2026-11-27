@@ -138,10 +138,21 @@ var STEADY_FRAMES = 30, STEADY_LIMIT_MS = 40;
 // The walk's pace in metres a real second: game/Walk.roc's pace, 6.4,
 // times its tempo, 1.2.
 var WALK_PACE = 6.4 * 1.2;
+// By the robots' campfire the walk eases off to a quarter of its pace and
+// picks up again past it: a copy of game/Camp.roc's slow stretch (`slow_from`,
+// `slow_low`, `slow_high`, `slow_to` and `slow_low_share`), which
+// scripts/build_web.shale checks. walkPaceShare is Camp.pace_share.
+var WALK_SLOW = { slow_from: 238, slow_low: 252, slow_high: 288, slow_to: 300, slow_low_share: 0.25 };
+function walkPaceShare(walked) {
+	function smooth(t) { var c = Math.max(0, Math.min(1, t)); return c * c * (3 - 2 * c); }
+	var s = WALK_SLOW, low = s.slow_low_share;
+	if (walked < s.slow_low) return low + (1 - low) * (1 - smooth((walked - s.slow_from) / (s.slow_low - s.slow_from)));
+	return low + (1 - low) * smooth((walked - s.slow_high) / (s.slow_to - s.slow_high));
+}
 // With the interior on (no ?interior=0 or ?tavern=0), the ride goes on into
 // the Roo's Roost, and the walk starts again at the visit's end, not the
 // road's. As game/Walk.roc places them, in metres on the walk's line: the
-// jeep's stop (7.8 s past the road's end), the cut to the porch that R and 7 jump to, the
+// jeep's stop (7.8 s past the road's end), the cut to the porch that R jumps to, the
 // walker past the doors, and the visit's end. `lights` is how many point
 // lights the room adds (Roost.point_lights), with the bar lamp's shadow
 // light besides.
@@ -363,8 +374,7 @@ var walkView = (function () {
 	window.addEventListener("rocco:ready", function () { walk.started = true; });
 	window.addEventListener("walk:paused", function () { walk.paused = true; });
 	window.addEventListener("walk:walking", function () { walk.paused = false; walk.skipNext = true; });
-	// 5, 6 and 7 still jump as Z, K and R do.
-	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95, Digit5: CHAPTERS[1].at, Digit6: CHAPTERS[2].at, Digit7: CHAPTERS[6].at };
+	var JUMPS = { Digit1: 44, Digit2: 170, Digit3: 215, Digit4: 95 };
 	CHAPTERS.forEach(function (chapter) { JUMPS[chapter.code] = chapter.at; });
 	window.addEventListener("keydown", function (event) {
 		if (event.repeat) return;
@@ -617,7 +627,7 @@ var walkView = (function () {
 				var previous = lastSubmit;
 				if (lastSubmit > 0) frame.gap = frame.at - lastSubmit;
 				lastSubmit = frame.at;
-				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * Math.min(frame.gap, 250) / 1000) % WALK_ROOST.end;
+				if (frame.gap !== null && !walk.paused && !walk.held) walk.walked = (walk.walked + WALK_PACE * walkPaceShare(walk.walked) * Math.min(frame.gap, 250) / 1000) % WALK_ROOST.end;
 				frame.walked = walk.walked;
 				if (frame.gap !== null && frame.gap > STALL_MS && walkLoad.first_frame !== null) {
 					// The gap splits at the start of the animation frame
