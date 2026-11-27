@@ -2533,10 +2533,186 @@ console.log(<span class="syn-string">&quot;balances:&quot;</span>, ada.balance, 
 <span class="syn-keyword">const</span> town = Array.from({ length: <span class="syn-number">5</span> }, (_, i) =&gt; <span class="syn-keyword">new</span> Savings(<span class="syn-string">`saver</span>${i}<span class="syn-string">`</span>, <span class="syn-number">100</span> * (i + <span class="syn-number">1</span>), <span class="syn-number">0.1</span>));
 town.forEach((s) =&gt; s.addInterest());
 console.log(town.map((s) =&gt; s.balance).join(<span class="syn-string">&quot; &quot;</span>), opened.length);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/62-bitwise.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// The bitwise operators: each operand made a 32-bit integer (ECMAScript&#39;s</span>
+<span class="syn-comment">// ToInt32, or ToUint32 for `&gt;&gt;&gt;`), a shift&#39;s count taken modulo 32, and the</span>
+<span class="syn-comment">// answer a signed 32-bit integer (an unsigned one for `&gt;&gt;&gt;`).</span>
+
+console.log(<span class="syn-string">&quot;and, or, xor:&quot;</span>, <span class="syn-number">12</span> &amp; <span class="syn-number">10</span>, <span class="syn-number">12</span> | <span class="syn-number">10</span>, <span class="syn-number">12</span> ^ <span class="syn-number">10</span>, -<span class="syn-number">1</span> &amp; <span class="syn-number">255</span>, -<span class="syn-number">256</span> | <span class="syn-number">15</span>, -<span class="syn-number">1</span> ^ <span class="syn-number">1</span>);
+console.log(<span class="syn-string">&quot;not:&quot;</span>, ~<span class="syn-number">0</span>, ~<span class="syn-number">1</span>, ~-<span class="syn-number">1</span>, ~<span class="syn-number">255</span>, ~<span class="syn-number">2147483647</span>, ~-<span class="syn-number">2147483648</span>);
+console.log(<span class="syn-string">&quot;shifts:&quot;</span>, <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">4</span>, <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">31</span>, <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">32</span>, <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">33</span>, <span class="syn-number">1</span> &lt;&lt; -<span class="syn-number">1</span>, <span class="syn-number">5</span> &lt;&lt; <span class="syn-number">30</span>);
+console.log(<span class="syn-string">&quot;signed right:&quot;</span>, <span class="syn-number">256</span> &gt;&gt; <span class="syn-number">4</span>, -<span class="syn-number">256</span> &gt;&gt; <span class="syn-number">4</span>, -<span class="syn-number">1</span> &gt;&gt; <span class="syn-number">31</span>, -<span class="syn-number">2147483648</span> &gt;&gt; <span class="syn-number">31</span>, <span class="syn-number">7</span> &gt;&gt; <span class="syn-number">32</span>, <span class="syn-number">7</span> &gt;&gt; <span class="syn-number">33</span>, -<span class="syn-number">9</span> &gt;&gt; -<span class="syn-number">1</span>);
+console.log(<span class="syn-string">&quot;unsigned right:&quot;</span>, <span class="syn-number">256</span> &gt;&gt;&gt; <span class="syn-number">4</span>, -<span class="syn-number">1</span> &gt;&gt;&gt; <span class="syn-number">0</span>, -<span class="syn-number">1</span> &gt;&gt;&gt; <span class="syn-number">28</span>, -<span class="syn-number">256</span> &gt;&gt;&gt; <span class="syn-number">4</span>, -<span class="syn-number">1</span> &gt;&gt;&gt; <span class="syn-number">32</span>, -<span class="syn-number">1</span> &gt;&gt;&gt; <span class="syn-number">33</span>, <span class="syn-number">1</span> &gt;&gt;&gt; -<span class="syn-number">1</span>);
+
+<span class="syn-comment">// ToInt32 of what isn&#39;t already a 32-bit integer: fractions toward 0,</span>
+<span class="syn-comment">// NaN and the infinities 0, -0 0, and the rest modulo 2^32.</span>
+<span class="syn-keyword">const</span> edges = [<span class="syn-number">0.5</span>, -<span class="syn-number">0.5</span>, <span class="syn-number">1.9</span>, -<span class="syn-number">1.9</span>, NaN, Infinity, -Infinity, -<span class="syn-number">0</span>,
+  <span class="syn-number">2147483647</span>, <span class="syn-number">2147483648</span>, -<span class="syn-number">2147483648</span>, -<span class="syn-number">2147483649</span>,
+  <span class="syn-number">4294967295</span>, <span class="syn-number">4294967296</span>, <span class="syn-number">4294967297</span>, -<span class="syn-number">4294967297</span>,
+  <span class="syn-number">9007199254740991</span>, -<span class="syn-number">9007199254740991</span>, <span class="syn-number">1e20</span>, -<span class="syn-number">1e20</span>, <span class="syn-number">9223372036854775808</span>,
+  <span class="syn-number">9223372036854777856</span>, -<span class="syn-number">9223372036854777856</span>, <span class="syn-number">1180591620717411565568</span>, <span class="syn-number">1e300</span>];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> x <span class="syn-keyword">of</span> edges) {
+  console.log(x | <span class="syn-number">0</span>, x &gt;&gt;&gt; <span class="syn-number">0</span>, ~x, x &amp; <span class="syn-number">65535</span>, x &gt;&gt; <span class="syn-number">1</span>, x &lt;&lt; <span class="syn-number">1</span>, <span class="syn-number">1</span> &lt;&lt; x);
+}
+
+<span class="syn-comment">// -0 in, 0 out: `-0 | 0` is 0, which `Object.is` would tell apart; 1 / it</span>
+<span class="syn-comment">// is Infinity, not -Infinity.</span>
+console.log(<span class="syn-number">1</span> / (-<span class="syn-number">0</span> | <span class="syn-number">0</span>), <span class="syn-number">1</span> / (-<span class="syn-number">0</span> &gt;&gt; <span class="syn-number">0</span>), <span class="syn-number">1</span> / (-<span class="syn-number">0</span> &gt;&gt;&gt; <span class="syn-number">0</span>), <span class="syn-number">1</span> / (<span class="syn-number">0</span> &amp; -<span class="syn-number">1</span>));
+
+<span class="syn-comment">// Precedence: `|` below `^` below `&amp;` below `===`, shifts between `&lt;` and</span>
+<span class="syn-comment">// `+`, and every bitwise operator above `&amp;&amp;` (`6 &amp; 3 === 3` is `6 &amp; true`, a</span>
+<span class="syn-comment">// coercion: refused/bitwise-precedence.js).</span>
+console.log(<span class="syn-number">1</span> | <span class="syn-number">2</span> ^ <span class="syn-number">3</span> &amp; <span class="syn-number">5</span>);
+console.log((<span class="syn-number">1</span> | <span class="syn-number">2</span>) ^ (<span class="syn-number">3</span> &amp; <span class="syn-number">5</span>));
+console.log(<span class="syn-number">1</span> &lt;&lt; <span class="syn-number">2</span> + <span class="syn-number">3</span>, (<span class="syn-number">1</span> &lt;&lt; <span class="syn-number">2</span>) + <span class="syn-number">3</span>);
+console.log(<span class="syn-number">16</span> &gt;&gt; <span class="syn-number">1</span> &lt; <span class="syn-number">9</span>, <span class="syn-number">16</span> &gt;&gt; <span class="syn-number">1</span> &gt; <span class="syn-number">9</span>, <span class="syn-number">1</span> + <span class="syn-number">2</span> &gt;&gt; <span class="syn-number">1</span>, <span class="syn-number">1</span> &lt; <span class="syn-number">2</span> &lt;&lt; <span class="syn-number">1</span>);
+console.log((<span class="syn-number">6</span> &amp; <span class="syn-number">3</span>) === <span class="syn-number">2</span>, <span class="syn-number">6</span> &amp; <span class="syn-number">3</span> + <span class="syn-number">1</span>, <span class="syn-number">6</span> | <span class="syn-number">1</span> - <span class="syn-number">1</span>);
+console.log(<span class="syn-number">1</span> &amp; <span class="syn-number">1</span> &amp;&amp; <span class="syn-number">2</span> | <span class="syn-number">0</span>, <span class="syn-number">0</span> || <span class="syn-number">4</span> ^ <span class="syn-number">4</span>);
+console.log(-<span class="syn-number">1</span> &gt;&gt;&gt; <span class="syn-number">28</span> &gt;&gt; <span class="syn-number">1</span>, <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">2</span> &lt;&lt; <span class="syn-number">3</span>, ~~<span class="syn-number">7.9</span>, -~<span class="syn-number">5</span>, ~-~<span class="syn-number">5</span>, !~-<span class="syn-number">1</span>);
+console.log(<span class="syn-number">2</span> ** <span class="syn-number">3</span> &lt;&lt; <span class="syn-number">1</span>, <span class="syn-number">7</span> % <span class="syn-number">4</span> &lt;&lt; <span class="syn-number">2</span>, <span class="syn-number">3</span> * <span class="syn-number">2</span> &gt;&gt; <span class="syn-number">1</span>);
+
+<span class="syn-comment">// The compound assignments.</span>
+<span class="syn-keyword">let</span> a = <span class="syn-number">0xF0</span>;
+a &amp;= <span class="syn-number">0x3C</span>;
+console.log(a);
+a |= <span class="syn-number">0x101</span>;
+console.log(a);
+a ^= <span class="syn-number">0xFF</span>;
+console.log(a);
+a &lt;&lt;= <span class="syn-number">24</span>;
+console.log(a);
+a &gt;&gt;= <span class="syn-number">4</span>;
+console.log(a);
+a &gt;&gt;&gt;= <span class="syn-number">8</span>;
+console.log(a);
+<span class="syn-keyword">const</span> o = { bits: <span class="syn-number">5</span> };
+o.bits &lt;&lt;= <span class="syn-number">2</span>;
+o.bits |= <span class="syn-number">1</span>;
+<span class="syn-keyword">const</span> list = [<span class="syn-number">1</span>, <span class="syn-number">2</span>, <span class="syn-number">3</span>];
+list[<span class="syn-number">1</span>] ^= <span class="syn-number">7</span>;
+list[<span class="syn-number">2</span>] &gt;&gt;&gt;= <span class="syn-number">1</span>;
+console.log(o.bits, list);
+
+<span class="syn-comment">// In a loop, with the count and the value both changing.</span>
+<span class="syn-keyword">let</span> mixed = <span class="syn-number">0</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; <span class="syn-number">40</span>; i++) {
+  mixed = (mixed &lt;&lt; <span class="syn-number">3</span>) ^ (mixed &gt;&gt;&gt; <span class="syn-number">29</span>) ^ i;
+  mixed = mixed | <span class="syn-number">0</span>;
+}
+console.log(mixed, mixed &gt;&gt;&gt; <span class="syn-number">0</span>);
+
+<span class="syn-comment">// Through a function, so its parameters are values, and through an array.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">bits</span>(x, y) {
+  <span class="syn-keyword">return</span> [x &amp; y, x | y, x ^ y, x &lt;&lt; y, x &gt;&gt; y, x &gt;&gt;&gt; y, ~x];
+}
+console.log(bits(-<span class="syn-number">7</span>, <span class="syn-number">3</span>), bits(<span class="syn-number">123456789</span>, <span class="syn-number">35</span>), bits(<span class="syn-number">0.75</span>, -<span class="syn-number">0.75</span>));
+<span class="syn-keyword">const</span> words = [<span class="syn-number">0xDEADBEEF</span>, <span class="syn-number">0x7FFFFFFF</span>, <span class="syn-number">0x80000000</span>, <span class="syn-number">0xFFFFFFFF</span>];
+console.log(words.map((w) =&gt; w | <span class="syn-number">0</span>), words.map((w) =&gt; w &gt;&gt;&gt; <span class="syn-number">16</span>), words.map((w) =&gt; w &amp; <span class="syn-number">0xFFFF</span>));
+</code></pre></figure><figure class="listing"><figcaption>js/tests/63-bitwise-kernel.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A SAT solver&#39;s bit work, in the shape of rocsat&#39;s CDCL solver: a literal</span>
+<span class="syn-comment">// is twice its variable plus its sign, so `lit ^ 1` negates it and</span>
+<span class="syn-comment">// `lit &gt;&gt; 1` is its variable; a clause&#39;s header word holds its size in the</span>
+<span class="syn-comment">// low 28 bits and its flags above them, the mark in bit 31, the sign bit.</span>
+
+<span class="syn-keyword">const</span> SIZE_MASK = <span class="syn-number">0x0FFFFFFF</span>;
+<span class="syn-keyword">const</span> LEARNT = <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">28</span>;
+<span class="syn-keyword">const</span> DELETED = <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">29</span>;
+<span class="syn-keyword">const</span> MARK = <span class="syn-number">1</span> &lt;&lt; <span class="syn-number">31</span>;
+
+<span class="syn-keyword">function</span> <span class="syn-name">literal</span>(variable, negative) {
+  <span class="syn-keyword">return</span> (variable &lt;&lt; <span class="syn-number">1</span>) | (negative ? <span class="syn-number">1</span> : <span class="syn-number">0</span>);
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">header</span>(size, flags) {
+  <span class="syn-keyword">return</span> (size &amp; SIZE_MASK) | flags;
+}
+
+<span class="syn-keyword">function</span> <span class="syn-name">show</span>(word) {
+  <span class="syn-keyword">const</span> unsigned = word &gt;&gt;&gt; <span class="syn-number">0</span>;
+  <span class="syn-keyword">return</span> <span class="syn-string">`size </span>${word &amp; SIZE_MASK}<span class="syn-string">, learnt </span>${(word &amp; LEARNT) !== <span class="syn-number">0</span>}<span class="syn-string">, deleted </span>${(word &amp; DELETED) !== <span class="syn-number">0</span>}<span class="syn-string">, marked </span>${(word &amp; MARK) !== <span class="syn-number">0</span>}<span class="syn-string">, word </span>${unsigned}<span class="syn-string">`</span>;
+}
+
+<span class="syn-comment">// Literals and their negations.</span>
+<span class="syn-keyword">const</span> lits = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> v = <span class="syn-number">0</span>; v &lt; <span class="syn-number">6</span>; v++) {
+  lits.push(literal(v, v % <span class="syn-number">2</span> === <span class="syn-number">1</span>));
+}
+console.log(lits, lits.map((l) =&gt; l ^ <span class="syn-number">1</span>), lits.map((l) =&gt; l &gt;&gt; <span class="syn-number">1</span>), lits.map((l) =&gt; l &amp; <span class="syn-number">1</span>));
+
+<span class="syn-comment">// A clause database: headers with flags set and cleared.</span>
+<span class="syn-keyword">const</span> db = [header(<span class="syn-number">3</span>, <span class="syn-number">0</span>), header(<span class="syn-number">7</span>, LEARNT), header(<span class="syn-number">200000</span>, LEARNT | MARK), header(<span class="syn-number">2</span>, DELETED)];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> h <span class="syn-keyword">of</span> db) {
+  console.log(show(h));
+}
+db[<span class="syn-number">1</span>] |= MARK;
+db[<span class="syn-number">2</span>] &amp;= ~MARK;
+db[<span class="syn-number">3</span>] ^= DELETED | LEARNT;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> i = <span class="syn-number">0</span>; i &lt; db.length; i++) {
+  console.log(i, show(db[i]));
+}
+
+<span class="syn-comment">// Assignments as a bitset of 32-bit words: set, test and clear.</span>
+<span class="syn-keyword">const</span> words = [<span class="syn-number">0</span>, <span class="syn-number">0</span>, <span class="syn-number">0</span>];
+<span class="syn-keyword">function</span> <span class="syn-name">assign</span>(v) {
+  words[v &gt;&gt; <span class="syn-number">5</span>] |= <span class="syn-number">1</span> &lt;&lt; (v &amp; <span class="syn-number">31</span>);
+}
+<span class="syn-keyword">function</span> <span class="syn-name">assigned</span>(v) {
+  <span class="syn-keyword">return</span> (words[v &gt;&gt;&gt; <span class="syn-number">5</span>] &gt;&gt;&gt; (v &amp; <span class="syn-number">31</span>) &amp; <span class="syn-number">1</span>) === <span class="syn-number">1</span>;
+}
+<span class="syn-keyword">function</span> <span class="syn-name">unassign</span>(v) {
+  words[v &gt;&gt; <span class="syn-number">5</span>] &amp;= ~(<span class="syn-number">1</span> &lt;&lt; (v &amp; <span class="syn-number">31</span>));
+}
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> v <span class="syn-keyword">of</span> [<span class="syn-number">0</span>, <span class="syn-number">5</span>, <span class="syn-number">31</span>, <span class="syn-number">32</span>, <span class="syn-number">63</span>, <span class="syn-number">64</span>, <span class="syn-number">95</span>]) {
+  assign(v);
+}
+unassign(<span class="syn-number">5</span>);
+console.log(words, words.map((w) =&gt; w &gt;&gt;&gt; <span class="syn-number">0</span>));
+<span class="syn-keyword">const</span> seen = [];
+<span class="syn-keyword">for</span> (<span class="syn-keyword">let</span> v = <span class="syn-number">0</span>; v &lt; <span class="syn-number">96</span>; v++) {
+  <span class="syn-keyword">if</span> (assigned(v)) seen.push(v);
+}
+console.log(seen);
+
+<span class="syn-comment">// A literal&#39;s value under an assignment, by `^` of its sign: true, false or</span>
+<span class="syn-comment">// unassigned (2), as solvers keep it, and a watch&#39;s position by a hash.</span>
+<span class="syn-keyword">const</span> values = [<span class="syn-number">2</span>, <span class="syn-number">1</span>, <span class="syn-number">0</span>, <span class="syn-number">2</span>, <span class="syn-number">1</span>, <span class="syn-number">0</span>];
+<span class="syn-keyword">function</span> <span class="syn-name">value</span>(lit) {
+  <span class="syn-keyword">const</span> v = values[lit &gt;&gt; <span class="syn-number">1</span>];
+  <span class="syn-keyword">return</span> v === <span class="syn-number">2</span> ? <span class="syn-number">2</span> : v ^ (lit &amp; <span class="syn-number">1</span>);
+}
+console.log(lits.map(value), lits.map((l) =&gt; value(l ^ <span class="syn-number">1</span>)));
+<span class="syn-keyword">let</span> hash = <span class="syn-number">2166136261</span>;
+<span class="syn-keyword">for</span> (<span class="syn-keyword">const</span> l <span class="syn-keyword">of</span> lits) {
+  hash ^= l;
+  hash = (hash * <span class="syn-number">16777619</span>) &gt;&gt;&gt; <span class="syn-number">0</span>;
+  hash ^= hash &gt;&gt;&gt; <span class="syn-number">13</span>;
+}
+console.log(hash, hash &amp; <span class="syn-number">1023</span>, hash | <span class="syn-number">0</span>);
+
+<span class="syn-comment">// Counting set bits and the lowest one, as a phase-saving or a heap code</span>
+<span class="syn-comment">// might.</span>
+<span class="syn-keyword">function</span> <span class="syn-name">popcount</span>(x) {
+  <span class="syn-keyword">let</span> n = <span class="syn-number">0</span>;
+  <span class="syn-keyword">let</span> w = x &gt;&gt;&gt; <span class="syn-number">0</span>;
+  <span class="syn-keyword">while</span> (w !== <span class="syn-number">0</span>) {
+    w &amp;= w - <span class="syn-number">1</span>;
+    n++;
+  }
+  <span class="syn-keyword">return</span> n;
+}
+console.log([<span class="syn-number">0</span>, <span class="syn-number">1</span>, <span class="syn-number">255</span>, -<span class="syn-number">1</span>, <span class="syn-number">0x55555555</span>, MARK].map(popcount), [<span class="syn-number">12</span>, <span class="syn-number">40</span>, -<span class="syn-number">8</span>, MARK].map((x) =&gt; x &amp; -x));
 </code></pre></figure><h2 id="the-refused-programs">The refused programs <a class="section-link" href="#the-refused-programs" aria-label="Link to this section">§</a></h2>
 <p>The VM refuses each program with the message its first line gives.</p>
-<figure class="listing"><figcaption>js/tests/refused/bitwise.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: bitwise operators</span>
+<figure class="listing"><figcaption>js/tests/refused/bitwise-not.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `~` on a boolean (a coercion)</span>
+console.log(~<span class="syn-number">1</span>);
+console.log(~<span class="syn-keyword">true</span>);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/bitwise-precedence.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: an operator on a number and a boolean (a coercion)</span>
+<span class="syn-comment">// `&amp;` binds looser than `===`, so this is `6 &amp; (3 === 3)`.</span>
+console.log(<span class="syn-number">6</span> &amp; <span class="syn-number">3</span> === <span class="syn-number">3</span>);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/bitwise-undefined.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: an operator on a undefined and a number (a coercion)</span>
+<span class="syn-keyword">let</span> x;
+console.log(x &gt;&gt;&gt; <span class="syn-number">0</span>);
+</code></pre></figure><figure class="listing"><figcaption>js/tests/refused/bitwise.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: an operator on a string and a number (a coercion)</span>
 console.log(<span class="syn-number">5</span> &amp; <span class="syn-number">3</span>);
+console.log(<span class="syn-string">&#39;7&#39;</span> | <span class="syn-number">0</span>);
 </code></pre></figure><figure class="listing"><figcaption>js/tests/refused/bool-plus.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: unsupported: `+` on a boolean and a number (a coercion)</span>
 console.log(<span class="syn-keyword">true</span> + <span class="syn-number">1</span>);
 </code></pre></figure><figure class="listing"><figcaption>js/tests/refused/break-outside.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// refused: SyntaxError: Illegal break statement</span>

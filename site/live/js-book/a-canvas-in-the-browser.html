@@ -44,7 +44,7 @@
 <h2 id="what-a-program-sees">What a program sees <a class="section-link" href="#what-a-program-sees" aria-label="Link to this section">§</a></h2>
 <p>In <a href="https://roc.lynrummy.com/js/">the playground</a>, a program is JavaScript from the subset plus a deliberately small API for one 400 by 400 canvas. It is a toy&#39;s API, sized for sketches, games of one screen and demonstrations:</p>
 <ul>
-<li><strong>Drawing:</strong> <code>background</code>, <code>fill</code>, <code>stroke</code>, <code>line</code>, <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>polygon</code> and <code>text</code>, named after p5.js&#39;s but a small set of their own, with colors as CSS strings.</li>
+<li><strong>Drawing:</strong> <code>background</code>, <code>fill</code>, <code>noFill</code>, <code>stroke</code>, <code>noStroke</code>, <code>line</code>, <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>polygon</code> and <code>text</code>, named after p5.js&#39;s but a small set of their own, with colors as CSS strings.</li>
 <li><strong>A turtle:</strong> <code>forward</code>, <code>back</code>, <code>turn</code>, <code>penUp</code>, <code>penDown</code> and <code>goto</code>.</li>
 <li><strong>Input:</strong> <code>mouseX()</code>, <code>mouseY()</code> and <code>keyIsDown(key)</code>, read when called, and <code>onClick(handler)</code>.</li>
 <li><strong>Time:</strong> <code>setTimeout</code>, <code>setInterval</code> and their clears, and a <code>function frame(t)</code>, which the page calls 30 times a second.</li>
