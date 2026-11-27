@@ -167,14 +167,19 @@ function check_page_files(page)
   return nil
 end
 
--- The book holds PROVENANCE, BOOK_FIXED and pages (`.html`), and nothing else.
+-- The book holds PROVENANCE, BOOK_FIXED, pages (`.html`) and its canvas
+-- pictures (`shots/<name>.png`, which js-book/book.shale holds to the book's
+-- shot fences), and nothing else.
 function check_book_files(book)
   local found = files_under(book)
   local other = {}
   local pages = 0
+  local shots = 0
   for f in found do
     if ends_with(f, ".html") then
       pages = pages + 1
+    elseif starts_with(f, "shots/") and ends_with(f, ".png") and not contains(sub(f, 7, #f), "/") then
+      shots = shots + 1
     elseif f ~= "PROVENANCE" and not has_item(BOOK_FIXED, f) then
       push(other, f)
     end
@@ -184,7 +189,7 @@ function check_book_files(book)
     if not has_item(found, f) then push(missing, f) end
   end
   if not has_item(found, "PROVENANCE") then push(missing, "PROVENANCE") end
-  check_line("files", #other == 0 and #missing == 0, book .. " holds " .. pages .. " pages; missing: " .. join(missing, " ") .. "; unexpected: " .. join(other, " "))
+  check_line("files", #other == 0 and #missing == 0, book .. " holds " .. pages .. " pages and " .. shots .. " pictures; missing: " .. join(missing, " ") .. "; unexpected: " .. join(other, " "))
   return nil
 end
 
