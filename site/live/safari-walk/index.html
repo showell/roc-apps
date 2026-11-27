@@ -68,7 +68,7 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 <h1>Safari Walk</h1>
 <p>A ride down a dirt road across a dry savanna at golden hour, as the sun sets ahead of you: a new take on Safari Ride, the canvas game on this site, in 3D.</p>
 <p>Its logic is written in Roc, on Rocco, Braeden Foster's 3D engine for Roc games, from Steve's fork with changes for Firefox. It needs a browser with WebGPU. AI agents (Claude) wrote the code, under Steve Howell's supervision.</p>
-<p><kbd>Space</kbd> pauses and resumes. <kbd>F</kbd> shows a frame readout. Every 20 seconds of walking, a frame report goes to the browser's console, ready to copy.</p>
+<p><kbd>Space</kbd> pauses and resumes; <kbd>←</kbd> and <kbd>→</kbd> step one frame back or on, pausing first. <kbd>F</kbd> shows a frame readout. Every 20 seconds of walking, a frame report goes to the browser's console, ready to copy.</p>
 </article></div>
 <div id="message"></div>
 <div id="rate"></div>
@@ -142,7 +142,7 @@ var WALK_PACE = 6.4 * 1.2;
 // picks up again past it: a copy of game/Camp.roc's slow stretch (`slow_from`,
 // `slow_low`, `slow_high`, `slow_to` and `slow_low_share`), which
 // scripts/build_web.shale checks. walkPaceShare is Camp.pace_share.
-var WALK_SLOW = { slow_from: 238, slow_low: 252, slow_high: 288, slow_to: 300, slow_low_share: 0.25 };
+var WALK_SLOW = { slow_from: 238, slow_low: 252, slow_high: 288, slow_to: 320, slow_low_share: 0.25 };
 function walkPaceShare(walked) {
 	function smooth(t) { var c = Math.max(0, Math.min(1, t)); return c * c * (3 - 2 * c); }
 	var s = WALK_SLOW, low = s.slow_low_share;
@@ -171,7 +171,7 @@ var CHAPTERS = [
 	{ code: "KeyZ", letter: "Z", name: "Zebra and ducks", at: CHAPTER_STARTS.zebra_and_ducks },
 	{ code: "KeyK", letter: "K", name: "Kangaroo", at: CHAPTER_STARTS.kangaroo },
 	{ code: "KeyD", letter: "D", name: "Dust devil", at: CHAPTER_STARTS.dust_devil },
-	{ code: "KeyW", letter: "W", name: "Campfire", at: CHAPTER_STARTS.campfire },
+	{ code: "KeyW", letter: "W", name: "Worker Campfire", at: CHAPTER_STARTS.campfire },
 	{ code: "KeyA", letter: "A", name: "Approach tavern", at: WALK_ROOST.on ? CHAPTER_STARTS.approach_tavern : CHAPTER_STARTS.roost_sign },
 	{ code: "KeyR", letter: "R", name: "Roo's Roost", at: WALK_ROOST.on ? CHAPTER_STARTS.roost_doors : CHAPTER_STARTS.roost_sign },
 	{ code: "KeyO", letter: "O", name: "Order drink", at: WALK_ROOST.on ? CHAPTER_STARTS.order_drink : CHAPTER_STARTS.roost_sign },
@@ -380,6 +380,10 @@ var walkView = (function () {
 		if (event.repeat) return;
 		if (event.code === "Digit0") walk.held = !walk.held;
 		if (event.code in JUMPS) walk.walked = JUMPS[event.code];
+		// The arrows step the walk one frame back or on, a sixtieth of a
+		// second at the walk's pace there (main.roc), and pause it.
+		if (event.code === "ArrowRight") walk.walked = (walk.walked + WALK_PACE * walkPaceShare(walk.walked) / 60) % WALK_ROOST.end;
+		if (event.code === "ArrowLeft") walk.walked = (walk.walked - WALK_PACE * walkPaceShare(walk.walked) / 60 + WALK_ROOST.end) % WALK_ROOST.end;
 	}, true);
 
 	// What the walk passes at `walked` metres (Zebra.roc, Daylight.roc,
@@ -858,6 +862,9 @@ var walkView = (function () {
 		list.appendChild(item);
 		return item;
 	});
+	var frames = document.createElement("li");
+	frames.innerHTML = '<span class="mark"></span><span class="letter">←→</span><span class="name">step a frame back or on</span>';
+	list.appendChild(frames);
 	var hide = document.createElement("li");
 	hide.innerHTML = '<span class="mark"></span><span class="letter">C</span><span class="name">hide this</span>';
 	list.appendChild(hide);
