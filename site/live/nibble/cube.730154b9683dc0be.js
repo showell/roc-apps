@@ -30,8 +30,15 @@
 // the tile under it flipped) flashes that tile and dips the cube, and leaves
 // the tile stamped for the rest of the run; a glow of the paint's colour on
 // the floor beside the cube on the side the paint faces; and a compass of
-// where the paint points. The listing beside the program is its run, a line
-// a roll, as a Nibble++ program is a line an instruction.
+// where the paint points.
+//
+// Beside the canvas is the chain a move runs down, in reading order: 1 the
+// move (the arrow buttons), 2 the listing, the program a line a roll as a
+// Nibble++ program is a line an instruction, its newest line at the bottom,
+// 3 the program as letters (the text box) and as machine code, and 4 the
+// name of the question its lit set answers, with the set's number. A move
+// lights each link in turn (`pulseChain`), so its consequence reads down
+// the chain.
 
 const ROLLS = "NESW";
 // CubeWasm.roc's state: the lit set in bits 0-15, the cell in 16-19, the
@@ -496,6 +503,7 @@ function draw(now) {
   canvas.dataset.stamped = [...stamped].sort((a, b) => a - b).join(",");
   canvas.dataset.flash = flash ? String(flash.cell) : "";
   canvas.dataset.flashes = String(view.flashes);
+  canvas.dataset.lit = String(lit);
 }
 
 // The cube's faces moved `dy` up (a dip when negative).
@@ -603,7 +611,6 @@ const input = document.getElementById("program");
 const said = document.getElementById("said");
 const listing = document.getElementById("listing");
 const status = document.getElementById("status");
-const map = document.getElementById("lit-map");
 const lengthLine = document.getElementById("length");
 const parLine = document.getElementById("par");
 const playButton = document.getElementById("play");
@@ -612,14 +619,22 @@ const binaryLine = document.getElementById("binary");
 const nameLine = document.getElementById("name");
 const machineLine = document.getElementById("machine-code");
 const compass = document.getElementById("compass");
-const mapCells = Array.from({ length: 16 }, (_, cell) => {
-  const d = document.createElement("div");
-  d.textContent = String(cell);
-  d.title = `tile ${cellLabel(cell)}, bit ${cell}`;
-  d.dataset.name = cellName(cell);
-  map.append(d);
-  return d;
-});
+const chain = document.getElementById("chain");
+const chainLinks = Array.from(chain.querySelectorAll(".link"));
+
+// A move's highlight, run down the chain's links in order (each link's
+// delay is its `--i` in cube.html). Each link counts the pulses it has
+// shown, for the check.
+function pulseChain() {
+  const n = Number(chain.dataset.pulses) + 1;
+  chain.dataset.pulses = String(n);
+  for (const link of chainLinks) {
+    link.classList.remove("pulse");
+    void link.offsetWidth;
+    link.classList.add("pulse");
+    link.dataset.pulse = String(n);
+  }
+}
 
 const programText = () => view.program.map((r) => ROLLS[r]).join("");
 const el = (tag, text, cls) => { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; return e; };
@@ -652,7 +667,10 @@ function showListing(shown) {
   listing.replaceChildren(...rows.map(listingLine));
   const now = listing.children[Math.min(shown, rows.length - 1)];
   now.classList.add("now");
-  // The current line kept in view, scrolling the listing alone.
+  // The lines fill from the bottom, so the newest is just above the
+  // letters; the current line is kept in view, scrolling the listing alone.
+  const last = listing.lastElementChild;
+  if (now === last) { listing.scrollTop = listing.scrollHeight; return; }
   const top = now.offsetTop - listing.offsetTop, bottom = top + now.offsetHeight;
   if (top < listing.scrollTop) listing.scrollTop = top;
   else if (bottom > listing.scrollTop + listing.clientHeight) listing.scrollTop = bottom - listing.clientHeight;
@@ -670,22 +688,18 @@ function showRun() {
   showListing(shown);
   const word = wordAt(shown);
   showCompass(faceOf(word));
-  const where = `on ${cellLabel(cellOf(word))}, the paint ${FACE_NAMES[faceOf(word)]}`;
+  // The run's place is the canvas's to show; the chain says only a halt.
   if (isHalt(shown)) {
-    status.className = "err";
     const after = view.program.length - view.haltAt - 1;
     status.textContent = `Halted at roll ${view.haltAt + 1}: ${ROLLS[view.program[view.haltAt]]} from ${cellLabel(cellOf(word))} leaves the board.` +
       (after > 0 ? ` The ${after} roll${after === 1 ? "" : "s"} after it do nothing.` : "");
   } else {
-    status.className = "";
-    status.textContent = shown === 0 ? `The start: ${where}.` : `After roll ${shown} of ${view.program.length}: ${where}.`;
+    status.textContent = "";
   }
   const n = view.program.length;
   lengthLine.textContent = `${n} of ${L} rolls`;
   machineLine.textContent = n === 0 ? "" : machineCode(view.program);
-  machineLine.title = n === 0 ? "" : `The machine code: each roll's opcode in two bits (N 00, E 01, S 10, W 11), line 1 first, and the bits as one binary number: ${machineLine.textContent}`;
   const lit = litOf(view.frames[view.frames.length - 1]);
-  mapCells.forEach((d, cell) => d.classList.toggle("lit", ((lit >> cell) & 1) === 1));
   decimalLine.textContent = String(lit);
   binaryLine.textContent = binaryOf(lit);
   parLine.textContent = `par ${pars[lit]}; yours is ${n}`;
@@ -728,6 +742,7 @@ function fromText() {
   runProgram();
   view.at = lastFrame();
   showRun();
+  pulseChain();
   requestDraw();
 }
 
@@ -759,10 +774,13 @@ function rollNow(code) {
   input.value = programText();
   input.classList.remove("bad");
   runProgram();
+  pressed(code);
   if (view.at < lastFrame()) stepTo(view.at + 1);
   else { showRun(); requestDraw(); }
+  pulseChain();
 }
 
+// The arrow button of a roll lights, whichever way the roll was made.
 const rollButtons = Array.from(document.querySelectorAll("button[data-roll]"));
 function pressed(code) {
   const b = rollButtons.find((x) => x.dataset.roll === ROLLS[code]);
@@ -791,7 +809,6 @@ document.addEventListener("keydown", (ev) => {
   if (ev.target === input || ev.altKey || ev.ctrlKey || ev.metaKey) return;
   if (!(ev.key in KEYS)) return;
   ev.preventDefault();
-  pressed(KEYS[ev.key]);
   rollNow(KEYS[ev.key]);
 });
 

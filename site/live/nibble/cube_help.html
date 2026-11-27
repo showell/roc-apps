@@ -62,10 +62,16 @@
   </section>
   <section>
     <h2>Playing</h2>
-    <p>Type a program, or roll the cube with the arrow buttons or the arrow keys, or click a tile next to the cube (or drag the cube onto it). Play, Back, Forward and Reset move through the run. A roll off the board can only be typed, or made with a button or key, since no tile is there to click.</p>
-    <p>The <strong>listing</strong> under the program is the program a line a roll, as a Nibble++ program is a line an instruction: the line's number, its opcode (a roll's two bits: N 00, E 01, S 10, W 11), the roll, where the paint points after it (U, D, N, S, E or W), and what it did: the tile it lit or darkened, or the halt. The current line is highlighted; a click on a line shows the run there. Under the text box is the program's machine code, its opcodes line 1 first and the number they make read as one binary number.</p>
+    <p>Beside the cube is a chain of four steps, read top to bottom, and each move runs a highlight down it, so you can follow what the move did:</p>
+    <ol>
+      <li><strong>The move.</strong> Click a tile next to the cube (or drag the cube onto it), or use the arrow buttons or the arrow keys; the button of each roll lights, however it was made. Play, Back, Forward and Reset move through the run, and Clear empties it. A roll off the board can only be typed, or made with a button or key, since no tile is there to click.</li>
+      <li><strong>The listing</strong>, the program a line a roll, as a Nibble++ program is a line an instruction: the line's number, its opcode (a roll's two bits: N 00, E 01, S 10, W 11), the roll, where the paint points after it (U, D, N, S, E or W), and what it did: the tile it lit or darkened, or the halt. The newest line is at the bottom. The current line is highlighted; a click on a line shows the run there.</li>
+      <li><strong>The program as letters and machine code.</strong> The letters are a text box: type a program there. Under it is the machine code, the opcodes line 1 first and the number they make read as one binary number.</li>
+      <li><strong>The question its lit set answers</strong>, its name, with the lit set as a number in decimal and binary, its par, and, when the program halts, where.</li>
+    </ol>
+    <p>The samples are in the bar at the top.</p>
     <p>When the paint lands face down, the tile under the cube flashes and the cube dips, and the tile keeps a blue frame, its stamp, for the rest of the run. When the paint faces a side, the floor glows blue on that side of the cube, so a face turned away from you still shows. The compass in the canvas's corner says where the paint points: N, E, S or W, or U and D in its middle.</p>
-    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows your program's lit set, as tiles and as a number in decimal and binary, its par, its name, and your program's length.</p>
+    <p>A set's <strong>par</strong> is the fewest rolls of any program that ends with exactly that set lit. The page shows it beside your program's length.</p>
   </section>
   <section>
     <h2>The samples</h2>

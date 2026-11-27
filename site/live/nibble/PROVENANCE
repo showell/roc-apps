@@ -1,5 +1,5 @@
-published 2026-11-27T22:04:48Z
-cook-levin-riff 2b68f371 https://github.com/showell/cook-levin-riff/commit/2b68f371d34fee36b41cf96dfa9b74b8706d5757 (its web/build.shale)
+published 2026-11-27T22:24:25Z
+cook-levin-riff 7b17d247 https://github.com/showell/cook-levin-riff/commit/7b17d24770535d45ed37bc84ad22c00d3245a5d1 (its web/build.shale)
 sha256 b73e3a49a51f81a3  1143 bytes  cube.b73e3a49a51f81a3.wasm
 sha256 6745219783632f65  8321 bytes  nibble.6745219783632f65.wasm
 sha256 30f5a0b8d928868e  5304 bytes  plus.30f5a0b8d928868e.wasm

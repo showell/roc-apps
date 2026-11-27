@@ -6,50 +6,58 @@
 <title>Rolling cube</title>
 <link rel="stylesheet" href="nibble.5a34209f8e3d41b1.css">
 <style>
-  /* Three panes side by side on a wide screen, the canvas as tall as the
-     window allows; one column on a narrow one. */
-  main.cube { max-width: none; padding: 8px 16px; }
-  main.cube header { align-items: baseline; margin-bottom: 4px; }
-  main.cube h1 { margin: 0; font-size: 1.05rem; }
-  .panes { display: grid; grid-template-columns: clamp(230px, 22vw, 320px) minmax(0, 1fr) clamp(210px, 19vw, 300px); gap: 14px; }
+  /* Two panes on a wide screen: the canvas, sized to leave the chain its
+     room, and beside it the chain a move runs down, in reading order:
+     1 the move, 2 the program a line a roll, 3 the program as letters and
+     machine code, 4 the question its lit set answers. The samples sit in
+     the top bar, outside the chain. One column on a narrow screen. */
+  main.cube { max-width: none; padding: 6px 16px 8px; }
+  .top { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-bottom: 6px; }
+  .top h1 { margin: 0; font-size: 1.05rem; }
+  .top #help { margin-left: auto; }
+  .samples { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted); }
+  .samples button { padding: 1px 7px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--fg); font: inherit; font-size: 0.82rem; cursor: pointer; }
+  .panes { --scene-h: clamp(240px, min(calc(100vh - 56px), 37vw), 600px);
+    display: grid; grid-template-columns: auto minmax(340px, 640px); justify-content: center; gap: 14px; align-items: start; }
   .pane { min-width: 0; }
-  .pane.write { display: flex; flex-direction: column; height: calc(100vh - 16px); }
   .pane.view { position: relative; }
-  #scene { display: block; width: 100%; height: calc(100vh - 16px); min-height: 260px; border-radius: 8px; background: #1b1d22; touch-action: none; }
+  #scene { display: block; width: calc(var(--scene-h) * 1.25); max-width: 100%; height: var(--scene-h); border-radius: 8px; background: #1b1d22; touch-action: none; }
   #scene.can-roll { cursor: pointer; }
-  .pane h2 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-  .pane h2:not(:first-child) { margin-top: 12px; }
-  .pane header + h2 { margin-top: 2px; }
-  .pane h2 small { font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; }
-  #program { width: 100%; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
-  #program.bad { border-color: var(--bad); }
-  #said { margin: 4px 0 0; font-size: 0.88rem; min-height: 0; }
-  #said:empty { display: none; }
-  #said.err, #status.err { color: var(--bad); }
-  .drive { display: flex; gap: 12px; align-items: flex-start; margin-top: 10px; }
-  .keys { display: grid; grid-template-columns: repeat(3, 42px); grid-template-rows: repeat(2, 42px); gap: 4px; flex: none; }
-  .keys button { position: relative; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: 17px system-ui, sans-serif; cursor: pointer; }
-  .keys button small { position: absolute; right: 3px; bottom: 1px; font: 600 10px ui-monospace, Menlo, monospace; color: var(--muted); }
+  .pane.chain { display: flex; flex-direction: column; height: calc(100vh - 56px); min-height: 360px; }
+  .link { position: relative; padding: 3px 8px 5px 30px; border-radius: 8px; border-left: 3px solid transparent; }
+  .link + .link { margin-top: 2px; }
+  .link .step { position: absolute; left: 4px; top: 4px; width: 19px; height: 19px; border-radius: 50%; background: var(--line); color: var(--muted); font: 600 11px/19px system-ui, sans-serif; text-align: center; }
+  .link h2 { margin: 0 0 3px; font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .link h2 small { font-size: inherit; font-weight: 400; text-transform: none; letter-spacing: 0; }
+  /* A move's highlight runs down the chain, a link after the other. */
+  .link.pulse { animation: chain-pulse 900ms ease-out calc(var(--i) * 150ms) both; }
+  .link.pulse .step { animation: step-pulse 900ms ease-out calc(var(--i) * 150ms) both; }
+  @keyframes chain-pulse { 0% { background: transparent; border-left-color: transparent; } 20% { background: color-mix(in srgb, var(--accent) 16%, transparent); border-left-color: var(--accent); } 100% { background: transparent; border-left-color: transparent; } }
+  @keyframes step-pulse { 0%, 100% { background: var(--line); color: var(--muted); } 20% { background: var(--accent); color: var(--accent-fg); } }
+  .link.listing-link { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+  /* 1: the move. */
+  .drive { display: flex; gap: 12px; align-items: flex-start; }
+  .keys { display: grid; grid-template-columns: repeat(3, 36px); grid-template-rows: repeat(2, 32px); gap: 3px; flex: none; }
+  .keys button { position: relative; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: 15px system-ui, sans-serif; cursor: pointer; }
+  .keys button small { position: absolute; right: 3px; bottom: 0; font: 600 9px ui-monospace, Menlo, monospace; color: var(--muted); }
   .keys button.pressed, .keys button:active { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
   .keys button.pressed small { color: var(--accent-fg); }
   .keys [data-roll="N"] { grid-column: 2; grid-row: 1; }
   .keys [data-roll="W"] { grid-column: 1; grid-row: 2; }
   .keys [data-roll="S"] { grid-column: 2; grid-row: 2; }
   .keys [data-roll="E"] { grid-column: 3; grid-row: 2; }
-  .steps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; flex: 1; min-width: 0; }
-  .steps button, .samples button { padding: 5px 6px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; font-size: 0.9rem; cursor: pointer; }
+  .steps { display: grid; grid-template-columns: repeat(3, auto); gap: 3px; align-content: start; }
+  .steps button { padding: 3px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--fg); font: inherit; font-size: 0.85rem; cursor: pointer; }
   .steps button:disabled { opacity: 0.45; cursor: default; }
-  .samples { display: flex; flex-wrap: wrap; gap: 4px; }
-  .samples button { background: transparent; font-size: 0.86rem; padding: 3px 7px; }
-  /* The listing: the program a line a roll, filling the pane, scrolling in it. */
+  /* 2: the listing, a line a roll, filling from the bottom as a terminal
+     does, so the newest line is always just above the letters. */
   .listing-head, #listing li { display: grid; grid-template-columns: 1.8em 1.4em 8.6em 1.2em minmax(0, 1fr); gap: 6px; align-items: baseline; }
-  #listing li .code { color: var(--muted); opacity: 0.7; font-size: 0.78rem; }
-  #machine-code { margin: 3px 0 0; font: 0.72rem ui-monospace, Menlo, Consolas, monospace; color: var(--muted); opacity: 0.8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #machine-code:empty { display: none; }
-  .listing-head { font-size: 0.75rem; color: var(--muted); padding: 0 6px; }
-  #listing { flex: 1; min-height: 60px; overflow-y: auto; margin: 2px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 6px; font: 0.9rem/1.55 ui-monospace, Menlo, Consolas, monospace; }
+  .listing-head { font-size: 0.72rem; color: var(--muted); padding: 0 6px; }
+  #listing { flex: 1; min-height: 72px; overflow-y: auto; display: flex; flex-direction: column; margin: 2px 0 0; padding: 0; list-style: none; border: 1px solid var(--line); border-radius: 6px; font: 0.88rem/1.5 ui-monospace, Menlo, Consolas, monospace; }
+  #listing li:first-child { margin-top: auto; }
   #listing li { padding: 0 6px; cursor: pointer; }
   #listing li .num { color: var(--muted); text-align: right; }
+  #listing li .code { color: var(--muted); opacity: 0.7; font-size: 0.78rem; }
   #listing li .op { white-space: nowrap; }
   #listing li .op small { color: var(--muted); }
   #listing li .paint { font-weight: 600; color: #7aa2ff; text-align: center; }
@@ -60,6 +68,23 @@
   #listing li.dead { opacity: 0.45; text-decoration: line-through; }
   #listing li.now { background: var(--accent); color: var(--accent-fg); }
   #listing li.now .num, #listing li.now .code, #listing li.now small, #listing li.now .paint, #listing li.now .mark { color: var(--accent-fg); }
+  /* 3: the letters (the text box, where a program is typed) and the machine code. */
+  #program { width: 100%; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); font: 15px ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.06em; }
+  #program.bad { border-color: var(--bad); }
+  #machine-code { margin: 3px 0 0; min-height: 1.3em; font: 0.76rem ui-monospace, Menlo, Consolas, monospace; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #said { margin: 2px 0 0; font-size: 0.85rem; }
+  #said:empty { display: none; }
+  #said.err, #status { color: var(--bad); }
+  /* 4: the question the lit set answers, its number beside it. */
+  .answer { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 12px; }
+  #name { margin: 0; font: 600 1.15rem ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+  #name[data-named="0"] { color: var(--muted); }
+  #number { margin: 0; font: 0.9rem ui-monospace, Menlo, Consolas, monospace; color: var(--muted); }
+  #number b { color: var(--fg); font-size: 1.05rem; }
+  #number small, .facts small { font-family: system-ui, sans-serif; font-size: 0.78rem; }
+  .facts { margin: 1px 0 0; font-size: 0.85rem; color: var(--muted); }
+  #status { margin: 2px 0 0; font-size: 0.85rem; }
+  #status:empty { display: none; }
   /* The compass: where the paint points, over the canvas's corner. */
   #compass { position: absolute; top: 8px; right: 8px; display: grid; grid-template-columns: repeat(3, 20px); grid-template-rows: repeat(3, 20px) auto; gap: 1px;
     padding: 5px; border-radius: 8px; background: rgba(20, 21, 26, 0.72); font: 600 11px/20px ui-monospace, Menlo, monospace; text-align: center; color: #6b6f7c; pointer-events: none; }
@@ -73,80 +98,73 @@
   #compass .mid [data-dir].on { display: block; border-radius: 50%; }
   #compass [data-dir].on { background: #3a7bff; color: #fff; }
   #compass small { grid-column: 1 / 4; grid-row: 4; font: 10px/1.2 system-ui, sans-serif; color: #8a8e9a; }
-  #length, #par { font-size: 1.05rem; }
-  #par { margin-top: 2px; }
-  .result { display: flex; gap: 10px; align-items: flex-start; }
-  #lit-map { display: grid; grid-template-columns: repeat(4, 24px); gap: 3px; flex: none; }
-  #lit-map div { width: 24px; height: 24px; border-radius: 3px; background: #2b2d33; border: 1px solid var(--line); color: #9a9aa2; font: 10px/22px ui-monospace, Menlo, monospace; text-align: center; }
-  #lit-map div.lit { background: #ffb347; border-color: #ffb347; box-shadow: 0 0 6px #ffb34799; color: #3a2a10; }
-  #number { margin: 0; font: 0.9rem/1.5 ui-monospace, Menlo, Consolas, monospace; min-width: 0; }
-  #number b { font-size: 1.15rem; }
-  #number small, #binary-line small { color: var(--muted); font-family: system-ui, sans-serif; font-size: 0.8rem; }
-  #binary-line { margin: 4px 0 0; font: 0.9rem ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-  #name { margin: 0; font: 600 1rem ui-monospace, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
-  #name[data-named="0"] { color: var(--muted); }
-  #status { margin: 0; color: var(--muted); font-size: 0.92rem; }
   @media (max-width: 899px) {
     .panes { grid-template-columns: minmax(0, 1fr); }
-    .pane.write { height: auto; }
-    #listing { flex: none; max-height: 40vh; }
-    .pane.view { order: -1; }
-    #scene { height: min(72vw, 52vh); min-height: 220px; }
+    #scene { width: 100%; height: min(72vw, 52vh); min-height: 220px; }
+    .pane.chain { height: auto; min-height: 0; }
+    #listing { flex: none; height: 30vh; }
   }
 </style>
 </head>
 <body>
 <main class="cube">
   <p id="loading">Loading the cube...</p>
+  <div class="top">
+    <h1>Rolling cube</h1>
+    <div class="samples" id="samples" aria-label="Sample programs">Samples:</div>
+    <a href="cube_help.html" id="help">Help</a>
+  </div>
   <div class="panes">
-    <div class="pane write">
-      <header><h1>Rolling cube</h1><a href="cube_help.html" id="help">Help</a></header>
-      <h2><label for="program">A RollScript program</label></h2>
-      <input id="program" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="" placeholder="rolls: N E S W">
-      <p id="said"></p>
-      <p id="machine-code"></p>
-      <div class="drive">
-        <div class="keys" role="group" aria-label="Roll the cube (the arrow keys work too)">
-          <button type="button" data-roll="N" title="Roll north (the up arrow key)">▲<small>N</small></button>
-          <button type="button" data-roll="W" title="Roll west (the left arrow key)">◀<small>W</small></button>
-          <button type="button" data-roll="S" title="Roll south (the down arrow key)">▼<small>S</small></button>
-          <button type="button" data-roll="E" title="Roll east (the right arrow key)">▶<small>E</small></button>
-        </div>
-        <div class="steps">
-          <button type="button" id="play">Play</button>
-          <button type="button" id="reset" title="Back to the start">Reset</button>
-          <button type="button" id="back" title="One roll back">Back</button>
-          <button type="button" id="forward" title="One roll forward">Forward</button>
-          <button type="button" id="clear" title="An empty program">Clear</button>
-        </div>
-      </div>
-      <h2>Samples</h2>
-      <div class="samples" id="samples"></div>
-      <h2 title="The program a line a roll: what it rolls, where the paint points after it, and the tile it lights or darkens when the paint lands face down">The listing</h2>
-      <div class="listing-head" aria-hidden="true"><span>line</span><span>op</span><span>roll</span><span>paint</span><span></span></div>
-      <ol id="listing" aria-label="The program, a line a roll"></ol>
-    </div>
     <div class="pane view">
-      <canvas id="scene" width="720" height="500" aria-label="The board and the cube, in 3D; click a tile beside the cube to roll onto it"></canvas>
+      <canvas id="scene" width="625" height="500" aria-label="The board and the cube, in 3D; click a tile beside the cube to roll onto it"></canvas>
       <div id="compass" aria-label="Where the paint points"><span data-dir="N">N</span><span data-dir="W">W</span><span class="mid"><span data-dir="U">U</span><span data-dir="D">D</span></span><span data-dir="E">E</span><span data-dir="S">S</span><small>the paint</small></div>
     </div>
-    <div class="pane read">
-      <h2>Length</h2>
-      <div id="length"></div>
-      <h2>The lit set, its result</h2>
-      <div class="result">
-        <div id="lit-map" aria-label="The tiles the program lights, numbered 0 to 15"></div>
-        <p id="number" title="The lit set as a 16-bit number: tile n is bit n, so a1 (tile 0) is the last binary digit"><b id="decimal"></b><br><small>decimal</small></p>
-      </div>
-      <p id="binary-line" title="The lit set in binary: tile 15 (d4) is the first digit, tile 0 (a1) the last"><span id="binary"></span> <small>binary</small></p>
-      <div id="par" title="par: the fewest rolls that end with this set lit"></div>
-      <h2 title="The question the lit set answers about the numbers 0 to 15, named as Nibble++ names its languages; a set with no short name shows its number">Its name</h2>
-      <p id="name"></p>
-      <h2>The run</h2>
-      <p id="status"></p>
+    <div class="pane chain" id="chain" data-pulses="0">
+      <section class="link" data-link="move" style="--i: 0">
+        <span class="step">1</span>
+        <h2>The move <small>a tile beside the cube, a button or an arrow key</small></h2>
+        <div class="drive">
+          <div class="keys" role="group" aria-label="Roll the cube (the arrow keys work too)">
+            <button type="button" data-roll="N" title="Roll north (the up arrow key)">▲<small>N</small></button>
+            <button type="button" data-roll="W" title="Roll west (the left arrow key)">◀<small>W</small></button>
+            <button type="button" data-roll="S" title="Roll south (the down arrow key)">▼<small>S</small></button>
+            <button type="button" data-roll="E" title="Roll east (the right arrow key)">▶<small>E</small></button>
+          </div>
+          <div class="steps">
+            <button type="button" id="play">Play</button>
+            <button type="button" id="back" title="One roll back">Back</button>
+            <button type="button" id="forward" title="One roll forward">Forward</button>
+            <button type="button" id="reset" title="Back to the start">Reset</button>
+            <button type="button" id="clear" title="An empty program">Clear</button>
+          </div>
+        </div>
+      </section>
+      <section class="link listing-link" data-link="listing" style="--i: 1">
+        <span class="step">2</span>
+        <h2 title="The program a line a roll: its opcode, what it rolls, where the paint points after it, and the tile it lights or darkens when the paint lands face down">The program, a line a roll</h2>
+        <div class="listing-head" aria-hidden="true"><span>line</span><span>op</span><span>roll</span><span>paint</span><span></span></div>
+        <ol id="listing" aria-label="The program, a line a roll"></ol>
+      </section>
+      <section class="link" data-link="code" style="--i: 2">
+        <span class="step">3</span>
+        <h2><label for="program">As RollScript and machine code</label> <small id="length"></small></h2>
+        <input id="program" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" value="" placeholder="type rolls: N E S W">
+        <p id="said"></p>
+        <p id="machine-code" title="The machine code: each roll's opcode in two bits (N 00, E 01, S 10, W 11), line 1 first, and the bits read as one binary number"></p>
+      </section>
+      <section class="link" data-link="name" style="--i: 3">
+        <span class="step">4</span>
+        <h2 title="The question the lit set answers about the numbers 0 to 15, named as Nibble++ names its languages; a set with no short name shows its number">The question its lit set answers</h2>
+        <div class="answer">
+          <p id="name"></p>
+          <p id="number" title="The lit set as a 16-bit number: tile n is bit n, so a1 (tile 0) is the last binary digit"><b id="decimal"></b> <small>=</small> <span id="binary"></span> <small>binary</small></p>
+        </div>
+        <p class="facts"><span id="par" title="par: the fewest rolls that end with this set lit"></span></p>
+        <p id="status"></p>
+      </section>
     </div>
   </div>
 </main>
-<script type="module" src="cube.0275aeb244614149.js"></script>
+<script type="module" src="cube.730154b9683dc0be.js"></script>
 </body>
 </html>
