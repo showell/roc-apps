@@ -44,13 +44,15 @@ canvas { display: block; background: #06080f; width: min(960px, 100%, calc(88vh 
 #chapters .letter { display: inline-block; width: 1.2em; font: 600 11px monospace; }
 #chapters .now { color: #f2d999; }
 #chapters .now .mark { visibility: visible; }
-/* The paused notice, over the picture's middle (the script places it there)
+/* The paused notice, just below the picture, or in its bottom-right corner
+   when the picture runs to the window's foot (the script places it there), so
+   a screenshot of the picture's middle stays clear. It shows
    whenever the game says the walk is paused, and gone when it walks on. It
    takes no clicks or keys, so they reach the canvas, and it never animates:
    a layer forever animating over the canvas was once suspected of making
    Firefox throttle it. */
-#paused { display: none; position: absolute; transform: translate(-50%, -50%); margin: 0; padding: 12px 22px; background: rgba(0, 0, 0, 0.6); border-radius: 6px; color: #f2ead6; font: 600 20px/1.4 system-ui, sans-serif; text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; user-select: none; }
-#paused kbd { font: 600 16px monospace; border: 1px solid #8a8678; border-radius: 3px; padding: 0 5px; }
+#paused { display: none; position: absolute; margin: 0; padding: 4px 10px; background: rgba(0, 0, 0, 0.6); border-radius: 4px; color: #f2ead6; font: 600 14px/1.4 system-ui, sans-serif; text-shadow: 0 1px 2px #000; white-space: nowrap; pointer-events: none; user-select: none; }
+#paused kbd { font: 600 12px monospace; border: 1px solid #8a8678; border-radius: 3px; padding: 0 5px; }
 #rate { display: none; position: absolute; top: 8px; left: 8px; max-width: calc(100% - 32px); white-space: pre-wrap; padding: 4px 8px; background: rgba(0, 0, 0, 0.55); color: #eee; font: 13px monospace; pointer-events: none; }
 </style>
 </head>
@@ -884,7 +886,8 @@ var walkView = (function () {
 	}, true);
 	window.walkChapterHide = function () { shown = false; update(); };
 })();
-// The paused notice, over the picture's middle: up whenever the game says the
+// The paused notice, out of the picture's way: just below it when the window
+// has room, else in its bottom-right corner. Up whenever the game says the
 // walk is paused (walk:paused, above), however it got there, once the walk
 // shows, and down when the game says it walks on. A chapter key pressed while
 // paused shows that chapter's first frame and leaves the notice up.
@@ -894,12 +897,14 @@ var walkView = (function () {
 	var shown = false, paused = false, gone = false;
 	function place() {
 		var box = canvas.getBoundingClientRect();
-		notice.style.left = Math.round(box.left + box.width / 2) + "px";
-		notice.style.top = Math.round(box.top + box.height / 2) + "px";
+		var tall = notice.offsetHeight || 30, wide = notice.offsetWidth || 260;
+		var below = box.bottom + 6 + tall <= window.innerHeight;
+		notice.style.top = Math.round(below ? box.bottom + 6 : box.bottom - tall - 8) + "px";
+		notice.style.left = Math.round(box.right - wide - 8) + "px";
 	}
 	function update() { notice.style.display = shown && paused && !gone ? "block" : "none"; }
 	window.walkPaused = function () { return { paused: paused, notice: notice.style.display === "block" }; };
-	window.addEventListener("walk:paused", function () { paused = true; update(); });
+	window.addEventListener("walk:paused", function () { paused = true; update(); place(); });
 	window.addEventListener("walk:walking", function () { paused = false; update(); });
 	window.addEventListener("walk:shown", function () { shown = true; place(); update(); });
 	window.addEventListener("resize", place);
