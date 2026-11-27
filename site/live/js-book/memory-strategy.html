@@ -3,41 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Memory strategy · A JavaScript Interpreter in Roc</title>
+<title>Memory strategy · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li class="here"><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a><ol class="sections"><li><a href="memory-strategy.html#a-reference-is-an-index">A reference is an index</a></li><li><a href="memory-strategy.html#the-free-list">The free list</a></li><li><a href="memory-strategy.html#slots-and-boxes">Slots and boxes</a></li><li><a href="memory-strategy.html#what-each-operation-costs">What each operation costs</a></li><li><a href="memory-strategy.html#one-line-of-javascript">One line of JavaScript</a></li></ol></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li class="here"><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a><ol class="sections"><li><a href="memory-strategy.html#a-reference-is-an-index">A reference is an index</a></li><li><a href="memory-strategy.html#the-free-list">The free list</a></li><li><a href="memory-strategy.html#slots-and-boxes">Slots and boxes</a></li><li><a href="memory-strategy.html#what-each-operation-costs">What each operation costs</a></li><li><a href="memory-strategy.html#one-line-of-javascript">One line of JavaScript</a></li></ol></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 5</p>
+<p class="chapter-number">Chapter 11</p>
 <h1 id="memory-strategy">Memory strategy</h1>
 <p>Everything a JavaScript program shares lives in one Roc list, and every operation is shaped so that Roc writes that list in place. This chapter lays out the types, states what each operation costs and how that is checked, and follows one line of JavaScript through the machine.</p>
 <h2 id="a-reference-is-an-index">A reference is an index <a class="section-link" href="#a-reference-is-an-index" aria-label="Link to this section">§</a></h2>
@@ -207,7 +209,7 @@
 </g>
 </g>
 </svg><figcaption>Two references into the heap, and its free list</figcaption></figure><h2 id="slots-and-boxes">Slots and boxes <a class="section-link" href="#slots-and-boxes" aria-label="Link to this section">§</a></h2>
-<p>A call&#39;s frame is a run of slots on the operand stack, from its base: its parameters, the variables its blocks declare, the hidden places of its <code>for ... of</code> loops, then the boxes it captures. An instruction names a slot by its place from the base, so a local is one index into the stack. The values being worked on sit above the slots, and the callers wait in <code>frames</code>. A push writes the place at <code>top</code>, and appends only past the stack&#39;s end:</p>
+<p>In the VM, a call&#39;s frame (<a class="chapter-link" href="the-front-end.html">“The front end”</a>) is a run of slots on the operand stack, from its base, so a local is one index into the stack. The values being worked on sit above the slots, and the callers wait in <code>frames</code>. A push writes the place at <code>top</code>, and appends only past the stack&#39;s end:</p>
 <figure class="listing"><figcaption>js/roc/Machine.roc, the function pushed</figcaption><pre><code class="language-roc"><span class="syn-name">pushed</span> : <span class="syn-type">Machine.Machine</span>, <span class="syn-type">Heap.Value</span> -&gt; <span class="syn-type">Machine.Machine</span>
 <span class="syn-name">pushed</span> = |machine, value|
 	<span class="syn-keyword">if</span> machine.top &lt; machine.stack.len() {
@@ -487,7 +489,7 @@
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-pipeline-and-the-machine.html"><small>Previous</small>The pipeline and the machine</a>
+<a rel="prev" href="the-vm-and-its-machine.html"><small>Previous</small>The VM and its machine</a>
 <a rel="next" href="the-garbage-collector.html"><small>Next</small>The garbage collector</a>
 </nav>
 </main>

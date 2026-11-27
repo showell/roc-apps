@@ -3,67 +3,55 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Why a compiler suits Roc · A JavaScript Interpreter in Roc</title>
+<title>Why a compiler suits Roc · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li class="here"><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a><ol class="sections"><li><a href="why-a-compiler-suits-roc.html#the-interpreter-has-effects-of-its-own">The interpreter has effects of its own</a></li><li><a href="why-a-compiler-suits-roc.html#the-compiler-is-one-function">The compiler is one function</a></li><li><a href="why-a-compiler-suits-roc.html#the-ultimate-delegation">The ultimate delegation</a></li><li><a href="why-a-compiler-suits-roc.html#what-the-copy-rule-still-asks">What the copy rule still asks</a></li></ol></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li class="here"><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a><ol class="sections"><li><a href="why-a-compiler-suits-roc.html#the-interpreter-has-effects-of-its-own">The interpreter has effects of its own</a></li><li><a href="why-a-compiler-suits-roc.html#the-compiler-is-one-function">The compiler is one function</a></li><li><a href="why-a-compiler-suits-roc.html#the-ultimate-delegation">The ultimate delegation</a></li><li><a href="why-a-compiler-suits-roc.html#what-the-copy-rule-still-asks">What the copy rule still asks</a></li></ol></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 15</p>
+<p class="chapter-number">Chapter 16</p>
 <h1 id="why-a-compiler-suits-roc">Why a compiler suits Roc</h1>
 <p>In one respect the compiler is the simpler of the two programs for Roc. An interpreter has to perform the program&#39;s effects while it runs. A compiler reads a text and gives back bytes, one transformation from start to end, and the effects wait for the executable.</p>
 <h2 id="the-interpreter-has-effects-of-its-own">The interpreter has effects of its own <a class="section-link" href="#the-interpreter-has-effects-of-its-own" aria-label="Link to this section">§</a></h2>
 <p>The VM runs the program inside the Roc call. When the program calls <code>console.log</code>, the VM hands the line to its host&#39;s <code>emit!</code> then and there; a timer waits on the event queue; a click arrives from the page (<a class="chapter-link" href="a-canvas-in-the-browser.html">“A canvas in the browser”</a>). So the VM&#39;s loop is effectful, and Roc marks every function on that path with <code>!</code> and <code>=&gt;</code>: 25 lines of <code>Vm.roc</code> declare such a function, and 38 lines across <code>js/roc/</code> (lines of the form <code>name! :</code>, counted for this chapter on 2026-11-25).</p>
-<p>The run&#39;s whole state travels with those calls as one value, the machine, and most of the interpreter&#39;s performance work went into handing it on cheaply. The cells are lent to a rule and taken back, so a write to the heap stays in place (<a class="chapter-link" href="javascripts-rules-for-values.html">“JavaScript&#39;s rules for values”</a>). Every shape that would put a second owner on the heap is a copy cliff, and the machine record is held to 248 bytes so that handing it to each instruction costs vector moves in place of a <code>memcpy</code> (<a class="chapter-link" href="what-copies.html">“What copies”</a>).</p>
+<p>The run&#39;s whole state travels with those calls as one value, the machine, and most of the interpreter&#39;s performance work went into handing it on cheaply. The cells are lent to a rule and taken back, so a write to the heap stays in place (<a class="chapter-link" href="javascripts-rules-for-values.html">“JavaScript&#39;s rules for values”</a>). Every shape that would put a second owner on the heap is a copy cliff, and the machine record is held to 248 bytes so that handing it to each instruction costs vector moves in place of a <code>memcpy</code> (<a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a>).</p>
 <h2 id="the-compiler-is-one-function">The compiler is one function <a class="section-link" href="#the-compiler-is-one-function" aria-label="Link to this section">§</a></h2>
 <p>The compiler&#39;s whole work is <code>executable_of</code>, from the program&#39;s text to the executable&#39;s bytes, or the reason it refuses:</p>
 <figure class="listing"><figcaption>x86/roc/JsToX86.roc, the function executable_of</figcaption><pre><code class="language-roc"><span class="syn-comment">## The executable a program compiles to, or why it doesn&#39;t.</span>
 <span class="syn-name">executable_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Str</span>)
 <span class="syn-name">executable_of</span> = |src| {
-	tree = <span class="syn-keyword">match</span> <span class="syn-type">Parser</span>.program_of(src, <span class="syn-type">Core</span>) {
-		<span class="syn-type">Ok</span>(parsed) =&gt; parsed
-		<span class="syn-type">Err</span>(fault) =&gt; {
-			place = <span class="syn-string">&quot;line </span>${fault.line.to_str()}<span class="syn-string">, column </span>${fault.column.to_str()}<span class="syn-string">&quot;</span>
-			<span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;</span>${fault.why}<span class="syn-string"> (</span>${place}<span class="syn-string">)&quot;</span>)
-		}
-	}
-	program = <span class="syn-keyword">match</span> <span class="syn-type">Compile</span>.program(tree) {
-		<span class="syn-type">Ok</span>(compiled) =&gt; compiled
-		<span class="syn-type">Err</span>(<span class="syn-type">Unsupported</span>(why)) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(why)
-	}
-	items = <span class="syn-keyword">match</span> <span class="syn-type">Lowering</span>.program_items(program) {
-		<span class="syn-type">Ok</span>(lowered) =&gt; lowered
-		<span class="syn-type">Err</span>(<span class="syn-type">Refused</span>(why)) =&gt; <span class="syn-keyword">return</span> <span class="syn-type">Err</span>(<span class="syn-string">&quot;refused: </span>${why}<span class="syn-string">&quot;</span>)
-	}
-	<span class="syn-keyword">match</span> <span class="syn-type">Assembly</span>.assemble(items) {
+	lowered = lowering_of(src)?
+	<span class="syn-keyword">match</span> <span class="syn-type">Assembly</span>.assemble(lowered.statements) {
 		<span class="syn-type">Ok</span>(code) =&gt; <span class="syn-type">Ok</span>(<span class="syn-type">Elf</span>.executable(code))
 		<span class="syn-type">Err</span>(<span class="syn-type">UnknownLabel</span>(label)) =&gt; <span class="syn-type">Err</span>(<span class="syn-string">&quot;no label </span>${label}<span class="syn-string">&quot;</span>)
 		<span class="syn-type">Err</span>(<span class="syn-type">DuplicateLabel</span>(label)) =&gt; <span class="syn-type">Err</span>(<span class="syn-string">&quot;the label </span>${label}<span class="syn-string"> is marked twice&quot;</span>)
@@ -155,14 +143,14 @@
 <p>The program&#39;s effects still happen, later, and the processor does them. <code>console.log</code> ends in the runtime&#39;s <code>runtime_write</code>, which fills the output buffer, and the buffer goes out by a <code>syscall</code> instruction for <code>write</code>. The timers become <code>runtime_run_timers</code>, a loop in the executable over a virtual clock. The compiler writes each effect down as instructions, and the processor and the kernel perform them when the executable runs.</p>
 <p>Many compilers hand their last step to a C compiler or to LLVM. This one hands it to the metal: the bytes Roc writes are the bytes the processor runs.</p>
 <h2 id="what-the-copy-rule-still-asks">What the copy rule still asks <a class="section-link" href="#what-the-copy-rule-still-asks" aria-label="Link to this section">§</a></h2>
-<p>With the effects gone, the machine record and its lending go too. The lowering&#39;s state is the kinds of one function&#39;s slots, made afresh for each function on each pass, and the passes are a plain loop over values that ends when the kinds settle. The one large value that grows is the code itself. <code>Assembly.roc</code> builds the bytes by appending to one list and patches the placeholders with <code>set</code> while that list has one owner, so both passes write it in place (the module&#39;s own comment; unchecked by an allocation count). The copy rule of <a class="chapter-link" href="what-copies.html">“What copies”</a> still holds, and in the compiler it governs one list in one place.</p>
-<p>A pure function is also plain to test. Each of the encoder&#39;s 98 <code>expect</code>s holds one instruction&#39;s bytes, <code>rsp</code> and <code>r12</code> as a base and the displacements at the edges of 8 and 32 bits among them, and each was read back through <code>objdump</code> during development (<code>x86/README.md</code>). An <code>expect</code> of a pure function needs a value in and a value out, and the host stays out of it.</p>
+<p>With the effects gone, the machine record and its lending go too. The lowering&#39;s state is the kinds of one function&#39;s slots, made afresh for each function on each pass, and the passes are a plain loop over values that ends when the kinds settle. The one large value that grows is the code itself. <code>Assembly.roc</code> builds the bytes by appending to one list and patches the placeholders with <code>set</code> while that list has one owner, so both passes write it in place (the module&#39;s own comment; unchecked by an allocation count). The copy rule of <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> still holds, and in the compiler it governs one list in one place.</p>
+<p>A pure function is also plain to test. Each of the encoder&#39;s 106 <code>expect</code>s holds one instruction&#39;s bytes, <code>rsp</code> and <code>r12</code> as a base and the displacements at the edges of 8 and 32 bits among them, and each was read back through <code>objdump</code> during development (<code>x86/README.md</code>). An <code>expect</code> of a pure function needs a value in and a value out, and the host stays out of it.</p>
 <p>The work moved, and some of it moved into the runtime. A routine that the interpreter writes as a Roc function, such as <code>console.log</code>&#39;s layout of an array in columns, is in the compiler a list of x86-64 instructions, written one a line in Roc (<code>x86/roc/Inspect.roc</code>, 1,184 lines).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="the-compiler-to-x86-64.html"><small>Previous</small>The compiler to x86-64</a>
-<a rel="next" href="the-compiler-against-node.html"><small>Next</small>The compiler against node</a>
+<a rel="prev" href="handing-the-machine-on.html"><small>Previous</small>Handing the machine on</a>
+<a rel="next" href="dev-and-release-builds-disagree.html"><small>Next</small>Dev and release builds disagree</a>
 </nav>
 </main>
 </body>

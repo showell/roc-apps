@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The VM and its machine · JavaScript in Roc: A Compiler and an Interpreter</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li class="here"><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a><ol class="sections"><li><a href="the-vm-and-its-machine.html#the-loop-only-dispatches">The loop only dispatches</a></li><li><a href="the-vm-and-its-machine.html#the-heap-is-one-roc-value">The heap is one Roc value</a></li><li><a href="the-vm-and-its-machine.html#the-machine">The machine</a></li></ol></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 10</p>
+<h1 id="the-vm-and-its-machine">The VM and its machine</h1>
+<p><code>Vm.roc</code> is the interpreter&#39;s back end: it runs the front end&#39;s bytecode (<a class="chapter-link" href="the-front-end.html">“The front end”</a>) on a stack machine. This chapter looks at its loop, then at the one value the run works on: the machine.</p>
+<p>Beside it, <code>Inspect.roc</code> formats <code>console.log</code>&#39;s output as node&#39;s <code>util.inspect</code> does, function for function, and <code>NumberText.roc</code> writes a number as <code>String(n)</code> does.</p>
+<h2 id="the-loop-only-dispatches">The loop only dispatches <a class="section-link" href="#the-loop-only-dispatches" aria-label="Link to this section">§</a></h2>
+<p>The VM&#39;s loop fetches the next instruction and hands the machine to <code>dispatch!</code>, whose match calls one top-level handler an arm. Each handler is a small function of its own, so the language grows by adding handlers and every function stays small. Here is the heart of the loop, a collection first when one is due:</p>
+<figure class="listing"><figcaption>js/roc/Vm.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-keyword">while</span> <span class="syn-type">Machine</span>.is_running($machine) <span class="syn-keyword">and</span> $machine.depth &gt;= floor {
+		<span class="syn-keyword">if</span> <span class="syn-type">Machine</span>.is_collection_due($machine) {
+			before = <span class="syn-type">Heap</span>.in_use_count($machine.cells, $machine.free)
+			{ machine: swept, live } = <span class="syn-type">Machine</span>.collected($machine)
+			heard = { cells: swept.cells.len(), before: before, live: live }
+			told! = host.collected!
+			told!(heard)
+			$machine = <span class="syn-type">Machine</span>.with_collection_heard(swept, heard)
+		}
+		<span class="syn-keyword">if</span> $machine.code != $code {
+			$code = $machine.code
+			$ops = <span class="syn-type">Machine</span>.code_of(program, $code).ops
+		}
+		op = $ops.get($machine.pc) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Vm.loop!: every code ends in a return or a finish&quot;</span>
+		$machine = dispatch!(host, program, { ..$machine, pc: $machine.pc + <span class="syn-number">1</span> }, op)
+</code></pre></figure><h2 id="the-heap-is-one-roc-value">The heap is one Roc value <a class="section-link" href="#the-heap-is-one-roc-value" aria-label="Link to this section">§</a></h2>
+<p>JavaScript shares arrays, objects and closures by reference, and Roc has only values. So the interpreter keeps everything JavaScript shares in one list of cells, the heap, and a JavaScript reference is an index into it. <a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a> lays out the heap, the stack and what each operation costs.</p>
+<h2 id="the-machine">The machine <a class="section-link" href="#the-machine" aria-label="Link to this section">§</a></h2>
+<p>Everything a run holds is one record, <code>Machine.Machine</code>, handed to each instruction&#39;s handler and handed back:</p>
+<figure class="listing"><figcaption>js/roc/Machine.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Machine</span> : {
+		cells : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>),
+		stack : <span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>),
+		top : <span class="syn-type">U64</span>,
+		frames : <span class="syn-type">List</span>(<span class="syn-type">Machine.Frame</span>),
+		<span class="syn-comment"># How many of `frames` are callers waiting: the ones past it are spent.</span>
+		depth : <span class="syn-type">U64</span>,
+		handlers : <span class="syn-type">List</span>(<span class="syn-type">Machine.Handler</span>),
+		<span class="syn-comment"># How many of `handlers` wait: the ones past it are spent.</span>
+		handler_count : <span class="syn-type">U64</span>,
+		<span class="syn-comment"># The timers and the click handler, boxed: an instruction hands the</span>
+		<span class="syn-comment"># machine back, and only a timer&#39;s or a click&#39;s touch the queue, so</span>
+		<span class="syn-comment"># the box keeps every other instruction from copying it.</span>
+		events : <span class="syn-type">Box</span>(<span class="syn-type">Events.Queue</span>),
+		code : <span class="syn-type">U64</span>,
+		pc : <span class="syn-type">U64</span>,
+		base : <span class="syn-type">U64</span>,
+		<span class="syn-comment"># Boxed, as the queue is: made once, at the start.</span>
+		builtins : <span class="syn-type">Box</span>(<span class="syn-type">List</span>(<span class="syn-type">Heap.Value</span>)),
+		<span class="syn-comment"># The first free cell, which the next allocation takes.</span>
+		free : <span class="syn-type">Heap.Free</span>,
+		<span class="syn-comment"># Boxed: only a collection writes it.</span>
+		collecting : <span class="syn-type">Box</span>(<span class="syn-type">Machine.Collecting</span>),
+		status : <span class="syn-type">Machine.Status</span>,
+		steps : <span class="syn-type">U64</span>,
+		effects : <span class="syn-type">U64</span>,
+		<span class="syn-comment"># Boxed: only the start of a run or a callback writes it.</span>
+		budget : <span class="syn-type">Box</span>(<span class="syn-type">Machine.Budget</span>),
+		<span class="syn-comment"># Boxed, as the queue is: only a turtle&#39;s move touches it.</span>
+		turtle : <span class="syn-type">Box</span>(<span class="syn-type">Canvas.Turtle</span>),
+</code></pre></figure><p>The boxes in it are the subject of <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a>: each boxed part is one that most instructions leave alone.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="what-the-compiler-leaves-to-an-optimizer.html"><small>Previous</small>What the compiler leaves to an optimizer</a>
+<a rel="next" href="memory-strategy.html"><small>Next</small>Memory strategy</a>
+</nav>
+</main>
+</body>
+</html>

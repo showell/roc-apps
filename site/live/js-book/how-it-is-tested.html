@@ -3,45 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How it is tested · A JavaScript Interpreter in Roc</title>
+<title>How it is tested · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li class="here"><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li class="here"><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a><ol class="sections"><li><a href="how-it-is-tested.html#the-oracle-against-node">The oracle against node</a></li><li><a href="how-it-is-tested.html#the-compilers-checks">The compiler&#39;s checks</a></li><li><a href="how-it-is-tested.html#controls-held-exactly">Controls held exactly</a></li><li><a href="how-it-is-tested.html#golden-logs-for-the-canvas">Golden logs for the canvas</a></li><li><a href="how-it-is-tested.html#page-check">page_check</a></li><li><a href="how-it-is-tested.html#planted-faults">Planted faults</a></li></ol></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 12</p>
+<p class="chapter-number">Chapter 19</p>
 <h1 id="how-it-is-tested">How it is tested</h1>
 <p>A check is trusted once it has been seen to fail. Each check below holds the code to a fixed answer, and each count is exact.</p>
 <h2 id="the-oracle-against-node">The oracle against node <a class="section-link" href="#the-oracle-against-node" aria-label="Link to this section">§</a></h2>
-<p><code>js/oracle.shale</code>, a tier of the default <code>check.shale</code>, holds every corpus program&#39;s transcript and exit code to node&#39;s, 61 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with <code>collect=every</code>, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.</p>
+<p><code>js/oracle.shale</code>, a tier of the default <code>check.shale</code>, holds <code>js-vm</code>&#39;s transcript and exit code on every corpus program to node&#39;s, 61 of them, and every refusal to its message. Every program runs, and the run fails if any one fails. It also runs with <code>collect=every</code>, which collects after every instruction that allocates, and programs 51 to 53 hold values through each kind of root while collections run.</p>
+<h2 id="the-compilers-checks">The compiler&#39;s checks <a class="section-link" href="#the-compilers-checks" aria-label="Link to this section">§</a></h2>
+<p><code>x86/programs.shale</code>, also a tier of <code>check.shale</code>, compiles each program in <code>x86/tests/</code> and holds what its executable prints, and its exit code, to node&#39;s; each program in <code>x86/tests/refused/</code> names the refusal <code>js-x86</code> must print or the line its executable must stop with. Then it holds the corpus to <code>x86/corpus.txt</code>, the list of programs whose executables match node, so a program that starts or stops matching fails the gate until the list moves. <code>x86/hello.shale</code> runs the backend&#39;s expects, the encoder&#39;s 106 among them, each holding one instruction&#39;s bytes, and <code>x86/fib.shale</code> the compiler&#39;s 187 (<code>x86/README.md</code>).</p>
 <h2 id="controls-held-exactly">Controls held exactly <a class="section-link" href="#controls-held-exactly" aria-label="Link to this section">§</a></h2>
 <p><code>check.shale js=1</code> runs the nine allocation controls of <a class="chapter-link" href="dev-and-release-builds-disagree.html">“Dev and release builds disagree”</a>, in both builds. A missing expected file fails the run (<code>80b5e681</code>).</p>
 <h2 id="golden-logs-for-the-canvas">Golden logs for the canvas <a class="section-link" href="#golden-logs-for-the-canvas" aria-label="Link to this section">§</a></h2>

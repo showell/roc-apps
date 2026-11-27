@@ -3,44 +3,45 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The compiler to x86-64 · A JavaScript Interpreter in Roc</title>
+<title>The compiler to x86-64 · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles">What it compiles</a></li></ol></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles">What it compiles</a></li></ol></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 14</p>
+<p class="chapter-number">Chapter 6</p>
 <h1 id="the-compiler-to-x86-64">The compiler to x86-64</h1>
-<p>The <code>x86/</code> folder holds a second way to run the subset: <code>js-x86</code>, an ahead-of-time compiler that turns a program into a static Linux x86-64 executable. Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>).</p>
-<p>It began as a hello-world executable on 2026-11-24 (<code>c3ff721</code>), and 47 minutes later it compiled a recursive <code>fib</code> to node&#39;s answer (<code>0c5ea7e</code>). By 01:21 UTC on 2026-11-25 it ran 45 of the corpus&#39;s 61 programs exactly as node does (<code>451306b</code>), then 47 with classes (<code>6ec8068</code>).</p>
+<p>The <code>x86/</code> folder holds <code>js-x86</code>, an ahead-of-time compiler that turns a program into a static Linux x86-64 executable. Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>).</p>
 <h2 id="the-pipeline">The pipeline <a class="section-link" href="#the-pipeline" aria-label="Link to this section">§</a></h2>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="From the text to the executable" width="134pt" height="380pt"
  viewBox="0.00 0.00 134.00 380.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -89,14 +90,14 @@
 </g>
 </g>
 </svg><figcaption>From the text to the executable</figcaption></figure><ul>
-<li><strong>The front end is the interpreter&#39;s own.</strong> <code>JsToX86.roc</code> imports <code>Parser</code> and <code>Compile</code> from <code>js/roc/</code> as a package, so the compiler starts from the same <code>Bytecode</code> the VM runs (<a class="chapter-link" href="the-pipeline-and-the-machine.html">“The pipeline and the machine”</a>).</li>
+<li><strong>The front end is shared.</strong> <code>JsToX86.roc</code> imports <code>Parser</code> and <code>Compile</code> from <code>js/roc/</code> as a package, so the compiler starts from the same <code>Bytecode</code> the interpreter runs (<a class="chapter-link" href="the-front-end.html">“The front end”</a>).</li>
 <li><strong><code>Lowering.roc</code></strong> turns each function&#39;s bytecode into <code>Assembly</code> statements, one instruction&#39;s machine code after another, and hands each family of instructions to a module of its own: <code>OperatorLowering</code>, <code>BuiltinLowering</code>, <code>CallLowering</code> and <code>IndexLowering</code>.</li>
 <li><strong><code>Assembly.roc</code></strong> lays the statements out as bytes. A jump or a call that names a label gets a placeholder, patched once every label&#39;s place is known.</li>
 <li><strong><code>Elf.roc</code></strong> wraps the code as an executable: an ELF header, one program header and one segment, read and execute, mapped at 0x400000.</li>
 <li><strong>The last step only carries.</strong> Roc&#39;s default platform writes text alone to stdout, so <code>js-x86</code> prints the executable as hex, and <code>x86/executables.shale</code> turns each pair of digits back into its byte.</li>
 </ul>
 <h2 id="a-value-in-8-bytes">A value in 8 bytes <a class="section-link" href="#a-value-in-8-bytes" aria-label="Link to this section">§</a></h2>
-<p>A slot of the frame has to hold any JavaScript value. The compiler fits every value into the 8 bytes of a double, a scheme called NaN-boxing. A double has about 2^53 bit patterns that all mean NaN, and x86-64&#39;s arithmetic makes only two of them. So a number is its own double, and every other value is one of the spare NaNs: its top 16 bits are a tag, and its low 48 bits are an address or a constant (<code>x86/roc/Boxing.roc</code>):</p>
+<p>A slot of the frame that <code>Compile</code> lays out has to hold any JavaScript value. The compiler fits every value into the 8 bytes of a double, a scheme called NaN-boxing. A double has about 2^53 bit patterns that all mean NaN, and x86-64&#39;s arithmetic makes only two of them. So a number is its own double, and every other value is one of the spare NaNs: its top 16 bits are a tag, and its low 48 bits are an address or a constant (<code>x86/roc/Boxing.roc</code>):</p>
 <table>
 <thead>
 <tr>
@@ -146,24 +147,113 @@
 <p>The two NaNs the processor makes lie below every tag, so a value is a number exactly when its bits are below the first tag shifted into place: one unsigned compare.</p>
 <p><strong>A known kind stays untagged.</strong> The lowering walks each function&#39;s instructions keeping the kind of each slot and each place on the bytecode&#39;s stack: a number, a boolean, a string, an array and so on, or <code>Value</code>, a value whose kind only the run decides. Where two known numbers meet <code>+</code>, the code is one <code>addsd</code>, and it tests zero tags. A <code>Value</code>&#39;s tag is tested in line for <code>+</code> and the comparisons, and the runtime does the rest (<code>runtime_add</code>, <code>runtime_compare</code> and their kin). Since a value&#39;s bits are the same whatever the compiler knows of it, a place that widens to <code>Value</code> where two ways meet costs zero instructions. A function&#39;s parameters and its result take their kinds from the whole program: the lowering runs pass after pass until every call&#39;s argument kinds and every return&#39;s kind settle (<code>Lowering.program_items</code>).</p>
 <h2 id="the-runtime">The runtime <a class="section-link" href="#the-runtime" aria-label="Link to this section">§</a></h2>
-<p>Every executable carries the runtime, about 15 KB of machine code (<code>x86/README.md</code>): the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>. Here is the whole allocator:</p>
-<figure class="listing"><figcaption>x86/roc/Runtime.roc, the function allocate_items</figcaption><pre><code class="language-roc"><span class="syn-comment">## The bump allocator: `rdi` rounded up to 8, taken from `r15`. It changes</span>
-<span class="syn-comment">## `rax` and `rdi` alone.</span>
+<p>Every executable carries the runtime, about 15 KB of machine code (<code>x86/README.md</code>): the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>. Here is the allocator, with its paths for a fresh page and a large block, from <code>Heap.roc</code>:</p>
+<figure class="listing"><figcaption>x86/roc/Heap.roc, the function allocate_items</figcaption><pre><code class="language-roc"><span class="syn-comment">## The allocator: `rdi` rounded up to 8, the header that and the kind in</span>
+<span class="syn-comment">## `rax` make, and the class whose block holds them both (the highest bit</span>
+<span class="syn-comment">## of `rdi + 7`, at least 3). A class&#39;s next block is taken unless it lies</span>
+<span class="syn-comment">## at a page&#39;s start, which says its page is full or it has none: then a</span>
+<span class="syn-comment">## page is taken first. A block past the most a page of blocks holds takes</span>
+<span class="syn-comment">## pages of its own. It keeps every register but `rax` and `rdi`.</span>
 <span class="syn-name">allocate_items</span> : <span class="syn-type">List</span>(<span class="syn-type">Assembly.Statement</span>)
 <span class="syn-name">allocate_items</span> = [
-	<span class="syn-type">Emit</span>.mark(<span class="syn-type">Runtime</span>.allocate),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_kind&quot;</span>),
+	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rcx</span>),
+	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rdi</span>, <span class="syn-number">7</span>),
 	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rdi</span>, <span class="syn-number">-8</span>),
-	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rax</span>, <span class="syn-type">R15</span>),
-	<span class="syn-type">Emit</span>.plus(<span class="syn-type">R15</span>, <span class="syn-type">Rdi</span>),
-	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">R15</span>, <span class="syn-type">R14</span>),
-	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-string">&quot;runtime_out_of_memory&quot;</span>),
+	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rcx</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rdi</span>, <span class="syn-number">7</span>)),
+	<span class="syn-type">Instruction</span>(
+		<span class="syn-type">AluImm</span>({
+			operation: <span class="syn-type">Or</span>,
+			to: <span class="syn-type">Rcx</span>,
+			value: <span class="syn-number">8</span>,
+		}),
+	),
+	<span class="syn-type">Instruction</span>(<span class="syn-type">Bsr</span>({ to: <span class="syn-type">Rcx</span>, from: <span class="syn-type">Rcx</span> })),
+	<span class="syn-type">Instruction</span>(
+		<span class="syn-type">Alu</span>({
+			operation: <span class="syn-type">Or</span>,
+			to: <span class="syn-type">Rdi</span>,
+			from: <span class="syn-type">Rax</span>,
+		}),
+	),
+	<span class="syn-type">Emit</span>.cmp_imm(<span class="syn-type">Rcx</span>, most_class),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-string">&quot;runtime_allocate_large&quot;</span>),
+	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rcx</span>, <span class="syn-number">4</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">0</span> })),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rdx</span>, page_size - <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_page&quot;</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_block&quot;</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">8</span> })),
+	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rdx</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.store(class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">0</span> }), <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
+	<span class="syn-type">Emit</span>.ret,
+	<span class="syn-comment"># A page for the class whose offset is in `rcx`, marked in the table</span>
+	<span class="syn-comment"># with the class&#39;s bit.</span>
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_page&quot;</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, next_page_place),
+	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rdx</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, page_size)),
+	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rdx</span>, <span class="syn-type">R14</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-type">Heap</span>.out_of_memory),
+	<span class="syn-type">Emit</span>.store(next_page_place, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rsi</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, first_page_place),
+	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rsi</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rsi</span>, page_bits),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rcx</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rdx</span>, <span class="syn-number">4</span>),
+	<span class="syn-type">Emit</span>.byte_store(table_entry(<span class="syn-type">Rsi</span>), <span class="syn-type">Dl</span>),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_block&quot;</span>),
+	<span class="syn-comment"># A large block: the pages its header and its bytes fill, the first</span>
+	<span class="syn-comment"># marked `large_first` and the rest `large_rest`.</span>
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large&quot;</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rax</span>, <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rax</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rax</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">8</span> + page_size - <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.bit_and_imm(<span class="syn-type">Rax</span>, <span class="syn-number">0</span> - page_size),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, next_page_place),
+	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rax</span>, <span class="syn-type">R14</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">A</span>, <span class="syn-type">Heap</span>.out_of_memory),
+	<span class="syn-type">Emit</span>.store(next_page_place, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rsi</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rsi</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rcx</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rcx</span>, <span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rcx</span>, page_bits),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rax</span>, <span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, first_page_place),
+	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rax</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rax</span>, page_bits),
+	<span class="syn-type">Emit</span>.imm(<span class="syn-type">Rdx</span>, large_first),
+	<span class="syn-type">Emit</span>.byte_store(table_entry(<span class="syn-type">Rax</span>), <span class="syn-type">Dl</span>),
+	<span class="syn-type">Emit</span>.imm(<span class="syn-type">Rdx</span>, large_rest),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large_page&quot;</span>),
+	<span class="syn-type">Emit</span>.minus_imm(<span class="syn-type">Rcx</span>, <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_large_done&quot;</span>),
+	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">1</span>),
+	<span class="syn-type">Emit</span>.byte_store(table_entry(<span class="syn-type">Rax</span>), <span class="syn-type">Dl</span>),
+	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_large_page&quot;</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large_done&quot;</span>),
+	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rax</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rsi</span>, <span class="syn-number">8</span>)),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rsi</span>),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.ret,
 ]
-</code></pre></figure><p>Four registers belong to the runtime for the whole run: <code>r12</code> the stack&#39;s limit, <code>r13</code> the runtime&#39;s state, <code>r14</code> the heap&#39;s end and <code>r15</code> its next free byte, in a heap of 1 GiB. The allocator only bumps, so every allocation lasts until the program exits, and a program that fills the heap stops with a message saying the collector is still to come.</p>
+</code></pre></figure><p>Four registers belong to the runtime for the whole run: <code>r12</code> the stack&#39;s limit, <code>r13</code> the runtime&#39;s state, <code>r14</code> the heap&#39;s end and <code>r15</code> the heap&#39;s state, in a heap of 2 GiB. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>), and the allocator only bumps through them, so every allocation lasts until the program exits, and a program that fills the heap stops with a message saying the collector is still to come (<a class="chapter-link" href="the-garbage-collector.html">“The garbage collector”</a> says what is being built).</p>
 <p>The executable of fib(22) is 25,167 bytes, nearly all of it the runtime (<code>x86/fib.shale</code>, 2026-11-25): milestone 2&#39;s, before the runtime, was 1,010 bytes (<code>x86/README.md</code>).</p>
 <h2 id="what-it-compiles">What it compiles <a class="section-link" href="#what-it-compiles" aria-label="Link to this section">§</a></h2>
-<p><code>x86/programs.shale</code> compiles each of the interpreter&#39;s 61 corpus programs and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 47 of 61 (<code>6ec8068</code>). It also holds the 23 programs of <code>x86/tests/</code> to node, and the 31 of <code>x86/tests/refused/</code> to their refusals. The 14 left stop at these, by the first reason each meets (<code>x86/README.md</code>, &quot;The corpus&quot;):</p>
+<p><code>x86/programs.shale</code> compiles each of the 61 corpus programs in <code>js/tests/</code> and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 47 of 61 (<code>6ec8068</code>). It also holds the 23 programs of <code>x86/tests/</code> to node, and the 31 of <code>x86/tests/refused/</code> to their refusals. The 14 left stop at these, by the first reason each meets (<code>x86/README.md</code>, &quot;The corpus&quot;):</p>
 <table>
 <thead>
 <tr>
@@ -190,8 +280,8 @@
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="limitations.html"><small>Previous</small>Limitations</a>
-<a rel="next" href="why-a-compiler-suits-roc.html"><small>Next</small>Why a compiler suits Roc</a>
+<a rel="prev" href="rocs-copy-rule.html"><small>Previous</small>Roc&#39;s copy rule</a>
+<a rel="next" href="the-compiler-against-node.html"><small>Next</small>The compiler against node</a>
 </nav>
 </main>
 </body>

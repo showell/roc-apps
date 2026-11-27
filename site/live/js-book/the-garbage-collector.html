@@ -3,41 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The garbage collector · A JavaScript Interpreter in Roc</title>
+<title>The garbage collector · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li class="here"><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li></ol></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li class="here"><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a><ol class="sections"><li><a href="the-garbage-collector.html#what-it-does">What it does</a></li><li><a href="the-garbage-collector.html#around-the-copy-cliff">Around the copy cliff</a></li><li><a href="the-garbage-collector.html#its-roots-and-when-it-runs">Its roots, and when it runs</a></li><li><a href="the-garbage-collector.html#garbage-you-can-watch">Garbage you can watch</a></li><li><a href="the-garbage-collector.html#two-collectors-two-worlds">Two collectors, two worlds</a></li></ol></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 6</p>
+<p class="chapter-number">Chapter 12</p>
 <h1 id="the-garbage-collector">The garbage collector</h1>
 <h2 id="what-it-does">What it does <a class="section-link" href="#what-it-does" aria-label="Link to this section">§</a></h2>
 <p><code>Collector.roc</code> is the VM&#39;s garbage collector, a precise mark and sweep. The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell on the free list. A live cell keeps its index, so every reference stays valid across a collection.</p>
@@ -65,7 +67,7 @@
 		{ cells: $cells, free: $free, live: $live }
 </code></pre></figure><p>Writing <code>Freed</code> over a garbage cell drops the cell that was there, and Roc&#39;s reference counting returns what it held (an object&#39;s properties, an array&#39;s items, a closure&#39;s boxes) to the allocator at that write. The heap&#39;s list keeps its length, and <a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a> shows an allocation taking a freed place. That is how the programs in <code>js/heaps/</code> went from peaks of 40 to 164 MB to about 4 MB each (<code>62110109</code>).</p>
 <h2 id="around-the-copy-cliff">Around the copy cliff <a class="section-link" href="#around-the-copy-cliff" aria-label="Link to this section">§</a></h2>
-<p>The collector is shaped around Roc&#39;s copy cliff, where a write to a list that something else still refers to copies the whole list first (&quot;What copies&quot; lists the shapes):</p>
+<p>The collector is shaped around Roc&#39;s copy cliff, where a write to a list that something else still refers to copies the whole list first (<a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> lists the shapes):</p>
 <ul>
 <li><strong>The marks are a list of their own.</strong> <code>marked</code> reads the cells and writes only its marks and its stack of cells waiting to be visited, each in place, so every list it writes is its own. A mark bit inside each cell would make the first mark copy the heap.</li>
 <li><strong>The sweep owns the cells.</strong> <code>collected</code> takes the cells out of the machine with <code>lent</code> before it calls <code>swept</code>, so each <code>set</code> in the sweep is the list&#39;s only reference and writes in place:</li>
@@ -147,6 +149,10 @@
 		<span class="syn-type">EveryAllocation</span>(left) =&gt; machine.cells.len() != left.length <span class="syn-keyword">or</span> machine.free != left.free
 	}
 </code></pre></figure><p>Between two instructions every value the program holds is in the machine. The one exception is a builtin that runs a callback, such as <code>filter</code> or <code>sort</code>: what it keeps across the callback waits on the stack, where the collections inside the callback see it. A live value that names a freed cell stops the run, since it means a root was missed.</p>
+<h2 id="garbage-you-can-watch">Garbage you can watch <a class="section-link" href="#garbage-you-can-watch" aria-label="Link to this section">§</a></h2>
+<p>Two samples show the collector at work. <code>js/tests/55-garbage.js</code> makes 1,800 short-lived pieces, an object, an array and a closure each, in 12 rounds, so the memory view&#39;s sawtooth shows its teeth; node holds it like every corpus program, and the page lists it third (<code>a57db770</code>). <code>onCollect(fn)</code> is a playground extra, like <code>onClick</code> and outside JavaScript: its handler hears each collection after the sweep, as an event that runs between instructions, as a timer does. Node keeps its own collector hidden from a program, so the canvas log <code>9-garbage-heard</code> holds that sample, in <code>js-canvas</code> and on the page (<code>aa391df8</code>). The handler sits in the boxed event queue, so a program that ignores <code>onCollect</code> pays one match inside each collection and runs every instruction as before.</p>
+<h2 id="two-collectors-two-worlds">Two collectors, two worlds <a class="section-link" href="#two-collectors-two-worlds" aria-label="Link to this section">§</a></h2>
+<p>The compiled programs get a collector of their own, a separate codebase in the same family: a non-moving mark and sweep that collects at about twice the last live size. <code>Collector.roc</code> works on a Roc list of cells: a reference is an index, the VM names its roots exactly, and Roc&#39;s reference counting frees what a <code>Freed</code> cell held. The compiler&#39;s, designed in <code>x86/COLLECTOR.md</code>, works on raw memory: each heap block carries a header word of its kind and size, blocks sit in pages of one size class, and the roots are found conservatively, in every word of the machine stack and the registers that looks like a heap address. The headers and pages are built (<code>e876665</code>); the mark and the sweep come next, with a torture tier that collects at every allocation. Until they land, a compiled program keeps every allocation until it exits.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

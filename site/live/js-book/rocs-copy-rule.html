@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roc&#39;s copy rule · JavaScript in Roc: A Compiler and an Interpreter</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li class="here"><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a><ol class="sections"><li><a href="rocs-copy-rule.html#when-a-write-copies">When a write copies</a></li></ol></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 5</p>
+<h1 id="rocs-copy-rule">Roc&#39;s copy rule</h1>
+<p>Both programs lean on one rule of Roc&#39;s. The interpreter keeps a JavaScript program&#39;s heap in one Roc list, which many of its instructions write; the compiler builds an executable&#39;s bytes by appending to one list. Each is fast only while Roc writes its list in place, and this chapter states when Roc does. <a class="chapter-link" href="handing-the-machine-on.html">“Handing the machine on”</a> gives the three habits the interpreter took from it.</p>
+<h2 id="when-a-write-copies">When a write copies <a class="section-link" href="#when-a-write-copies" aria-label="Link to this section">§</a></h2>
+<p>Roc writes a list in place only while the list has a single owner, and a copy is silent. On RC1 every copy is a use after a consume: a write (<code>List.set</code>, <code>append</code>, <code>Dict.insert</code>) takes the value, and something still reads the old one after it. The copy allocates the whole list again on every such write, so its cost grows with the list. roc-apps holds each shape below as a loop in its <code>tools/copy_shapes/</code>, checked in the release and dev builds.</p>
+<p>Shapes that copy in every build:</p>
+<ol>
+<li>The old list read after its write: <code>ys = xs.set(j, v) ?? xs</code>, then <code>xs.get(j)</code>. Reading first is free.</li>
+<li>A closure over the list called after the write.</li>
+<li>An inner list got, written and set back while the outer list still holds it. <code>List.update</code> hands the element over unshared and is free.</li>
+<li>The old dict read after an insert, even its length.</li>
+<li>A value got from a dict, written and inserted back while the dict still holds it.</li>
+</ol>
+<p>Shapes that copy in the dev build only, where a helper stays a call that owns its arguments and the release build specializes it first:</p>
+<ol start="6">
+<li>A helper that reads its list after writing it.</li>
+<li>A helper that reads the whole record inside the write of one of its fields.</li>
+<li><code>?? xs</code> on a list whose entries hold a reference count, such as a list of strings. <code>?? crash</code> is free.</li>
+</ol>
+<p>A record update copies the record around the field it writes, inline sub-records included. A <code>Box</code> carried untouched is free, but every write re-boxes it, one allocation a write.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-front-end.html"><small>Previous</small>The front end</a>
+<a rel="next" href="the-compiler-to-x86-64.html"><small>Next</small>The compiler to x86-64</a>
+</nav>
+</main>
+</body>
+</html>

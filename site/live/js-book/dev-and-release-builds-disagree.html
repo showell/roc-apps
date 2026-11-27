@@ -3,41 +3,43 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dev and release builds disagree · A JavaScript Interpreter in Roc</title>
+<title>Dev and release builds disagree · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#step-budgets">Step budgets</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li class="here"><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a><ol class="sections"><li><a href="dev-and-release-builds-disagree.html#allocation-counts">Allocation counts</a></li><li><a href="dev-and-release-builds-disagree.html#copies-that-happen-only-in-dev">Copies that happen only in dev</a></li><li><a href="dev-and-release-builds-disagree.html#timings">Timings</a></li><li><a href="dev-and-release-builds-disagree.html#step-budgets">Step budgets</a></li><li><a href="dev-and-release-builds-disagree.html#what-each-build-is-for">What each build is for</a></li></ol></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
-<p class="chapter-number">Chapter 10</p>
+<p class="chapter-number">Chapter 17</p>
 <h1 id="dev-and-release-builds-disagree">Dev and release builds disagree</h1>
 <p>Roc has two backends. The dev backend (<code>--opt=dev</code>) compiles in about a second and emits code that is mostly stack moves. The release build (<code>--opt=speed</code>) goes through LLVM, runs fib(22) about nine times faster, and compiles slowly. The two builds disagree about allocations, about time and about copies, and this project met each disagreement.</p>
 <h2 id="allocation-counts">Allocation counts <a class="section-link" href="#allocation-counts" aria-label="Link to this section">§</a></h2>
@@ -101,7 +103,7 @@
 <p>Most of the difference is one cause. The dev build lowers closures to boxes, so a <code>List.update</code> whose lambda captures a value that holds a reference count (a key, a value, a list) allocates once per write to box the capture. That allocation is a box and the list stays in place, and the release build makes it zero times (the files&#39; own comments say so line by line). One dev allocation remains unexplained: 02-closure-call&#39;s 112-byte list per call, which roc-alloc-trace puts down to <code>Machine.pushed</code> and which three rewrites left in place (<code>js/README.md</code>).</p>
 <p>This difference forced a decision. The walker&#39;s heap writers were first rewritten as <code>List.update</code> calls (<code>46c08a1d</code>); the release build held every control, and four dev controls rose by one. The change was reverted (<code>53f986a1</code>), then brought back (<code>22cd72db</code>) under the rule that Roc code should read well and play well with tooling, even at the cost of a little noise in dev builds. The dev expected file was rewritten, and every new line in it explains its allocation.</p>
 <h2 id="copies-that-happen-only-in-dev">Copies that happen only in dev <a class="section-link" href="#copies-that-happen-only-in-dev" aria-label="Link to this section">§</a></h2>
-<p>Some copies are made only by the dev build, at a helper&#39;s boundary: there a helper stays a call that owns its arguments, where the release build specializes it first. &quot;Roc&#39;s copy rule&quot; lists three such shapes. This project met two kinds:</p>
+<p>Some copies are made only by the dev build, at a helper&#39;s boundary: there a helper stays a call that owns its arguments, where the release build specializes it first. <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> lists three such shapes. This project met two kinds:</p>
 <ul>
 <li><strong>A rule generic over the whole machine.</strong> When <code>ValueRules</code> was split out, a version that took the engine&#39;s whole machine as an open record came first. The dev build copied the cells a rule wrote through it (a probe measured 3 allocations a write against 1), and the walker&#39;s dev controls went red, 05-array-push rising from 3 to 12.73 a pass (<code>d8d6b7fe</code>). The rules now take a small machine of the cells, which the VM lends and takes back.</li>
 <li><strong>A planted copy the release build optimized away.</strong> Twice, a <code>List.drop_last</code> was planted back into the walker&#39;s scope handling. Each time the dev ladder went red on 02-closure-call alone (15 to 16 in <code>920cda0c</code>, 3 to 4 in <code>2233adc9</code>) and the release ladder stayed green, because the release build makes zero copies there.</li>
@@ -153,7 +155,7 @@
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
-<a rel="prev" href="what-copies.html"><small>Previous</small>What copies</a>
+<a rel="prev" href="why-a-compiler-suits-roc.html"><small>Previous</small>Why a compiler suits Roc</a>
 <a rel="next" href="build-times.html"><small>Next</small>Build times</a>
 </nav>
 </main>

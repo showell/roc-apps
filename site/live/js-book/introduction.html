@@ -3,47 +3,53 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Introduction · A JavaScript Interpreter in Roc</title>
+<title>Introduction · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
-<li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#what-it-runs">What it runs</a></li><li><a href="introduction.html#who-judges-it">Who judges it</a></li><li><a href="introduction.html#where-the-numbers-come-from">Where the numbers come from</a></li></ol></li>
+<li class="here"><a href="introduction.html"><span class="number">1</span>Introduction</a><ol class="sections"><li><a href="introduction.html#what-it-runs">What it runs</a></li><li><a href="introduction.html#who-judges-it">Who judges it</a></li><li><a href="introduction.html#the-playground">The playground</a></li><li><a href="introduction.html#where-the-numbers-come-from">Where the numbers come from</a></li><li><a href="introduction.html#the-order-of-the-book">The order of the book</a></li></ol></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
 <li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
 <p class="chapter-number">Chapter 1</p>
 <h1 id="introduction">Introduction</h1>
-<p>The <code>js/</code> folder of roc-js-interpreter holds an interpreter for a subset of JavaScript, written in <a href="https://www.roc-lang.org/">Roc</a>. It runs as a command-line program, <code>js-vm</code>, and in a browser playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a>, where a program draws on a canvas as it runs and a memory view shows its heap over time.</p>
-<p>This book is for a reader who knows programming and is new to this codebase, and above all for one curious about writing a language&#39;s runtime in a language that has only values. AI coding agents (Claude) wrote the code, with human supervision, over three days, 2026-11-23 to 2026-11-25.</p>
+<p>roc-js-interpreter holds two programs that run one subset of JavaScript, both written in <a href="https://www.roc-lang.org/">Roc</a>. <code>js-x86</code>, in <code>x86/</code>, is an ahead-of-time compiler: it turns a program into a static Linux x86-64 executable. <code>js-vm</code>, in <code>js/</code>, is an interpreter: it turns the program into bytecode and runs that on a virtual machine. The two share a front end, the lexer, the parser, the resolver and the bytecode compiler, so they read a program&#39;s text the same way.</p>
+<p>This book is for a reader who knows programming and is new to this codebase, and above all for one curious about writing a language&#39;s tools in a language that has only values. AI coding agents (Claude) wrote the code, with human supervision, over four days, 2026-11-23 to 2026-11-26.</p>
 <h2 id="what-it-runs">What it runs <a class="section-link" href="#what-it-runs" aria-label="Link to this section">§</a></h2>
 <p>The subset is real JavaScript: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps and Sets, and the timers. Classes run too, as syntax sugar the parser writes as plain functions (<code>0b6d8deb</code>). <code>this</code> outside a class&#39;s code, <code>new</code> on a program&#39;s own function and prototypes stay outside it, and <code>js/README.md</code> says why: each would make every call carry a receiver or every property read walk a prototype chain.</p>
-<p>Here is one of the playground&#39;s samples, a turtle drawing a spiral:</p>
+<p>The interpreter runs all 61 programs of the corpus in <code>js/tests/</code>, and the compiler 49 of them (<code>x86/README.md</code>, &quot;The corpus&quot;, 2026-11-26).</p>
+<h2 id="who-judges-it">Who judges it <a class="section-link" href="#who-judges-it" aria-label="Link to this section">§</a></h2>
+<p>Every program in the subset is real JavaScript, so node is a free oracle, and it judges both programs. <code>js/oracle.shale</code> runs each program in <code>js/tests/</code> through node 22 and through <code>js-vm</code>, and the two transcripts, exit codes included, must match byte for byte; <code>x86/programs.shale</code> holds each executable&#39;s output and exit code to node&#39;s the same way. A program outside the subset gets an error that names what it used: each program in <code>js/tests/refused/</code> names, on its first line, the message <code>js-vm</code> must end with. The corpus grew from 32 programs and 25 refusals on the first day (<code>278631d8</code>) to 61 and 76 (<code>js/README.md</code>, its status of 2026-11-24). Program 54, <code>54-big-daddy.js</code>, is a day in a small city that uses every feature of the subset, and it is also the playground&#39;s &quot;all features&quot; sample (<code>7d6a472f</code>, <code>cc904c2a</code>).</p>
+<h2 id="the-playground">The playground <a class="section-link" href="#the-playground" aria-label="Link to this section">§</a></h2>
+<p>The interpreter also runs in a browser playground at <a href="https://roc.lynrummy.com/js/">roc.lynrummy.com/js/</a>, where a program draws on a canvas as it runs and a memory view shows its heap over time. Here is one of the playground&#39;s samples, a turtle drawing a spiral:</p>
 <figure class="listing"><figcaption>js/canvas/2-turtle-spiral.js, the whole file</figcaption><pre><code class="language-javascript"><span class="syn-comment">// A turtle spiral</span>
 <span class="syn-keyword">const</span> STEPS = <span class="syn-number">90</span>; <span class="syn-comment">// how many lines the turtle draws</span>
 <span class="syn-keyword">const</span> GROWTH = <span class="syn-number">2</span>; <span class="syn-comment">// how much longer each line is than the one before</span>
@@ -58,11 +64,10 @@ background(<span class="syn-string">&quot;white&quot;</span>);
   turn(TURN);
 }
 console.log(<span class="syn-string">&quot;the turtle ends at heading&quot;</span>, (STEPS * TURN) % <span class="syn-number">360</span>);
-</code></pre></figure><h2 id="who-judges-it">Who judges it <a class="section-link" href="#who-judges-it" aria-label="Link to this section">§</a></h2>
-<p>Every program in the subset is real JavaScript, so node is a free oracle. <code>js/oracle.shale</code> runs each program in <code>js/tests/</code> through node 22 and through <code>js-vm</code>, and the two transcripts, exit codes included, must match byte for byte. A program outside the subset gets an error that names what it used: each program in <code>js/tests/refused/</code> names, on its first line, the message <code>js-vm</code> must end with. The corpus grew from 32 programs and 25 refusals on the first day (<code>278631d8</code>) to 61 and 76 (<code>js/README.md</code>, its status of 2026-11-24). Program 54, <code>54-big-daddy.js</code>, is a day in a small city that uses every feature of the subset, and it is also the playground&#39;s &quot;all features&quot; sample (<code>7d6a472f</code>, <code>cc904c2a</code>).</p>
-<h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
+</code></pre></figure><h2 id="where-the-numbers-come-from">Where the numbers come from <a class="section-link" href="#where-the-numbers-come-from" aria-label="Link to this section">§</a></h2>
 <p>The project began as a folder of <a href="https://github.com/showell/roc-apps">roc-apps</a> and moved to its own repository with its history on 2026-11-24, so a commit from before then may name a file that only roc-apps holds. Each number in this book comes from a commit message, cited by its short hash (a commit of roc-js-interpreter, or one of roc-apps&#39; linked there), from <code>js/README.md</code>, or from another file of the repository, named where it is used. Code is quoted from the repository as it stands when the book is built.</p>
-<p><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a> is the project&#39;s short history. The design starts at <a class="chapter-link" href="the-pipeline-and-the-machine.html">“The pipeline and the machine”</a>. The compiler to x86-64 has four chapters of its own, from <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> to <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>.</p>
+<h2 id="the-order-of-the-book">The order of the book <a class="section-link" href="#the-order-of-the-book" aria-label="Link to this section">§</a></h2>
+<p><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a> is the project&#39;s short history. Part I is the machinery the two programs share: <a class="chapter-link" href="the-front-end.html">“The front end”</a>, and <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a>, which both lean on. Part II is the compiler, from <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> on. For Roc it is the simpler program, one pure function from a program&#39;s text to an executable&#39;s bytes, so it comes first. Part III is the interpreter, from <a class="chapter-link" href="the-vm-and-its-machine.html">“The VM and its machine”</a> on, which carries what the compiler hands to the processor: the program&#39;s effects, a heap, a collector and a page. Part IV, from <a class="chapter-link" href="why-a-compiler-suits-roc.html">“Why a compiler suits Roc”</a> on, is what building the two taught about Roc.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

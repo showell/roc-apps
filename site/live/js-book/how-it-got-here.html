@@ -3,58 +3,59 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>How it got here · A JavaScript Interpreter in Roc</title>
+<title>How it got here · JavaScript in Roc: A Compiler and an Interpreter</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
 </head>
 <body class="chapter">
 <nav class="book-nav" id="chapters" aria-label="Chapters">
-<a class="book-name" href="index.html">A JavaScript Interpreter in Roc</a>
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
-<li class="here"><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a><ol class="sections"><li><a href="how-it-got-here.html#a-tree-walker-first">A tree-walker first</a></li><li><a href="how-it-got-here.html#the-vm-in-three-rounds">The VM, in three rounds</a></li><li><a href="how-it-got-here.html#the-page-and-the-walkers-end">The page, and the walker&#39;s end</a></li><li><a href="how-it-got-here.html#garbage-you-can-watch">Garbage you can watch</a></li></ol></li>
-<li><a href="the-pipeline-and-the-machine.html"><span class="number">4</span>The pipeline and the machine</a></li>
-<li><a href="memory-strategy.html"><span class="number">5</span>Memory strategy</a></li>
-<li><a href="the-garbage-collector.html"><span class="number">6</span>The garbage collector</a></li>
-<li><a href="javascripts-rules-for-values.html"><span class="number">7</span>JavaScript&#39;s rules for values</a></li>
-<li><a href="a-canvas-in-the-browser.html"><span class="number">8</span>A canvas in the browser</a></li>
-<li><a href="what-copies.html"><span class="number">9</span>What copies</a></li>
-<li><a href="dev-and-release-builds-disagree.html"><span class="number">10</span>Dev and release builds disagree</a></li>
-<li><a href="build-times.html"><span class="number">11</span>Build times</a></li>
-<li><a href="how-it-is-tested.html"><span class="number">12</span>How it is tested</a></li>
-<li><a href="limitations.html"><span class="number">13</span>Limitations</a></li>
-<li><a href="the-compiler-to-x86-64.html"><span class="number">14</span>The compiler to x86-64</a></li>
-<li><a href="why-a-compiler-suits-roc.html"><span class="number">15</span>Why a compiler suits Roc</a></li>
-<li><a href="the-compiler-against-node.html"><span class="number">16</span>The compiler against node</a></li>
-<li><a href="three-compilers-one-race.html"><span class="number">17</span>Three compilers, one race</a></li>
-<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">18</span>What the compiler leaves to an optimizer</a></li>
+<li class="here"><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a><ol class="sections"><li><a href="how-it-got-here.html#2026-11-23-a-tree-walker">2026-11-23: a tree-walker</a></li><li><a href="how-it-got-here.html#2026-11-24-the-vm-and-the-compilers-first-programs">2026-11-24: the VM, and the compiler&#39;s first programs</a></li><li><a href="how-it-got-here.html#2026-11-25-the-compiler-on-the-corpus">2026-11-25: the compiler on the corpus</a></li><li><a href="how-it-got-here.html#2026-11-26-method-tables-and-a-third-contestant">2026-11-26: method tables, and a third contestant</a></li></ol></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
 <li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
 </ol>
 </nav>
 <main>
-<p class="book-bar"><a href="index.html">A JavaScript Interpreter in Roc</a> <a href="#chapters">Chapters</a></p>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
 <article>
 <p class="chapter-number">Chapter 3</p>
 <h1 id="how-it-got-here">How it got here</h1>
-<p>This chapter is the history, kept brief. A reader who wants the design can skip ahead to <a class="chapter-link" href="the-pipeline-and-the-machine.html">“The pipeline and the machine”</a>.</p>
-<h2 id="a-tree-walker-first">A tree-walker first <a class="section-link" href="#a-tree-walker-first" aria-label="Link to this section">§</a></h2>
-<p>The first interpreter walked the tree (<code>30837f8e</code>). Its whole state was one value threaded through the walk: the heap, the scopes, the output and the step count. The same day it gained the node oracle, a wasm page with an editor and a Run button (<code>6a0ea512</code>), copy probes and exact allocation counts (<code>4dc98448</code>, <code>84263a4b</code>), variables resolved to slots before the run (<code>920cda0c</code>), a canvas library behind a host of effects (<code>65a8d71a</code>, <code>b8272c67</code>), and timers and clicks on one queue with a virtual clock (<code>941e9e67</code>). By the end of the day the walker passed 50 of 50 corpus programs and 44 of 44 refusals.</p>
-<h2 id="the-vm-in-three-rounds">The VM, in three rounds <a class="section-link" href="#the-vm-in-three-rounds" aria-label="Link to this section">§</a></h2>
-<p>The bytecode VM was built beside the walker in three rounds on 2026-11-24. The first round (<code>fe85d386</code>) brought the compiler and the stack machine, and refused what it had yet to cover as <code>js: unsupported (vm): ...</code>: 37 of 50 programs matched node, the VM refused the other 13, and every answer it gave was right. The second round (<code>60466bc7</code>, <code>b69660c4</code>) added exceptions, <code>switch</code>, labels, destructuring, optional chains, Maps and Sets, and the timers, and brought the VM to 50 of 50 and 44 of 44. The third round (<code>abb4fc0a</code>, <code>226eabfe</code>) added a mark-sweep collector. Before it, the programs in <code>js/heaps/</code> peaked at 164, 164, 40 and 64 MB; after it, each holds about 1,024 cells and peaks at 3.8 to 4.1 MB on the dev build (<code>62110109</code>).</p>
-<h2 id="the-page-and-the-walkers-end">The page, and the walker&#39;s end <a class="section-link" href="#the-page-and-the-walkers-end" aria-label="Link to this section">§</a></h2>
-<p>The playground moved onto the VM next: the canvas samples (<code>3d151f80</code>), then the page (<code>fd9fb4e4</code>). Then the walker was deleted (<code>aef0658b</code>): <code>Interp.roc</code>, <code>js-run</code> and <code>js-count</code> went, and the VM&#39;s expected-count files took the walker&#39;s names, so the check tier stayed the same.</p>
-<p>The page gained a memory view (<code>668c52ca</code>, <code>c7a85d90</code>): a popup with the last run&#39;s heap over time. Then came a speed fix (<code>3aba5cf7</code>), the subject of <a class="chapter-link" href="what-copies.html">“What copies”</a>. Two gaps closed next: calls nest 10,000 deep (<code>f4320451</code>), and a Map or a Set drops its deleted entries once they outnumber the rest (<code>865341ff</code>).</p>
-<p>Classes came last, as syntax sugar (<code>0b6d8deb</code>, <code>be76fa0f</code>, <code>a2cd6994</code>). The parser writes each class as plain functions, one that sets the methods on an instance, one that runs the constructor&#39;s body and one that makes the instance and calls both, so <code>Resolve</code>, <code>Compile</code> and the VM see only functions. On 2026-11-26 the methods moved off the instances: each class now has one table of its methods, each method a single function whose first parameter is the receiver, so a compiler can call a method directly once it knows the receiver&#39;s class.</p>
-<h2 id="garbage-you-can-watch">Garbage you can watch <a class="section-link" href="#garbage-you-can-watch" aria-label="Link to this section">§</a></h2>
-<p>Two samples followed for the memory view. <code>js/tests/55-garbage.js</code> makes 1,800 short-lived pieces, an object, an array and a closure each, in 12 rounds, so the memory view&#39;s sawtooth shows its teeth; node holds it like every corpus program, and the page lists it third (<code>a57db770</code>). <code>onCollect(fn)</code> is a playground extra, like <code>onClick</code> and outside JavaScript: its handler hears each collection after the sweep, as an event that runs between instructions, as a timer does. Node keeps its own collector hidden from a program, so the canvas log <code>9-garbage-heard</code> holds that sample, in <code>js-canvas</code> and on the page (<code>aa391df8</code>). The handler sits in the boxed event queue, so a program that ignores <code>onCollect</code> pays one match inside each collection and runs every instruction as before.</p>
+<p>This chapter is the history, a section a day. The interpreter came first, and the compiler was built on its front end.</p>
+<h2 id="2026-11-23-a-tree-walker">2026-11-23: a tree-walker <a class="section-link" href="#2026-11-23-a-tree-walker" aria-label="Link to this section">§</a></h2>
+<p>The first interpreter walked the tree (<code>30837f8e</code>), its whole state one value threaded through the walk: the heap, the scopes, the output and the step count. The same day it gained the node oracle, a wasm page with an editor and a Run button (<code>6a0ea512</code>), exact allocation counts (<code>84263a4b</code>), variables resolved to slots before the run (<code>920cda0c</code>), a canvas behind a host of effects (<code>65a8d71a</code>), and timers and clicks on one queue with a virtual clock (<code>941e9e67</code>). By the end of the day the walker passed 50 of 50 corpus programs and 44 of 44 refusals.</p>
+<h2 id="2026-11-24-the-vm-and-the-compilers-first-programs">2026-11-24: the VM, and the compiler&#39;s first programs <a class="section-link" href="#2026-11-24-the-vm-and-the-compilers-first-programs" aria-label="Link to this section">§</a></h2>
+<p>The bytecode VM was built beside the walker in three rounds. The first (<code>fe85d386</code>) matched node on 37 of 50 programs and refused the other 13; the second (<code>60466bc7</code>, <code>b69660c4</code>) added exceptions, <code>switch</code>, destructuring, Maps and Sets and the timers, and reached 50 of 50; the third (<code>abb4fc0a</code>) added a mark-sweep collector, which took the heap programs&#39; peaks of 40 to 164 MB down to about 4 MB (<code>62110109</code>). The playground moved onto the VM (<code>fd9fb4e4</code>), and the walker was deleted (<code>aef0658b</code>). The page gained a memory view (<code>668c52ca</code>), a speed fix brought the VM&#39;s machine record under 256 bytes (<code>3aba5cf7</code>), and classes came as syntax sugar (<code>0b6d8deb</code>). The project moved from roc-apps to its own repository the same day.</p>
+<p>At 20:44 UTC the compiler made its first executable, a hello world (<code>c3ff721</code>), and 47 minutes later it compiled a recursive <code>fib</code> to node&#39;s answer (<code>0c5ea7e</code>).</p>
+<h2 id="2026-11-25-the-compiler-on-the-corpus">2026-11-25: the compiler on the corpus <a class="section-link" href="#2026-11-25-the-compiler-on-the-corpus" aria-label="Link to this section">§</a></h2>
+<p>By 01:21 UTC the compiler ran 45 of the corpus&#39;s 61 programs exactly as node does (<code>451306b</code>), and by 17:00, 47, with classes (<code>6ec8068</code>). The fib race began the same day, a long Fibonacci in limbs, compiled and timed against node (<code>b4eb82f</code>).</p>
+<h2 id="2026-11-26-method-tables-and-a-third-contestant">2026-11-26: method tables, and a third contestant <a class="section-link" href="#2026-11-26-method-tables-and-a-third-contestant" aria-label="Link to this section">§</a></h2>
+<p>The methods moved off the instances (<code>e4834f9</code>): each class got one table of its methods, each method one function whose first parameter is the receiver, so that the compiler can call a method directly once it knows the receiver&#39;s class (<code>555b245</code>). Roc&#39;s own build of the fib race joined as a third contestant (<code>ee99278</code>), and the compiler came out even with it (<a class="chapter-link" href="three-compilers-one-race.html">“Three compilers, one race”</a>).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
 <a rel="prev" href="motivation.html"><small>Previous</small>Motivation</a>
-<a rel="next" href="the-pipeline-and-the-machine.html"><small>Next</small>The pipeline and the machine</a>
+<a rel="next" href="the-front-end.html"><small>Next</small>The front end</a>
 </nav>
 </main>
 </body>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Handing the machine on · JavaScript in Roc: A Compiler and an Interpreter</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+</head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li><a href="motivation.html"><span class="number">2</span>Motivation</a></li>
+<li><a href="how-it-got-here.html"><span class="number">3</span>How it got here</a></li>
+<li class="part">Part I: Shared machinery</li><li><a href="the-front-end.html"><span class="number">4</span>The front end</a></li>
+<li><a href="rocs-copy-rule.html"><span class="number">5</span>Roc&#39;s copy rule</a></li>
+<li class="part">Part II: The compiler</li><li><a href="the-compiler-to-x86-64.html"><span class="number">6</span>The compiler to x86-64</a></li>
+<li><a href="the-compiler-against-node.html"><span class="number">7</span>The compiler against node</a></li>
+<li><a href="three-compilers-one-race.html"><span class="number">8</span>Three compilers, one race</a></li>
+<li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">9</span>What the compiler leaves to an optimizer</a></li>
+<li class="part">Part III: The interpreter</li><li><a href="the-vm-and-its-machine.html"><span class="number">10</span>The VM and its machine</a></li>
+<li><a href="memory-strategy.html"><span class="number">11</span>Memory strategy</a></li>
+<li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
+<li><a href="javascripts-rules-for-values.html"><span class="number">13</span>JavaScript&#39;s rules for values</a></li>
+<li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
+<li class="here"><a href="handing-the-machine-on.html"><span class="number">15</span>Handing the machine on</a><ol class="sections"><li><a href="handing-the-machine-on.html#a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on</a></li><li><a href="handing-the-machine-on.html#box-what-is-rarely-written">Box what is rarely written</a></li><li><a href="handing-the-machine-on.html#stay-under-256-bytes">Stay under 256 bytes</a></li></ol></li>
+<li class="part">Part IV: What Roc taught</li><li><a href="why-a-compiler-suits-roc.html"><span class="number">16</span>Why a compiler suits Roc</a></li>
+<li><a href="dev-and-release-builds-disagree.html"><span class="number">17</span>Dev and release builds disagree</a></li>
+<li><a href="build-times.html"><span class="number">18</span>Build times</a></li>
+<li><a href="how-it-is-tested.html"><span class="number">19</span>How it is tested</a></li>
+<li><a href="limitations.html"><span class="number">20</span>Limitations</a></li>
+<li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
+<li><a href="appendix-b-the-tested-programs.html">Appendix B: The tested programs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">JavaScript in Roc: A Compiler and an Interpreter</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 15</p>
+<h1 id="handing-the-machine-on">Handing the machine on</h1>
+<p>The interpreter&#39;s performance work came down to <a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> and three habits that follow from it, each about the machine record of <a class="chapter-link" href="the-vm-and-its-machine.html">“The VM and its machine”</a>.</p>
+<h2 id="a-value-is-copied-when-it-is-handed-on">A value is copied when it is handed on <a class="section-link" href="#a-value-is-copied-when-it-is-handed-on" aria-label="Link to this section">§</a></h2>
+<p>Every VM instruction takes the machine and hands it back, and a handler copies the machine record on the way in, by the copy rule&#39;s record rule.</p>
+<h2 id="box-what-is-rarely-written">Box what is rarely written <a class="section-link" href="#box-what-is-rarely-written" aria-label="Link to this section">§</a></h2>
+<p>A part of the machine that most instructions leave alone costs a copy on every instruction if it sits inline. The event queue was the first example: only timers and clicks touch it, yet inline it made the release build&#39;s fib(22) take 123 ms; boxed, 82 ms (<code>15686d94</code>). Since every write re-boxes, a box suits a part that is rarely written after it is made.</p>
+<h2 id="stay-under-256-bytes">Stay under 256 bytes <a class="section-link" href="#stay-under-256-bytes" aria-label="Link to this section">§</a></h2>
+<p>LLVM copies a record of up to 256 bytes with eight vector moves, and calls <code>memcpy</code> for a bigger one. The collector&#39;s fields, the budget and the boxed turtle took the machine from 232 to 312 bytes, so every instruction paid a <code>memcpy</code> call. Boxing the collector&#39;s schedule alone left it at 288 bytes, still past the line, which is why that change left the times as they were. Boxing the builtins, the collector&#39;s schedule and count, and the step and effect budgets brought it to 248 bytes (<code>3aba5cf7</code>):</p>
+<table>
+<thead>
+<tr>
+<th>release build, best of five, CPU</th>
+<th>312 bytes</th>
+<th>248 bytes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>fib(22)</td>
+<td>110 ms</td>
+<td>99 ms</td>
+</tr>
+<tr>
+<td>nested loops</td>
+<td>495 ms</td>
+<td>439 ms</td>
+</tr>
+<tr>
+<td><code>memcpy</code> in fib&#39;s profile</td>
+<td>16%</td>
+<td>absent</td>
+</tr>
+</tbody>
+</table>
+<p>The lesson in <code>js/README.md</code> is that a field added inline counts against the 256, and boxing one part pays off only once the whole machine is back under the line. The line is a cliff: a machine past it pays the whole <code>memcpy</code>.</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="a-canvas-in-the-browser.html"><small>Previous</small>A canvas in the browser</a>
+<a rel="next" href="why-a-compiler-suits-roc.html"><small>Next</small>Why a compiler suits Roc</a>
+</nav>
+</main>
+</body>
+</html>
