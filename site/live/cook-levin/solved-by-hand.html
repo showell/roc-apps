@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 27</p>
 <h1 id="solved-by-hand">Solved by hand</h1>
-<p><strong>SAT solving, on paper. The machine in a new form, as clauses, worked on paper; it needs <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>.</strong> We solve the smallest puzzle&#39;s formula on paper and read the first lemmas of the hardest one&#39;s proof as plain statements about programs.</p>
+<p>In this chapter we solve the smallest puzzle&#39;s formula on paper, then read the first lemmas of the hardest puzzle&#39;s proof as plain statements about programs.</p>
 <p>The solver&#39;s answers so far came as verdicts; worked by hand, the same formula shows its reasons, each forced value and each lemma a sentence about programs.</p>
 <h2 id="0-in-one-line">{0} in one line <a class="section-link" href="#0-in-one-line" aria-label="Link to this section">§</a></h2>
 <p><code>is_tiny</code> accepts exactly {0} (code 1), and its shortest program has one line (Theorem 5). With lines 2 to 6 forced to <code>nada</code> (<code>sat 1 len=1</code>), the formula opens with ten unit clauses, <code>-3</code> to <code>-12</code>, and ends with four, one an input. Unit propagation repeats one rule: a clause whose literals are all false but one makes that one true. From the formula&#39;s own unit clauses, <code>src/sat_hand_main.c</code> finds that the rule decides every variable:</p>

@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 31</p>
 <h1 id="six-steps-composed">Six steps composed</h1>
-<p><strong>Mathematics. New results, the book&#39;s thesis; it needs <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>.</strong> We compose all six steps into four polynomials, describe the one that answers every question at once, and prove that they agree with the machine at all 16,384 points.</p>
+<p>This chapter holds the book&#39;s thesis. We compose all six steps into four polynomials, describe the one that answers every question at once, and prove that they agree with the machine at all 16,384 points.</p>
 <p>A whole program is six steps. Composing them means substituting: step 1&#39;s four polynomials go in for the state variables of step 2, and so on, until the final state is four polynomials in the 14 bits of <a class="chapter-link" href="the-program-left-unknown.html">“The program left unknown”</a>: the input&#39;s two, <code>h0</code> and <code>l0</code>, and the program&#39;s twelve, <code>op1_hb</code> to <code>op6_lb</code>. <code>src/compose.c</code> substitutes the step polynomials into themselves six times (<code>1146d43</code>). The Roc port&#39;s step, from <code>roc/Compose.roc</code>:</p>
 <figure class="listing"><figcaption>roc/Compose.roc, the function after_step</figcaption><pre><code class="language-roc"><span class="syn-comment">## The state after step `index` (1 to 6), from the state before it: each</span>
 <span class="syn-comment">## step polynomial with its six variables replaced by the state&#39;s four</span>

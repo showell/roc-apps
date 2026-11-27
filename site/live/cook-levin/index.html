@@ -18,81 +18,72 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <main>
 <article>
 <h1 id="a-riff-on-cook-levin">A riff on Cook-Levin</h1>
-<p>A small book about <a href="https://github.com/showell/cook-levin-riff">cook-levin-riff</a>: a toy machine whose every program is a polynomial and a Boolean formula, the six-step composition that took three years to arrive, and five independent ways of computing the same answers that all agree.</p>
-<p>The book is meant to be skimmed. Each chapter opens with a guidepost, in bold. It starts with the chapter&#39;s frame, the way it looks at the machine: ordinary computation, circuit design, mathematics, complexity theory or SAT solving. Where a chapter changes frame partway through, a line in italics says so. Then comes the chapter&#39;s kind, one of six, and the earlier chapter it needs, so you can jump in anywhere:</p>
+<p>This is a small book about <a href="https://github.com/showell/cook-levin-riff">cook-levin-riff</a>: a toy machine whose every program is a polynomial and a Boolean formula, the six-step composition that took three years to arrive, and five independent ways of computing the same answers that all agree.</p>
+<p>The book is meant to be skimmed. Start with the Introduction and <a class="chapter-link" href="the-machine.html">“The machine”</a>; after those, each chapter&#39;s opening says what it is about, so you can jump in anywhere. Here is the whole book, one line a chapter:</p>
 <ul>
-<li><strong>Start here</strong>: the pitch and the machine, the two chapters to read first.</li>
-<li><strong>A review</strong>: well-known ideas, retold beside the toy; skip one you know.</li>
-<li><strong>New results</strong>: theorems, counts and answers worked out for this book, each checked by a run.</li>
-<li><strong>The machine in a new form</strong>: the same machine seen as something new, and the guidepost names what: the machine as a puzzle, as gates, as a grid, as clauses or as polynomials, with program 1689 shown in each.</li>
-<li><strong>Big output to skim</strong>: a monstrosity, printed whole because its size is the point.</li>
-<li><strong>Tools and history</strong>: the programming languages, the solver, the cross-checks, the story, and what is still open.</li>
-</ul>
-<p>This list is the whole book in one line a chapter, the kind in italics:</p>
-<ul>
-<li><a class="chapter-link" href="introduction.html">“Introduction”</a>: what the book is for, its thesis, and its guide, program 1689. <em>Start here.</em></li>
+<li><a class="chapter-link" href="introduction.html">“Introduction”</a>: what the book is for, its thesis, and its guide, program 1689.</li>
 </ul>
 <p><strong>Part I, the toy:</strong></p>
 <ul>
-<li><a class="chapter-link" href="the-machine.html">“The machine”</a>: Steve&#39;s whole machine in one page. <em>Start here.</em></li>
-<li><a class="chapter-link" href="nibble-the-puzzle-page.html">“Nibble, the puzzle page”</a>: sixteen puzzles to play in the browser. <em>The machine as a puzzle.</em></li>
-<li><a class="chapter-link" href="deciding-in-plain-python.html">“Deciding in plain Python”</a>: every answer as a one-line Python lookup. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="the-languages-in-this-book.html">“The languages in this book”</a>: the notations studied, from Nibble to polynomials, and the programming languages used, Roc above all. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="formal-languages-and-machines.html">“Formal languages and machines”</a>: formal languages and Turing&#39;s machine in six rules. <em>A review.</em></li>
-<li><a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a>: all 4,096 programs run, and the formal language only one program decides. <em>New results.</em></li>
-<li><a class="chapter-link" href="which-instructions-are-needed.html">“Which instructions are needed”</a>: one instruction is dead weight. <em>New results.</em></li>
+<li><a class="chapter-link" href="the-machine.html">“The machine”</a>: Steve&#39;s whole machine in one page.</li>
+<li><a class="chapter-link" href="nibble-the-puzzle-page.html">“Nibble, the puzzle page”</a>: sixteen puzzles to play in the browser.</li>
+<li><a class="chapter-link" href="deciding-in-plain-python.html">“Deciding in plain Python”</a>: every answer as a one-line Python lookup.</li>
+<li><a class="chapter-link" href="the-languages-in-this-book.html">“The languages in this book”</a>: the notations studied, from Nibble to polynomials, and the programming languages used, Roc above all.</li>
+<li><a class="chapter-link" href="formal-languages-and-machines.html">“Formal languages and machines”</a>: formal languages and Turing&#39;s machine in six rules.</li>
+<li><a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a>: all 4,096 programs run, and the formal language only one program decides.</li>
+<li><a class="chapter-link" href="which-instructions-are-needed.html">“Which instructions are needed”</a>: one instruction is dead weight.</li>
 </ul>
 <p><strong>Part II, P, NP and Cook-Levin:</strong></p>
 <ul>
-<li><a class="chapter-link" href="p-and-np.html">“P and NP”</a>: the two classes, defined. <em>A review.</em></li>
-<li><a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a>: the toy grown until P and NP apply. <em>New results.</em></li>
-<li><a class="chapter-link" href="p-np-and-cook-levin.html">“P, NP and Cook-Levin”</a>: the theorem itself, and what it means for the toy. <em>A review.</em></li>
+<li><a class="chapter-link" href="p-and-np.html">“P and NP”</a>: the two classes, defined.</li>
+<li><a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a>: the toy grown until P and NP apply.</li>
+<li><a class="chapter-link" href="p-np-and-cook-levin.html">“P, NP and Cook-Levin”</a>: the theorem itself, and what it means for the toy.</li>
 </ul>
 <p><strong>Part III, Cook-Levin on the toy:</strong></p>
 <ul>
-<li><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a>: the toy as a chip sees it. <em>The machine as gates.</em></li>
-<li><a class="chapter-link" href="the-formal-languages-seen-from-outside.html">“The formal languages, seen from outside”</a>: the 16 puzzles are the 16 two-input gates. <em>New results.</em></li>
-<li><a class="chapter-link" href="parts-for-a-small-computer.html">“Parts for a small computer”</a>: each instruction drawn as a circuit. <em>The machine as parts you could buy.</em></li>
-<li><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>: one step of the machine as 59 gates. <em>The machine&#39;s step as a circuit.</em></li>
-<li><a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a>: the whole machine, and one wire that says &quot;solved&quot;. <em>The machine as one chip.</em></li>
-<li><a class="chapter-link" href="the-circuit-as-equations.html">“The circuit as equations”</a>: all 1,439 gates, to skim. <em>Big output to skim.</em></li>
-<li><a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a>: the whole machine as one formula of 14 bits. <em>The machine as one formula.</em></li>
-<li><a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>: rocsat, DIMACS in a readable form, and the two questions we ask it. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a>: a claim about a program, checked by a solver. <em>The machine as clauses.</em></li>
-<li><a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a>: why naming gates beats multiplying them out. <em>New results.</em></li>
-<li><a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>: the circuit run backwards. <em>The machine run backwards.</em></li>
-<li><a class="chapter-link" href="the-tableau-filled-in.html">“The tableau, filled in”</a>: Cook&#39;s grid, printed twice. <em>The machine as a grid.</em></li>
-<li><a class="chapter-link" href="naming-the-gates.html">“Naming the gates”</a>: three gates become nine clauses, and propagation runs them. <em>A review.</em></li>
-<li><a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>: every puzzle as one formula. <em>New results.</em></li>
-<li><a class="chapter-link" href="proofs-of-unsatisfiability.html">“Proofs of unsatisfiability”</a>: a DRAT proof checked with a pencil, lemma by lemma. <em>A review.</em></li>
-<li><a class="chapter-link" href="solved-by-hand.html">“Solved by hand”</a>: a formula solved on paper. <em>The machine as clauses, worked on paper.</em></li>
-<li><a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>: one puzzle&#39;s whole formula and answer, and all 15 proofs checked. <em>Big output to skim.</em></li>
+<li><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a>: the toy as a chip sees it.</li>
+<li><a class="chapter-link" href="the-formal-languages-seen-from-outside.html">“The formal languages, seen from outside”</a>: the 16 puzzles are the 16 two-input gates.</li>
+<li><a class="chapter-link" href="parts-for-a-small-computer.html">“Parts for a small computer”</a>: each instruction drawn as a circuit.</li>
+<li><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>: one step of the machine as 59 gates.</li>
+<li><a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a>: the whole machine, and one wire that says &quot;solved&quot;.</li>
+<li><a class="chapter-link" href="the-circuit-as-equations.html">“The circuit as equations”</a>: all 1,439 gates, to skim.</li>
+<li><a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a>: the whole machine as one formula of 14 bits.</li>
+<li><a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>: rocsat, DIMACS in a readable form, and the two questions we ask it.</li>
+<li><a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a>: a claim about a program, checked by a solver.</li>
+<li><a class="chapter-link" href="from-equations-to-cnf.html">“From equations to CNF”</a>: why naming gates beats multiplying them out.</li>
+<li><a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>: the circuit run backwards.</li>
+<li><a class="chapter-link" href="the-tableau-filled-in.html">“The tableau, filled in”</a>: Cook&#39;s grid, printed twice.</li>
+<li><a class="chapter-link" href="naming-the-gates.html">“Naming the gates”</a>: three gates become nine clauses, and propagation runs them.</li>
+<li><a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>: every puzzle as one formula.</li>
+<li><a class="chapter-link" href="proofs-of-unsatisfiability.html">“Proofs of unsatisfiability”</a>: a DRAT proof checked with a pencil, lemma by lemma.</li>
+<li><a class="chapter-link" href="solved-by-hand.html">“Solved by hand”</a>: a formula solved on paper.</li>
+<li><a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>: one puzzle&#39;s whole formula and answer, and all 15 proofs checked.</li>
 </ul>
 <p><strong>Part IV, the polynomials:</strong></p>
 <ul>
-<li><a class="chapter-link" href="the-program-left-unknown.html">“The program left unknown”</a>: the machine as a formula of its program&#39;s bits, and two roads forward. <em>The machine as a formula of its program.</em></li>
-<li><a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>: logic turned into arithmetic, kept small by one identity, x² = x. <em>The machine as polynomials.</em></li>
-<li><a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a>: four polynomials that are the machine. <em>New results.</em></li>
-<li><a class="chapter-link" href="the-delightful-monstrosity.html">“The delightful monstrosity”</a>: the machine as one polynomial, in full view, then evaluated by hand. <em>Big output to skim.</em></li>
+<li><a class="chapter-link" href="the-program-left-unknown.html">“The program left unknown”</a>: the machine as a formula of its program&#39;s bits, and two roads forward.</li>
+<li><a class="chapter-link" href="arithmetization.html">“Arithmetization”</a>: logic turned into arithmetic, kept small by one identity, x² = x.</li>
+<li><a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a>: four polynomials that are the machine.</li>
+<li><a class="chapter-link" href="the-delightful-monstrosity.html">“The delightful monstrosity”</a>: the machine as one polynomial, in full view, then evaluated by hand.</li>
 </ul>
 <p><strong>Part V, Nibble++, a bigger machine:</strong></p>
 <ul>
-<li><a class="chapter-link" href="nibble.html">“Nibble++”</a>: a bigger machine, and why we built it. <em>New results.</em></li>
-<li><a class="chapter-link" href="two-theorems-about-nibble.html">“Two theorems about Nibble++”</a>: Fibonacci numbers, off by one where the inputs end. <em>New results.</em></li>
-<li><a class="chapter-link" href="shortest-programs-with-mod2-and-half.html">“Shortest programs with mod2 and half”</a>: every shortest length, explained by one recursion. <em>New results.</em></li>
-<li><a class="chapter-link" href="nibble-meets-rocsat.html">“Nibble++ meets rocsat”</a>: a 17 MB proof, replayed. <em>New results.</em></li>
-<li><a class="chapter-link" href="is-not-14-needs-28-lines.html">“is_not_14 needs 28 lines”</a>: a public question, answered twice. <em>New results.</em></li>
-<li><a class="chapter-link" href="guided-search.html">“Guided search”</a>: a search that asks about a few inputs at a time. <em>New results.</em></li>
+<li><a class="chapter-link" href="nibble.html">“Nibble++”</a>: a bigger machine, and why we built it.</li>
+<li><a class="chapter-link" href="two-theorems-about-nibble.html">“Two theorems about Nibble++”</a>: Fibonacci numbers, off by one where the inputs end.</li>
+<li><a class="chapter-link" href="shortest-programs-with-mod2-and-half.html">“Shortest programs with mod2 and half”</a>: every shortest length, explained by one recursion.</li>
+<li><a class="chapter-link" href="nibble-meets-rocsat.html">“Nibble++ meets rocsat”</a>: a 17 MB proof, replayed.</li>
+<li><a class="chapter-link" href="is-not-14-needs-28-lines.html">“is_not_14 needs 28 lines”</a>: a public question, answered twice.</li>
+<li><a class="chapter-link" href="guided-search.html">“Guided search”</a>: a search that asks about a few inputs at a time.</li>
 </ul>
 <p><strong>Part VI, the cross-checks, and the history:</strong></p>
 <ul>
-<li><a class="chapter-link" href="the-oracles.html">“The oracles”</a>: five ways to the same answers. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="the-roc-port.html">“The Roc port”</a>: the mathematics as Roc writes it. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a>: the toy in four days of 2023, and its polynomials composed in 2026. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="what-the-toy-taught-us.html">“What the toy taught us”</a>: Cook-Levin as it looks from inside the toy, in one page. <em>A review.</em></li>
-<li><a class="chapter-link" href="what-comes-next.html">“What comes next”</a>: the steps still open. <em>Tools and history.</em></li>
-<li><a class="chapter-link" href="appendix-the-steps-encodings.html">“Appendix: the step&#39;s encodings”</a>: every version of the step, side by side, a reference table. <em>The machine in every form at once.</em></li>
-<li><a class="chapter-link" href="appendix-two-drat-proofs.html">“Appendix: two DRAT proofs”</a>: two of those proofs, printed lemma by lemma. <em>Big output to skim.</em></li>
+<li><a class="chapter-link" href="the-oracles.html">“The oracles”</a>: five ways to the same answers.</li>
+<li><a class="chapter-link" href="the-roc-port.html">“The Roc port”</a>: the mathematics as Roc writes it.</li>
+<li><a class="chapter-link" href="how-it-got-here.html">“How it got here”</a>: the toy in four days of 2023, and its polynomials composed in 2026.</li>
+<li><a class="chapter-link" href="what-the-toy-taught-us.html">“What the toy taught us”</a>: Cook-Levin as it looks from inside the toy, in one page.</li>
+<li><a class="chapter-link" href="what-comes-next.html">“What comes next”</a>: the steps still open.</li>
+<li><a class="chapter-link" href="appendix-the-steps-encodings.html">“Appendix: the step&#39;s encodings”</a>: every version of the step, side by side, a reference table.</li>
+<li><a class="chapter-link" href="appendix-two-drat-proofs.html">“Appendix: two DRAT proofs”</a>: two of those proofs, printed lemma by lemma.</li>
 </ul>
 <p><strong>The monstrosities.</strong> Each is printed because its size is the point, and each is meant to be skimmed:</p>
 <ul>

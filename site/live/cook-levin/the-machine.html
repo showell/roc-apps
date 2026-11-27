@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 2</p>
 <h1 id="the-machine">The machine</h1>
-<p><strong>Ordinary computation. Start here; it stands alone.</strong> Here you get Steve&#39;s whole machine in one page: four instructions, a two-bit register and a spec of 26 lines. Every later chapter is this machine seen from another side.</p>
+<p>This chapter gives Steve&#39;s whole machine in one page: four instructions, a two-bit register and a spec of 26 lines. Every later chapter looks at this same machine from another side, so this is the page to read first.</p>
 <p>The machine holds one register, <code>AX</code>, of 2 bits, so <code>AX</code> is 0, 1, 2 or 3. A run starts with <code>AX</code> set to the input. Its program is six instructions, each one of four opcodes, and the machine&#39;s programming language, an assembly language, is called Nibble.</p>
 <h2 id="steves-spec">Steve&#39;s spec <a class="section-link" href="#steves-spec" aria-label="Link to this section">§</a></h2>
 <p>The toy&#39;s plain-English spec is the docstring at the top of Steve&#39;s <code>virtual_machine.py</code> (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L10-L35">lines 10 to 35</a>, at commit <a href="https://github.com/showell/virtual-machine/commit/94c3d31">94c3d31</a>), quoted as it stands:</p>

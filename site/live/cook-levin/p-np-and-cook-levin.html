@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 11</p>
 <h1 id="p-np-and-cook-levin">P, NP and Cook-Levin</h1>
-<p><strong>Complexity theory. A review; it needs <a class="chapter-link" href="p-and-np.html">“P and NP”</a>, and you can skip it if you know Cook-Levin.</strong> We state the theorem this whole book riffs on, and say exactly what it means for a machine with a two-bit register.</p>
+<p>This chapter states the theorem the whole book riffs on and says exactly what it means for a machine with a two-bit register. If you already know Cook-Levin, you can skip it.</p>
 <h2 id="sat-as-hard-as-all-of-np">SAT, as hard as all of NP <a class="section-link" href="#sat-as-hard-as-all-of-np" aria-label="Link to this section">§</a></h2>
 <p>A <em>reduction</em> from a formal language A to a formal language B is a polynomial-time translation of A&#39;s inputs into B&#39;s that keeps every answer: x is in A exactly when its translation is in B. A machine for B then answers A too. A formal language is <em>NP-complete</em> when it is in NP and every formal language in NP reduces to it. In 1971 Stephen Cook, in &quot;The Complexity of Theorem-Proving Procedures&quot;, and independently Leonid Levin, published in 1973, showed that SAT is as hard as anything in NP. Their proof takes the checking machine, which runs for a polynomial number of steps, and writes each step of its run as clauses: the whole run becomes one formula, satisfiable exactly when a certificate exists.</p>
 <h2 id="guessing-and-the-computation-history">Guessing, and the computation history <a class="section-link" href="#guessing-and-the-computation-history" aria-label="Link to this section">§</a></h2>

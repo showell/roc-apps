@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 34</p>
 <h1 id="two-theorems-about-nibble">Two theorems about Nibble++</h1>
-<p><strong>Mathematics. New results; it needs <a class="chapter-link" href="nibble.html">“Nibble++”</a>.</strong> We prove that the shortest programs of two instructions are counted by the Fibonacci numbers, off by exactly one where the inputs run out.</p>
+<p>Count the shortest programs of two instructions, and the Fibonacci numbers appear, off by exactly one where the inputs run out. This chapter proves it.</p>
 <p>With <code>zero</code> and <code>decr</code> alone, a short proof gives every formal language&#39;s shortest length and the count of formal languages at each length. The census of <a class="chapter-link" href="nibble.html">“Nibble++”</a> checks both.</p>
 <p><strong>Theorem 13.</strong> With <code>zero</code> and <code>decr</code> alone, the shortest program for a nonempty set S of inputs has exactly max(S) + |S| lines, and the empty set&#39;s has 0.</p>
 <p>In programmer terms, the program is one countdown that all 16 inputs share: each <code>decr</code> lowers every live counter at once, and each <code>zero</code> accepts the input whose counter reads 0 right then.</p>

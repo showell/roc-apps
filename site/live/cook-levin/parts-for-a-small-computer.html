@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 14</p>
 <h1 id="parts-for-a-small-computer">Parts for a small computer</h1>
-<p><strong>Circuit design. The machine in a new form, as parts you could buy; it stands alone.</strong> Here Steve&#39;s toy becomes a physical machine, built from gates you could buy, starting with each instruction drawn as a circuit.</p>
+<p>In this chapter Steve&#39;s toy becomes a physical machine, built from gates you could buy, starting with each instruction drawn as a circuit.</p>
 <p>This chapter and the two after it build the machine as hardware, a plain digital circuit, from the bottom up. The Boolean view&#39;s gates were Python operators; here each one is a part you could buy and solder, so the machine becomes a thing of wires. Each part is drawn once with all its gates, and from then on it is a box with named wires in and out. <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> wires the boxes into a stepper, and <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a> chains the steppers into the whole machine.</p>
 <h2 id="gates-and-wires">Gates and wires <a class="section-link" href="#gates-and-wires" aria-label="Link to this section">§</a></h2>
 <p>Three kinds of gate are allowed, AND, OR and NOT, and every part is made of them alone. The drawings use the standard symbols: AND is a D, OR a shield, NOT a triangle with a bubble. An OR followed by a NOT is drawn as one shield with a bubble, a NOR; it still counts as two gates. A dot marks a place where a wire branches, and a <code>0</code> is a wire tied to 0.</p>

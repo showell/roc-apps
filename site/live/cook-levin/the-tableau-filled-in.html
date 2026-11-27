@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 23</p>
 <h1 id="the-tableau-filled-in">The tableau, filled in</h1>
-<p><strong>Complexity theory. The machine in a new form, as a grid; it needs <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a>.</strong> We print Cook&#39;s grid twice, once for one program and once for every program at once, and you can watch a constant carry a fact down a column.</p>
+<p>Cook&#39;s proof builds a grid, the tableau, and this chapter prints it twice: once for one program and once for every program at once. Along the way you can watch a constant carry a fact down a column.</p>
 <p>The circuit turned around is a list of gates; laid out as Cook&#39;s grid, the same run reads as rows and columns, and a fact can be followed down a core.</p>
 <h2 id="the-tableau-of-one-program">The tableau of one program <a class="section-link" href="#the-tableau-of-one-program" aria-label="Link to this section">§</a></h2>
 <p>Here is the tableau filled in for <code>is_not_tiny</code>&#39;s answer, program 2916 (<code>decr, mod2, zero, decr, zero, nada</code>): each cell is the state after that row&#39;s line, from the stepper&#39;s compiled step (<code>src/tableau_main.c</code>, which the book&#39;s build runs and holds these tables to).</p>

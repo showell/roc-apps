@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 21</p>
 <h1 id="from-equations-to-cnf">From equations to CNF</h1>
-<p><strong>Circuit design, then SAT solving. New results; it needs <a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a> and <a class="chapter-link" href="the-circuit-as-equations.html">“The circuit as equations”</a>.</strong> We show why naming gates beats multiplying them out: 1,400 clauses against 3,869, the first growing in a straight line with the steps and the second exponentially.</p>
+<p>There are two ways to turn the circuit&#39;s equations into clauses, and one is far better. Naming the gates takes 1,400 clauses where multiplying them out takes 3,869, and as the steps grow, the first grows in a straight line and the second exponentially.</p>
 <p><a class="chapter-link" href="the-circuit-as-equations.html">“The circuit as equations”</a> writes the decider as 1,439 gates. This chapter turns those equations into CNF with a small Roc library, <code>roc/Cnf.roc</code>, and hands claims about the decider to rocsat, which evaluates them. What this adds is the decider in a solver&#39;s own format, and a first look at how big the two ways of writing it get. The encoding is the one <a class="chapter-link" href="checking-a-claim.html">“Checking a claim”</a> uses on the 14-bit machine, now applied to the whole decider.</p>
 <h2 id="the-library">The library <a class="section-link" href="#the-library" aria-label="Link to this section">§</a></h2>
 <p><code>roc/Cnf.roc</code> converts any Boolean expression of variables, constants, AND, OR and complement; the circuit&#39;s equations are one such input. It has four parts. An expression, <code>Cnf.Expr</code>, is a variable, a constant, the AND or OR of two expressions, or the complement of one. <code>Cnf.equations_of</code> reads the equations text into the inputs and one expression a wire. <code>Cnf.formula_of</code> is Tseitin&#39;s encoding, and <code>Cnf.dimacs</code> writes the result as DIMACS, with a <code>c</code> comment line naming each input&#39;s and each wire&#39;s literal.</p>
@@ -129,7 +129,6 @@ c core0.step2.lb_mux.low.out = 24
 24 -23 0
 -24 22 23 0
 </code></pre>
-<p><em>The frame switches here from circuit design to SAT solving.</em></p>
 <h2 id="rocsat-evaluates-it">rocsat evaluates it <a class="section-link" href="#rocsat-evaluates-it" aria-label="Link to this section">§</a></h2>
 <p><code>sat/claims.shale</code> asks <code>rocsat solve</code> whether each of three claims&#39; CNFs is satisfiable (<a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>). Every input is fixed by a unit clause, so the solver&#39;s search only evaluates. The first two claims are true, and the answer expected is SATISFIABLE. The third, that program 1689 decides {0, 2}, is false, since the program accepts 3 too, and the answer expected is UNSATISFIABLE. The script fails on any other answer, and writes the verdicts to <code>sat/claims/verdicts.txt</code>, which the book&#39;s build holds here:</p>
 <pre><code class="language-text">program 1689 decides {0, 2, 3}: 477 variables, 1400 clauses: exit 10, s SATISFIABLE, decisions=0 conflicts=0 propagations=477; rocsat check: c model ok; decides (477) = 1

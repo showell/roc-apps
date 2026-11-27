@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 6</p>
 <h1 id="formal-languages-and-machines">Formal languages and machines</h1>
-<p><strong>Complexity theory. A review; skip it if you know Turing machines.</strong> We explain the one word complexity theory runs on, the formal language, and show a Turing machine deciding one with six rules.</p>
+<p>Complexity theory runs on one word, the formal language. This chapter explains it and then shows a Turing machine deciding one with six rules. If you know Turing machines already, you can skip ahead.</p>
 <p>In computer science a <em>formal language</em> is a set of strings. The book spends two words on it because it also has a <em>programming language</em>, Nibble, the notation its programs are written in, and the two are different things: a Nibble program decides a formal language. Pick an alphabet, say the digits 0 to 9, and any set of strings over it is a formal language: the decimal numerals of the primes, the palindromes, the strings that are valid Roc programs. A formal language is the cleanest way to state a decision question. &quot;Is 91 prime?&quot; becomes &quot;is the string <code>91</code> in the formal language of primes?&quot;</p>
 <h2 id="machines-that-decide">Machines that decide <a class="section-link" href="#machines-that-decide" aria-label="Link to this section">§</a></h2>
 <p>A machine <em>decides</em> a formal language when, given any string, it halts, accepting the strings in the formal language and rejecting the rest. A program that decides the primes is a primality test; a compiler&#39;s parser decides the formal language of well-formed programs, and rejects the rest with an error.</p>
@@ -180,7 +180,6 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </table>
 <p>And on <code>ab</code>: <code>even</code> reads a and moves to <code>odd</code>, <code>odd</code> reads b and stays <code>odd</code>, <code>odd</code> reads the blank and rejects. Every run takes one step per symbol and then halts, so the machine decides the formal language: it accepts exactly the strings with an even count of a&#39;s.</p>
 <p>This machine only reads and moves right, so it is also a finite automaton; Turing&#39;s machines earn their tape on harder formal languages, such as the strings of a&#39;s followed by the same number of b&#39;s, where the machine writes marks on the tape to pair each a with a b. The idea carries over unchanged: states, a rule table, a run that ends in accept or reject, and a formal language made of the strings accepted.</p>
-<p><em>The frame switches here from Turing&#39;s machines to this book&#39;s.</em></p>
 <h2 id="this-books-machine">This book&#39;s machine <a class="section-link" href="#this-books-machine" aria-label="Link to this section">§</a></h2>
 <p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four values 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything.</p>
 <h2 id="formal-languages-in-this-book">Formal languages, in this book <a class="section-link" href="#formal-languages-in-this-book" aria-label="Link to this section">§</a></h2>

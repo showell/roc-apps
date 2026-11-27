@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 20</p>
 <h1 id="checking-a-claim">Checking a claim</h1>
-<p><strong>SAT solving. The machine in a new form, as clauses; it needs <a class="chapter-link" href="one-formula-for-the-whole-machine.html">“One formula for the whole machine”</a> and <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>.</strong> We turn a sentence like &quot;program 1689 accepts input 2&quot; into clauses, and a solver that knows only clauses confirms it or refutes it.</p>
+<p>Take a sentence like &quot;program 1689 accepts input 2&quot;. In this chapter we turn it into clauses, and a solver that knows only clauses confirms it or refutes it.</p>
 <p>What CNF adds to f&#39;s graph is a format any solver reads: a claim such as &quot;program 1689 accepts input 2&quot; becomes an assignment, and a tool that knows only clauses checks it. This chapter turns f&#39;s graph into CNF and asks <code>rocsat check</code> about the claim (<a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>).</p>
 <h2 id="naming-each-gate">Naming each gate <a class="section-link" href="#naming-each-gate" aria-label="Link to this section">§</a></h2>
 <p>Expanding f into CNF would start from its half-million characters. Tseitin&#39;s encoding names instead (<a class="chapter-link" href="naming-the-gates.html">“Naming the gates”</a> works a three-gate example by hand): each AND and OR node gets a variable of its own, and three clauses say that variable equals its gate. A complement is a literal&#39;s minus sign.</p>

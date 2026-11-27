@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 4</p>
 <h1 id="deciding-in-plain-python">Deciding in plain Python</h1>
-<p><strong>Ordinary computation. Tools and history; it stands alone.</strong> Every question the toy answers is a one-line lookup in Python. The machine earns its place as the thing being taken apart: a checker small enough to turn, whole, into a formula.</p>
+<p>In Python, every question the toy answers is a one-line lookup. So the machine earns its place another way: it is the thing we take apart, a checker small enough to turn, whole, into a formula.</p>
 <p>A formal language of Nibble&#39;s is four answers, one per input, so deciding one takes a line of ordinary code. The code here is <code>python/decides.py</code>, which <code>build.shale</code> runs on every build: it holds its two versions to each other on all 16 formal languages and all four inputs, and each one-line test below to its formal language.</p>
 <h2 id="two-versions-of-decides">Two versions of <code>decides</code> <a class="section-link" href="#two-versions-of-decides" aria-label="Link to this section">§</a></h2>
 <p>A formal language&#39;s <em>want</em> code has bit n set when input n is in it, so {0, 2, 3} is 1 + 4 + 8 = 13; <a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a> tables all 16 codes. The plain version lists the members and looks n up among them:</p>

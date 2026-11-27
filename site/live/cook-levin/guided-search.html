@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 38</p>
 <h1 id="guided-search">Guided search</h1>
-<p><strong>SAT solving. New results, from an experiment; it needs <a class="chapter-link" href="nibble-meets-rocsat.html">“Nibble++ meets rocsat”</a>.</strong> We try to beat the full search by asking the solver about a few inputs at a time, and report plainly where it wins and where it loses.</p>
+<p>Can we beat the full search by asking the solver about a few inputs at a time? This chapter tries it and reports plainly where it wins and where it loses.</p>
 <p>The search of <a class="chapter-link" href="nibble-meets-rocsat.html">“Nibble++ meets rocsat”</a> hands rocsat all 16 runs at once. A guided search, counterexample by counterexample, starts with a few runs and adds the others as they are needed. <code>plus_sat search-guarded</code> writes the full search&#39;s 16 runs with each run&#39;s output held by a selector variable, and <code>sat/plus_guided.shale</code> runs the loop on the same 11 cases with one rocsat kept across the rounds: <code>sat/rocsat_guided.roc</code>, on rocsat&#39;s incremental API, solves under the selectors of the set as assumptions, so the clauses rocsat learns in one round carry to the next. For a formal language W and a length k:</p>
 <ol>
 <li>Start with inputs 0 and 15.</li>

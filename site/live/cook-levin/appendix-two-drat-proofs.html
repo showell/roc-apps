@@ -70,7 +70,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
 <h1 id="appendix-two-drat-proofs">Appendix: two DRAT proofs</h1>
-<p><strong>SAT solving. Big output to skim; it needs <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>.</strong> Here are the raw files behind two rows of that chapter&#39;s table, rocsat&#39;s DRAT proofs printed lemma by lemma, for anyone who wants to watch a solver rule out every program of a given length.</p>
+<p>Here are the raw files behind two rows of the table in <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>: rocsat&#39;s DRAT proofs, printed lemma by lemma, for anyone who wants to watch a solver rule out every program of a given length.</p>
 <p>Each is a file of <code>sat/proofs/</code>, checked again by <code>src/drat.c</code> at every build of this book, as <a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a> tells.</p>
 <h2 id="monstrosity-2-five-lines-are-too-few-for-0-2-3">Monstrosity 2: five lines are too few for {0, 2, 3} <a class="section-link" href="#monstrosity-2-five-lines-are-too-few-for-0-2-3" aria-label="Link to this section">§</a></h2>
 <figure class="scrolling"><figcaption><code>sat/proofs/13-len5.drat</code>: rocsat&#39;s DRAT proof that the CNF of {0, 2, 3} at length 5 is unsatisfiable<br>286 lemmas, 387 deletions, 9,012 bytes</figcaption><pre><code class="language-text">-11 0

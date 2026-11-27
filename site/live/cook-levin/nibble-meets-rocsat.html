@@ -71,9 +71,8 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 36</p>
 <h1 id="nibble-meets-rocsat">Nibble++ meets rocsat</h1>
-<p><strong>SAT solving. New results; it needs <a class="chapter-link" href="nibble.html">“Nibble++”</a> and <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>.</strong> We hand the same questions to a SAT solver and watch it refute every 27-line program for the hardest formal language, with a 17 MB proof that our own checker replays.</p>
+<p>What happens when we hand the same questions to a SAT solver? It refutes every 27-line program for the hardest formal language, with a 17 MB proof that our own checker replays.</p>
 <p><a class="chapter-link" href="nibble.html">“Nibble++”</a> settles every formal language&#39;s shortest program by searching the machine&#39;s states. This chapter puts the same questions to rocsat, as <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a> frames them, in a CNF that <code>src/plus_sat.c</code> builds on the toy&#39;s gates.</p>
-<p><em>This section is circuit design; the rest of the chapter is SAT solving.</em></p>
 <h2 id="the-machine-as-a-circuit">The machine as a circuit <a class="section-link" href="#the-machine-as-a-circuit" aria-label="Link to this section">§</a></h2>
 <p><code>src/plus_sat.c</code> writes the Nibble++ step on a 4-bit <code>AX</code> in the AND and OR gates of <code>src/sat.c</code>, a complement being a literal&#39;s sign: a test of <code>AX</code> for 0, a borrow chain for <code>decr</code>, and for each bit of <code>AX</code> a four-way multiplexer steered by the line&#39;s two bits. Unrolled for a k-line program, one run&#39;s circuit takes the 2k program bits and the input&#39;s four bits, and its output is <code>accepted</code>. At 28 lines, the longest shortest length, <code>src/plus_sat_main.c</code> counts:</p>
 <table>
