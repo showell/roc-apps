@@ -22,7 +22,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="nibble-the-puzzle-page.html"><span class="number">3</span>Nibble, the puzzle page</a></li>
 <li><a href="deciding-in-plain-python.html"><span class="number">4</span>Deciding in plain Python</a></li>
 <li><a href="the-languages-in-this-book.html"><span class="number">5</span>The languages in this book</a></li>
-<li class="here"><a href="formal-languages-and-machines.html"><span class="number">6</span>Formal languages and machines</a><ol class="sections"><li><a href="formal-languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="formal-languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="formal-languages-and-machines.html#a-simple-example">A simple example</a></li><li><a href="formal-languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li></ol></li>
+<li class="here"><a href="formal-languages-and-machines.html"><span class="number">6</span>Formal languages and machines</a><ol class="sections"><li><a href="formal-languages-and-machines.html#machines-that-decide">Machines that decide</a></li><li><a href="formal-languages-and-machines.html#turings-machine">Turing&#39;s machine</a></li><li><a href="formal-languages-and-machines.html#a-simple-example">A simple example</a></li><li><a href="formal-languages-and-machines.html#this-books-machine">This book&#39;s machine</a></li><li><a href="formal-languages-and-machines.html#formal-languages-in-this-book">Formal languages, in this book</a></li></ol></li>
 <li><a href="programs-as-formal-languages.html"><span class="number">7</span>Programs as formal languages</a></li>
 <li><a href="which-instructions-are-needed.html"><span class="number">8</span>Which instructions are needed</a></li>
 <li class="part">Part II: P, NP and Cook-Levin</li>
@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -74,9 +74,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p><strong>Complexity theory. A review; skip it if you know Turing machines.</strong> We explain the one word complexity theory runs on, the formal language, and show a Turing machine deciding one with six rules.</p>
 <p>In computer science a <em>formal language</em> is a set of strings. The book spends two words on it because it also has a <em>programming language</em>, Nibble, the notation its programs are written in, and the two are different things: a Nibble program decides a formal language. Pick an alphabet, say the digits 0 to 9, and any set of strings over it is a formal language: the decimal numerals of the primes, the palindromes, the strings that are valid Roc programs. A formal language is the cleanest way to state a decision question. &quot;Is 91 prime?&quot; becomes &quot;is the string <code>91</code> in the formal language of primes?&quot;</p>
 <h2 id="machines-that-decide">Machines that decide <a class="section-link" href="#machines-that-decide" aria-label="Link to this section">§</a></h2>
-<p>A machine <em>decides</em> a formal language when, given any string, it halts, accepting the strings in the language and rejecting the rest. A program that decides the primes is a primality test; a compiler&#39;s parser decides the formal language of well-formed programs, and rejects the rest with an error.</p>
+<p>A machine <em>decides</em> a formal language when, given any string, it halts, accepting the strings in the formal language and rejecting the rest. A program that decides the primes is a primality test; a compiler&#39;s parser decides the formal language of well-formed programs, and rejects the rest with an error.</p>
 <h2 id="turings-machine">Turing&#39;s machine <a class="section-link" href="#turings-machine" aria-label="Link to this section">§</a></h2>
-<p>In 1936 Alan Turing described a machine with a finite set of states and an unbounded tape, in &quot;On Computable Numbers, with an Application to the Entscheidungsproblem&quot; (<em>Proceedings of the London Mathematical Society</em>, series 2, volume 42; a <a href="https://www.cs.virginia.edu/~robins/Turing_Paper_1936.pdf">free scan</a>). It reads and writes the tape one cell at a time, and every algorithm anyone has written since can be carried out by such a machine; that claim is the Church-Turing thesis. Turing also showed that some formal languages are undecidable: whatever machine one builds for them, some string defeats it. The best known is the halting problem, the formal language of programs that halt on their input. A machine can <em>recognize</em> it, accepting every member by running it, but for some strings outside the language it runs forever, still waiting to answer.</p>
+<p>In 1936 Alan Turing described a machine with a finite set of states and an unbounded tape, in &quot;On Computable Numbers, with an Application to the Entscheidungsproblem&quot; (<em>Proceedings of the London Mathematical Society</em>, series 2, volume 42; a <a href="https://www.cs.virginia.edu/~robins/Turing_Paper_1936.pdf">free scan</a>). It reads and writes the tape one cell at a time, and every algorithm anyone has written since can be carried out by such a machine; that claim is the Church-Turing thesis. Turing also showed that some formal languages are undecidable: whatever machine one builds for them, some string defeats it. The best known is the halting problem, the formal language of programs that halt on their input. A machine can <em>recognize</em> it, accepting every member by running it, but for some strings outside the formal language it runs forever, still waiting to answer.</p>
 <h2 id="a-simple-example">A simple example <a class="section-link" href="#a-simple-example" aria-label="Link to this section">§</a></h2>
 <p>Take the alphabet {a, b} and the formal language of strings with an even count of a&#39;s: <code>aba</code> and <code>bb</code> are in it, <code>ab</code> and <code>aaab</code> are out. A Turing machine decides it with two working states, <code>even</code> and <code>odd</code>, and a head that reads the tape left to right. The input is written on the tape, with blank cells after it, and the machine starts in <code>even</code> on the first symbol.</p>
 <table>
@@ -182,8 +182,52 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p>This machine only reads and moves right, so it is also a finite automaton; Turing&#39;s machines earn their tape on harder formal languages, such as the strings of a&#39;s followed by the same number of b&#39;s, where the machine writes marks on the tape to pair each a with a b. The idea carries over unchanged: states, a rule table, a run that ends in accept or reject, and a formal language made of the strings accepted.</p>
 <p><em>The frame switches here from Turing&#39;s machines to this book&#39;s.</em></p>
 <h2 id="this-books-machine">This book&#39;s machine <a class="section-link" href="#this-books-machine" aria-label="Link to this section">§</a></h2>
-<p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four strings 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything. Its formal languages are the 16 subsets of {0, 1, 2, 3}, the problems of <a class="chapter-link" href="the-machine.html">“The machine”</a>, which a program, a circuit and a SAT formula each decide alike. A program decides exactly one of them, the set of inputs it accepts.</p>
-<p>Which program decides which of them is the next question, and running all 4,096 programs settles it.</p>
+<p>The machine here is Turing&#39;s idea at its smallest. Its tape is one 2-bit register, its inputs are the four values 0, 1, 2 and 3, and every run halts within six steps, so every question about it is decidable by trying everything.</p>
+<h2 id="formal-languages-in-this-book">Formal languages, in this book <a class="section-link" href="#formal-languages-in-this-book" aria-label="Link to this section">§</a></h2>
+<p>A formal language is one set of inputs: {0, 2, 3} is a formal language. The collection of all 16 subsets of {0, 1, 2, 3} is a different thing, the family of every formal language Nibble could decide. Each formal language L gives exactly one decision problem, &quot;given an input x, is x in L?&quot;, and when this book speaks of the problem a formal language poses, it means that decision problem.</p>
+<table>
+<thead>
+<tr>
+<th>Term</th>
+<th>In Nibble</th>
+<th>In Nibble++</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>input</td>
+<td>one of 0, 1, 2, 3 (one 2-bit value; strictly, a one-symbol string)</td>
+<td>0 to 15</td>
+</tr>
+<tr>
+<td>formal language</td>
+<td>a set of inputs, e.g. {0, 2, 3}</td>
+<td>a subset of 0 to 15</td>
+</tr>
+<tr>
+<td>how many</td>
+<td>2^4 = 16</td>
+<td>2^16 = 65,536</td>
+</tr>
+<tr>
+<td>the decision problem of L</td>
+<td>&quot;given x, is x in L?&quot;</td>
+<td>the same</td>
+</tr>
+<tr>
+<td>a program decides L</td>
+<td>it accepts every input in L and rejects every other</td>
+<td>the same</td>
+</tr>
+<tr>
+<td>example</td>
+<td>program 1689 decides {0, 2, 3}</td>
+<td>the 28-line program decides is_not_14, every input but 14</td>
+</tr>
+</tbody>
+</table>
+<p>The textbook&#39;s formal language, from the top of this chapter, is a set of strings over an alphabet, of any length; ours are the special case of one-symbol strings, and <a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a> grows the inputs.</p>
+<p>A program decides exactly one formal language, the set of inputs it accepts, and a circuit and a SAT formula decide it alike. Which program decides which is the next question, and running all 4,096 programs settles it.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

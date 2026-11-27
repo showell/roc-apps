@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -132,9 +132,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><strong><code>decr</code></strong> takes 1 from <code>AX</code>, and rejects when <code>AX</code> is already 0.</li>
 <li><strong><code>mod2</code></strong> takes 2 from <code>AX</code> when it is 2 or 3, leaving its last bit.</li>
 </ul>
-<p>A run that reaches the end of its six instructions rejects. So a program accepts some of the four inputs and rejects the rest, and the set it accepts is the problem it decides. Complexity theory calls such a set a <em>formal language</em> or a <em>decision problem</em>; this book calls each of the 16 subsets of {0, 1, 2, 3} a <em>problem</em>.</p>
+<p>A run that reaches the end of its six instructions rejects. So a program accepts some of the four inputs and rejects the rest, and the set it accepts is the <em>formal language</em> it decides, one of the 16 subsets of {0, 1, 2, 3}. <a class="chapter-link" href="formal-languages-and-machines.html">“Formal languages and machines”</a> defines the term.</p>
 <h2 id="one-program-input-by-input">One program, input by input <a class="section-link" href="#one-program-input-by-input" aria-label="Link to this section">§</a></h2>
-<p>Here is a program that decides {3}, the problem the puzzle page calls <code>is_huge</code>. In an ordinary programming language it is <code>n == 3</code>. In Nibble it is program 2704:</p>
+<p>Here is a program that decides {3}, the formal language the puzzle page calls <code>is_huge</code>. In an ordinary programming language it is <code>n == 3</code>. In Nibble it is program 2704:</p>
 <pre><code class="language-text">decr
 decr
 decr
@@ -149,10 +149,10 @@ nada
 <li><strong>From 2</strong>, lines 1 and 2 take <code>AX</code> to 0, and line 3 rejects.</li>
 <li><strong>From 3</strong>, three <code>decr</code>s take <code>AX</code> to 0, and line 4&#39;s <code>zero</code> accepts.</li>
 </ul>
-<p>So the program accepts {3} and rejects the rest. Every input&#39;s run ends by line 4, so lines 5 and 6 could hold any opcodes. That is one reason most problems have many programs.</p>
-<p>Steve&#39;s own view of <code>nada</code> and of the design, in his words: &quot;nada is kinda not a real instruction under my machine. It just makes it so that every program is exactly 12 bits. It&#39;s also worth saying that the language was designed to have some complexity. It&#39;s using an imperfect machine to solve the problem somewhat by design.&quot; <a class="chapter-link" href="which-instructions-are-needed.html">“Which instructions are needed”</a> makes both points exact: <code>nada</code> is redundant (Theorem 7), and two instructions of another design would decide every problem in four lines (Theorem 8).</p>
+<p>So the program accepts {3} and rejects the rest. Every input&#39;s run ends by line 4, so lines 5 and 6 could hold any opcodes. That is one reason most formal languages have many programs.</p>
+<p>Steve&#39;s own view of <code>nada</code> and of the design, in his words: &quot;nada is kinda not a real instruction under my machine. It just makes it so that every program is exactly 12 bits. It&#39;s also worth saying that the language was designed to have some complexity. It&#39;s using an imperfect machine to solve the problem somewhat by design.&quot; <a class="chapter-link" href="which-instructions-are-needed.html">“Which instructions are needed”</a> makes both points exact: <code>nada</code> is redundant (Theorem 7), and two instructions of another design would decide every formal language in four lines (Theorem 8).</p>
 <h2 id="counting">Counting <a class="section-link" href="#counting" aria-label="Link to this section">§</a></h2>
-<p>Each instruction is one of 4 opcodes, so there are 4^6 = 4,096 programs. Each problem is a subset of {0, 1, 2, 3}, so there are 2^4 = 16 problems. Each program is a 12-bit number, two bits an instruction, and <code>assemble</code> and <code>disassemble</code> in <code>src/vm.c</code> convert between the two forms.</p>
+<p>Each instruction is one of 4 opcodes, so there are 4^6 = 4,096 programs. Each formal language is a subset of {0, 1, 2, 3}, so there are 2^4 = 16 formal languages. Each program is a 12-bit number, two bits an instruction, and <code>assemble</code> and <code>disassemble</code> in <code>src/vm.c</code> convert between the two forms.</p>
 <h2 id="program-numbers">Program numbers <a class="section-link" href="#program-numbers" aria-label="Link to this section">§</a></h2>
 <p>This book names a program by its number. Read the six lines as the digits of a base-4 number, line 1 first, with <code>nada</code> 0, <code>zero</code> 1, <code>decr</code> 2 and <code>mod2</code> 3: the number is op₁·4⁵ + op₂·4⁴ + op₃·4³ + op₄·4² + op₅·4 + op₆. So program 0 (<code>nada, nada, nada, nada, nada, nada</code>) is the first, program 4095 (<code>mod2, mod2, mod2, mod2, mod2, mod2</code>) is the last, and the number&#39;s twelve bits, line 1&#39;s two first, are the program&#39;s machine code as the puzzle page shows it. A program of fewer than six lines ends in <code>nada</code>, so its number ends in base-4 zeros. Steve&#39;s Python, and the C that matches it byte for byte, count through the programs in the other order, line 1 as the lowest digit. That order only decides which program the search finds first; the numbers in this book are all of the kind defined here, and the build checks each against the program it names.</p>
 <p>Type 1689 into the <a href="https://roc.lynrummy.com/nibble/sandbox.html">sandbox</a>, and its trace shows this run, a row a line and a column an input.</p>

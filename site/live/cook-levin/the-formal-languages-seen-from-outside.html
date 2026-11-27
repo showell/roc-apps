@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The problems, seen from outside · A riff on Cook-Levin</title>
+<title>The formal languages, seen from outside · A riff on Cook-Levin</title>
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="book.css">
 <script src="copy.js" defer></script>
@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li class="here"><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li class="here"><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -70,19 +70,19 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
 <article>
 <p class="chapter-number">Chapter 13</p>
-<h1 id="the-problems-seen-from-outside">The problems, seen from outside</h1>
+<h1 id="the-formal-languages-seen-from-outside">The formal languages, seen from outside</h1>
 <p><strong>Mathematics. New results; it needs <a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a>.</strong> We prove that the 16 puzzles are, in disguise, the 16 logic gates of two inputs, XOR among them.</p>
-<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> ran the machine as gates that see only bits. We can see more than the gates do. The gates showed how the machine computes; read from outside, the same bits show what it computes, each problem as a formula of two bits. Read an input n as its two bits, n = 2·<code>hb</code> + <code>lb</code>, and each problem is itself a Boolean function of them: {3} is <code>hb AND lb</code>, {1, 2, 3} is <code>hb OR lb</code>, {1, 2} is <code>hb XOR lb</code>, and {0, 2, 3} is <code>hb OR NOT lb</code>. That is a fact about the problems, found by looking at all 16 at once. The machine reaches each answer the long way instead, six ticks of the same gates.</p>
-<p><strong>Theorem 9.</strong> The 16 problems are exactly the 16 Boolean functions of two bits: each problem is one function of <code>hb</code> and <code>lb</code>, and each function is one problem.</p>
-<p><em>Proof.</em> A function of two bits is its four values, one per input, and a problem is the same four answers, so the two are counted alike, 2^4 = 16. A test evaluates the 16 expressions below at all four inputs, finds each one true at its problem&#39;s members alone and the 16 truth tables all different, and finds each problem decided by some program.</p>
+<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> ran the machine as gates that see only bits. We can see more than the gates do. The gates showed how the machine computes; read from outside, the same bits show what it computes, each formal language as a formula of two bits. Read an input n as its two bits, n = 2·<code>hb</code> + <code>lb</code>, and each formal language is itself a Boolean function of them: {3} is <code>hb AND lb</code>, {1, 2, 3} is <code>hb OR lb</code>, {1, 2} is <code>hb XOR lb</code>, and {0, 2, 3} is <code>hb OR NOT lb</code>. That is a fact about the formal languages, found by looking at all 16 at once. The machine reaches each answer the long way instead, six ticks of the same gates.</p>
+<p><strong>Theorem 9.</strong> The 16 formal languages are exactly the 16 Boolean functions of two bits: each formal language is one function of <code>hb</code> and <code>lb</code>, and each function is one formal language.</p>
+<p><em>Proof.</em> A function of two bits is its four values, one per input, and a formal language is the same four answers, so the two are counted alike, 2^4 = 16. A test evaluates the 16 expressions below at all four inputs, finds each one true at its formal language&#39;s members alone and the 16 truth tables all different, and finds each formal language decided by some program.</p>
 <figure class="listing"><figcaption>Run it</figcaption><pre><code class="language-text">$ out/tcc/test_theorems
 tests/test_theorems.c: 9 tests passed
-the test: the_16_languages_are_the_16_boolean_functions_of_two_bits
+the test: the_16_formal_languages_are_the_16_boolean_functions_of_two_bits
 </code></pre></figure><table>
 <thead>
 <tr>
 <th>code</th>
-<th>problem</th>
+<th>formal language</th>
 <th>as hb and lb</th>
 </tr>
 </thead>
@@ -169,7 +169,7 @@ the test: the_16_languages_are_the_16_boolean_functions_of_two_bits
 </tr>
 </tbody>
 </table>
-<p>So the 16 problems, the 16 puzzles of Nibble, are the 16 two-input connectives.</p>
+<p>So the 16 formal languages, the 16 puzzles of Nibble, are the 16 two-input connectives.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

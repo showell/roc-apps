@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -71,16 +71,16 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 5</p>
 <h1 id="the-languages-in-this-book">The languages in this book</h1>
-<p><strong>Ordinary computation. Tools and history; it needs <a class="chapter-link" href="the-machine.html">“The machine”</a>.</strong> The languages that matter most here are four instructions long; here they are, and the languages we study them with, each with its job.</p>
-<p>In this book you will see code from languages like Roc, Python, C, and JS. But these are the tools, not the subject, of this book. The subject is a different set of languages: the toy&#39;s own, the formal languages its programs decide, and the notations the machine is rewritten into, from formulas to polynomials.</p>
+<p><strong>Ordinary computation. Tools and history; it needs <a class="chapter-link" href="the-machine.html">“The machine”</a>.</strong> The programming language that matters most here has four instructions. Here it is, with the notations the book rewrites it into and the programming languages we study it with, each with its job.</p>
+<p>In this book you will see code in programming languages like Roc, Python, C and JS. But these are the tools, not the subject, of this book. The subject is the toy&#39;s own programming languages, the formal languages their programs decide, and the notations the machine is rewritten into, from formulas to polynomials.</p>
 <h2 id="the-languages-studied">The languages studied <a class="section-link" href="#the-languages-studied" aria-label="Link to this section">§</a></h2>
-<p>Nibble and Nibble++ are Steve&#39;s toy languages. They are specifically designed to be small in scope. Nibble fits in your hand. Nibble++ pushes just past brute force. Both come to life in playgrounds that accompany the book, and the machine you click there is the same Roc code this book quotes, compiled to run in your browser. Try <a href="https://roc.lynrummy.com/nibble/">Nibble&#39;s puzzles</a> and the <a href="https://roc.lynrummy.com/nibble/plus.html">Nibble++ playground</a>.</p>
-<p>Each program decides a <em>formal language</em>, the set of inputs it accepts, and that is the sense in which a program &quot;is&quot; a formal language (<a class="chapter-link" href="formal-languages-and-machines.html">“Formal languages and machines”</a>). Nibble&#39;s programs decide the 16 subsets of {0, 1, 2, 3}; Nibble++&#39;s decide the 65,536 subsets of 0 to 15.</p>
-<p>Chapter by chapter, the machine is rewritten into four more languages:</p>
+<p>Nibble and Nibble++ are Steve&#39;s toy programming languages, designed to be small. Nibble fits in your hand, and Nibble++ reaches just past what brute force can list. Both come to life in playgrounds that accompany the book, and the machine you click there is the same Roc code this book quotes, compiled to run in your browser. Try <a href="https://roc.lynrummy.com/nibble/">Nibble&#39;s puzzles</a> and the <a href="https://roc.lynrummy.com/nibble/plus.html">Nibble++ playground</a>.</p>
+<p>Each program decides a <em>formal language</em>, the set of inputs it accepts, and that is the sense in which a program &quot;is&quot; a formal language (<a class="chapter-link" href="formal-languages-and-machines.html">“Formal languages and machines”</a>). Nibble has 16 formal languages, the subsets of {0, 1, 2, 3}, and Nibble++ has 65,536, the subsets of 0 to 15.</p>
+<p>Chapter by chapter, the machine is rewritten into four notations:</p>
 <table>
 <thead>
 <tr>
-<th>language</th>
+<th>notation</th>
 <th>what it says about the machine</th>
 <th>where</th>
 </tr>
@@ -109,10 +109,10 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tbody>
 </table>
 <h2 id="the-languages-used">The languages used <a class="section-link" href="#the-languages-used" aria-label="Link to this section">§</a></h2>
-<p>Roc is our lingua franca in this book. This is not a book about type systems, but Roc&#39;s clear type annotations help us express mathematical concepts. It&#39;s also simply a good working language. It has the horsepower for computation and versatility to live in the browser.</p>
+<p>Roc is our lingua franca in this book. This is not a book about type systems, but Roc&#39;s clear type annotations help us express mathematical concepts. It is also a good working programming language, with the horsepower for computation and the versatility to run in the browser.</p>
 <p>Python is the programming language that inspired the book. We use Python mostly as a historical relic, but it remains an oracle to Roc and occasionally shines as a mainstream programming language whose syntax most programmers understand.</p>
 <p>C is our utility infielder. We use it for its raw speed and easy linkability. And when rocsat says no program exists, it&#39;s a small C program that checks the proof, so the book never has to take Roc&#39;s word for Roc&#39;s answers.</p>
-<p>Finally, JS does what JS does best. JS runs the skin of our toys. It also serves as a final oracle: the same machine, written in plain JavaScript, gives the same answers in the book&#39;s last chapter, and runs there on a compiler we happen to have written ourselves (in Roc!).</p>
+<p>Finally, JS does what JS does best. JS runs the skin of our toys. It also serves as a final oracle: the same machine, written in plain JavaScript, gives the same answers in <a class="chapter-link" href="what-comes-next.html">“What comes next”</a>, and runs there on a compiler we happen to have written ourselves (in Roc!).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -72,9 +72,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p class="chapter-number">Chapter 22</p>
 <h1 id="the-cook-levin-machine">The Cook-Levin machine</h1>
 <p><strong>Circuit design, then complexity theory. The machine in a new form, run backwards; it needs <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a>.</strong> We run the circuit backwards, the move at the heart of Cook-Levin: fix the answer, leave the program unknown, and ask which programs fit.</p>
-<p>The decider of <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a> is a checker: hand it a problem and a program, and it says true or false. Cook and Levin&#39;s idea is to run a checker backwards. Fix the problem, leave the program unknown, pin the output to true, and ask which programs fit. The circuit does the same work as before; only the question changes. Every form so far took a program and gave a verdict; this one takes the verdict and asks for the program, the direction a search for certificates needs.</p>
+<p>The decider of <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a> is a checker: hand it a formal language and a program, and it says true or false. Cook and Levin&#39;s idea is to run a checker backwards. Fix the formal language, leave the program unknown, pin the output to true, and ask which programs fit. The circuit does the same work as before; only the question changes. Every form so far took a program and gave a verdict; this one takes the verdict and asks for the program, the direction a search for certificates needs.</p>
 <h2 id="the-circuit-turned-around">The circuit, turned around <a class="section-link" href="#the-circuit-turned-around" aria-label="Link to this section">§</a></h2>
-<p>The want register is fixed at the problem&#39;s bits. The program register becomes twelve unknown wires, <code>v1</code> to <code>v12</code>. The output wire is required to be 1. Everything in between is the same 24 steppers and four comparators, and every wire in them is now an unknown too, tied to the wires feeding it by the rule of its gate.</p>
+<p>The want register is fixed at the formal language&#39;s bits. The program register becomes twelve unknown wires, <code>v1</code> to <code>v12</code>. The output wire is required to be 1. Everything in between is the same 24 steppers and four comparators, and every wire in them is now an unknown too, tied to the wires feeding it by the rule of its gate.</p>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="The question the circuit now asks" width="256pt" height="188pt"
  viewBox="0.00 0.00 256.00 188.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 184)">
@@ -112,7 +112,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <polygon fill="black" stroke="black" points="134.5,-46.1 131,-36.1 127.5,-46.1 134.5,-46.1"/>
 </g>
 </g>
-</svg><figcaption>The question the circuit now asks</figcaption></figure><p>A setting of the twelve unknowns that satisfies every gate&#39;s rule and lights the output is a program that decides the problem. The circuit has a satisfying setting exactly when some program decides the problem.</p>
+</svg><figcaption>The question the circuit now asks</figcaption></figure><p>A setting of the twelve unknowns that satisfies every gate&#39;s rule and lights the output is a program that decides the formal language. The circuit has a satisfying setting exactly when some program decides it.</p>
 <figure class="listing"><figcaption>1689, here: the circuit turned around, want 1011 fixed and decides = 1 required</figcaption><pre><code class="language-text">settings of v1 .. v12 tried: 4096
 settings that light decides: 1
 01 10 10 01 10 01: zero, decr, decr, zero, decr, zero, program 1689

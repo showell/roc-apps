@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -137,7 +137,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><strong><code>rocsat check F A</code>: does the assignment A satisfy the formula F?</strong> A gives every variable a value, and rocsat tests the clauses one by one. That is evaluation alone: rocsat is an outside calculator. It exits 0 and says <code>c model ok</code>, or exits 1 and names the first clause A breaks, counting from 0.</li>
 <li><strong><code>rocsat solve F</code>: does any assignment satisfy F?</strong> This is the solver&#39;s full power, a search over every assignment. It exits 10 and says <code>s SATISFIABLE</code>, with an assignment it found, or exits 20 and says <code>s UNSATISFIABLE</code>: every assignment breaks some clause of F. Given a second path, it writes a DRAT proof of that answer, which this repository&#39;s own checker replays (<a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>).</li>
 </ul>
-<p>UNSATISFIABLE is often the answer the book wants. To show that every program of five lines decides some problem other than {0, 2, 3}, say, the book writes a formula whose satisfying assignments would be five-line programs that decide it, and expects UNSATISFIABLE. Each chapter says which answer it expects.</p>
+<p>UNSATISFIABLE is often the answer the book wants. To show that every program of five lines decides some formal language other than {0, 2, 3}, say, the book writes a formula whose satisfying assignments would be five-line programs that decide it, and expects UNSATISFIABLE. Each chapter says which answer it expects.</p>
 <h2 id="the-happy-path">The happy path <a class="section-link" href="#the-happy-path" aria-label="Link to this section">§</a></h2>
 <p><code>sat/intro.shale</code> writes the CNF above as <code>example.cnf</code>:</p>
 <pre><code class="language-text">p cnf 3 3

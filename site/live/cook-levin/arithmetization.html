@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -71,7 +71,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 30</p>
 <h1 id="arithmetization">Arithmetization</h1>
-<p><strong>Mathematics. The machine in a new form, as polynomials; it needs <a class="chapter-link" href="the-program-left-unknown.html">“The program left unknown”</a>.</strong> We turn logic into arithmetic, NOT as 1 − x and AND as a product, and add one identity, x² = x, so that one step of the machine becomes four small polynomials of the proper kind, the kind that composes.</p>
+<p><strong>Mathematics. The machine in a new form, as polynomials; it needs <a class="chapter-link" href="the-program-left-unknown.html">“The program left unknown”</a>.</strong> We turn logic into arithmetic, NOT as 1 − x and AND as a product, and add one identity, x² = x, so that one step of the machine becomes four small polynomials, each variable to the first power at most, the kind that composes.</p>
 <p>Logic says true or false; arithmetic can add, multiply and substitute, which is what composing six steps into one object needs. The stepper writes one step of the machine as polynomials, the first of the two ways to compose in <a class="chapter-link" href="the-program-left-unknown.html">“The program left unknown”</a>: expand. Each bit of the state is a variable that is only ever 0 or 1, and logic becomes arithmetic:</p>
 <ul>
 <li>NOT x is 1 - x;</li>
@@ -254,7 +254,7 @@ the test: every_program_on_every_input_the_stepper_agrees_with_run_progam
         )
     return accepted
 </code></pre>
-<p>Then <code>find_solutions</code> asserts, after running all 4,096 programs on the interpreter, that every problem has a program and that each problem&#39;s example program, run through the polynomials on each input, accepts exactly the problem&#39;s inputs (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L159-L180">virtual_machine.py, lines 159 to 160 and 178 to 180</a>), 16 programs on 4 inputs:</p>
+<p>Then <code>find_solutions</code> asserts, after running all 4,096 programs on the interpreter, that every formal language has a program and that each one&#39;s example program, run through the polynomials on each input, accepts exactly its inputs (<a href="https://github.com/showell/virtual-machine/blob/94c3d31/virtual_machine.py#L159-L180">virtual_machine.py, lines 159 to 160 and 178 to 180</a>), 16 programs on 4 inputs:</p>
 <pre><code class="language-python">    for y in range(16):
         assert len(solutions[y]) &gt; 0
 </code></pre>

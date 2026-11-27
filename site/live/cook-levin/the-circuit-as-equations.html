@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -71,9 +71,9 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 17</p>
 <h1 id="the-circuit-as-equations">The circuit as equations</h1>
-<p><strong>Circuit design. Big output to skim; it needs <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a>.</strong> You get the whole decider as 1,439 equations, every gate of it, because here seeing is believing.</p>
+<p><strong>Circuit design. Big output to skim; it needs <a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a>.</strong> You get the whole decider as 1,439 equations, every gate of it, printed so you can see how much circuit a two-bit machine&#39;s checker takes.</p>
 <p><a class="chapter-link" href="the-circuit-in-full.html">“The circuit, in full”</a> draws the decider as boxes. This chapter writes every gate of it as one Boolean equation, 1,439 in all. Boxes hide their gates; equations show every one as a line of text that a separate program can read back and run. The names are those of <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>, led by the core and the step: <code>core2.step3.hb&#39;</code> is core 2&#39;s high bit of <code>AX</code> after line 3. The 16 inputs come first, then each core&#39;s input as two constants, <code>core2.in_hb = 1</code>, and the last line is <code>decides</code>.</p>
-<p><code>python/equations.py</code> reads this text back with a parser and an interpreter of its own, apart from the C that printed it, and evaluates it on all 4,096 programs and all 16 want registers at once: <code>decides</code> is 1 at exactly the 4,096 points where the program decides the problem the register holds. <code>build.shale</code> runs it on every build.</p>
+<p><code>python/equations.py</code> reads this text back with a parser and an interpreter of its own, apart from the C that printed it, and evaluates it on all 4,096 programs and all 16 want registers at once: <code>decides</code> is 1 at exactly the 4,096 points where the program decides the formal language the register holds. <code>build.shale</code> runs it on every build.</p>
 <p><strong>Monstrosity 1: the decider as 1,448 lines of equations.</strong> Here it is whole: 1,439 gates and 8 copies under one line of inputs, 109,098 bytes of text (<code>roc/golden/equations.txt</code>), printed by <code>src/circuit_main.c</code> to answer one question about a program twelve bits long, whether it solves a puzzle with four inputs. Every line is a gate you could solder. Skim them, glance at the last line, <code>decides</code>, and move on: the next chapter needs only their count.</p>
 <figure class="scrolling"><figcaption><code>book/build/equations.txt</code>: circuit_main equations: every gate of the decider, in evaluation order<br>1,439 gates, 392 NOT, 659 AND, 388 OR, 109,097 characters</figcaption><pre><code class="language-text">inputs: op1_hb op1_lb op2_hb op2_lb op3_hb op3_lb op4_hb op4_lb op5_hb op5_lb op6_hb op6_lb want0 want1 want2 want3
 core0.in_hb = 0

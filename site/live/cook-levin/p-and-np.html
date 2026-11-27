@@ -26,12 +26,12 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><a href="programs-as-formal-languages.html"><span class="number">7</span>Programs as formal languages</a></li>
 <li><a href="which-instructions-are-needed.html"><span class="number">8</span>Which instructions are needed</a></li>
 <li class="part">Part II: P, NP and Cook-Levin</li>
-<li class="category">The classes</li><li class="here"><a href="p-and-np.html"><span class="number">9</span>P and NP</a><ol class="sections"><li><a href="p-and-np.html#problems-formal-languages-and-algorithms">Problems, formal languages and algorithms</a></li><li><a href="p-and-np.html#time-as-a-function-of-length">Time as a function of length</a></li><li><a href="p-and-np.html#p-deciding-fast">P, deciding fast</a></li><li><a href="p-and-np.html#np-checking-fast">NP, checking fast</a></li><li><a href="p-and-np.html#what-is-known">What is known</a></li></ol></li>
+<li class="category">The classes</li><li class="here"><a href="p-and-np.html"><span class="number">9</span>P and NP</a><ol class="sections"><li><a href="p-and-np.html#decision-problems-formal-languages-and-algorithms">Decision problems, formal languages and algorithms</a></li><li><a href="p-and-np.html#time-as-a-function-of-length">Time as a function of length</a></li><li><a href="p-and-np.html#p-deciding-fast">P, deciding fast</a></li><li><a href="p-and-np.html#np-checking-fast">NP, checking fast</a></li><li><a href="p-and-np.html#what-is-known">What is known</a></li></ol></li>
 <li><a href="nibble-sized.html"><span class="number">10</span>Nibble, sized</a></li>
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -72,11 +72,11 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p class="chapter-number">Chapter 9</p>
 <h1 id="p-and-np">P and NP</h1>
 <p><strong>Complexity theory. A review; skip it if you know P and NP.</strong> We give you the two classes the rest of the book leans on, at the level of their definitions, with the toy close at hand.</p>
-<p>The toy&#39;s every question was settled by trying everything: 4,096 programs on four inputs. That works because the toy is finite. Complexity theory is about formal languages with inputs of every length, where trying everything grows with the input, and it sorts them by how fast the work grows. This chapter gives the two classes the rest of the book leans on, P and NP, at the level of their definitions.</p>
-<h2 id="problems-formal-languages-and-algorithms">Problems, formal languages and algorithms <a class="section-link" href="#problems-formal-languages-and-algorithms" aria-label="Link to this section">§</a></h2>
+<p>The toy&#39;s every question was settled by trying everything: 4,096 programs on four inputs. That works because the toy is finite. Complexity theory is about formal languages with inputs of every length, where trying everything grows with the input, and it sorts them by how fast the work grows.</p>
+<h2 id="decision-problems-formal-languages-and-algorithms">Decision problems, formal languages and algorithms <a class="section-link" href="#decision-problems-formal-languages-and-algorithms" aria-label="Link to this section">§</a></h2>
 <p>People say &quot;the traveling salesman problem is in NP&quot;, and this chapter makes that kind of sentence precise. Under it sit three layers:</p>
 <ul>
-<li><strong>A problem</strong>, as people say it: &quot;is this formula satisfiable?&quot;</li>
+<li><strong>A decision problem</strong>, as people say it: &quot;is this formula satisfiable?&quot;</li>
 <li><strong>A formal language</strong>, the set of strings that encode the problem&#39;s yes-instances. SAT is the set of DIMACS files, the format of <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>, that encode a satisfiable formula.</li>
 <li><strong>An algorithm</strong>, a machine or program that decides the set. rocsat is one algorithm that decides SAT, and a different thing from SAT.</li>
 </ul>
@@ -119,7 +119,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><strong>Every yes has evidence.</strong> If x is in L, some string c, a <em>certificate</em>, makes V(x, c) accept, and c is short: its length is at most polynomial in the length of x.</li>
 <li><strong>Every non-member resists all evidence.</strong> If x is outside L, V(x, c) rejects for every c whatsoever.</li>
 </ul>
-<p>The certificate is the answer&#39;s evidence, and the verifier is a skeptic that only checks. Finding the certificate is someone else&#39;s job.</p>
+<p>The certificate is the answer&#39;s evidence, and the verifier works like a test suite: handed a proposed answer, it says pass or fail. Finding the certificate is someone else&#39;s job.</p>
 <p>Two examples:</p>
 <ul>
 <li><strong>SAT</strong>, the satisfiable Boolean formulas. The certificate is an assignment, and the verifier evaluates the formula at it: <code>rocsat check</code>, in <a class="chapter-link" href="the-sat-solver.html">“The SAT solver”</a>, is such a verifier.</li>

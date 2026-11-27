@@ -31,10 +31,10 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
-<li class="here"><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a><ol class="sections"><li><a href="the-circuit-in-full.html#six-steppers-make-a-core">Six steppers make a core</a></li><li><a href="the-circuit-in-full.html#four-cores-decide-a-problem">Four cores decide a problem</a></li><li><a href="the-circuit-in-full.html#a-program-through-it">A program through it</a></li></ol></li>
+<li class="here"><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a><ol class="sections"><li><a href="the-circuit-in-full.html#six-steppers-make-a-core">Six steppers make a core</a></li><li><a href="the-circuit-in-full.html#four-cores-decide-a-formal-language">Four cores decide a formal language</a></li><li><a href="the-circuit-in-full.html#a-program-through-it">A program through it</a></li></ol></li>
 <li><a href="the-circuit-as-equations.html"><span class="number">17</span>The circuit as equations</a></li>
 <li><a href="one-formula-for-the-whole-machine.html"><span class="number">18</span>One formula for the whole machine</a></li>
 <li><a href="the-sat-solver.html"><span class="number">19</span>The SAT solver</a></li>
@@ -72,7 +72,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p class="chapter-number">Chapter 16</p>
 <h1 id="the-circuit-in-full">The circuit, in full</h1>
 <p><strong>Circuit design. The machine in a new form, as one chip; it needs <a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a>.</strong> We chain six steppers into the whole machine and set four machines side by side, so that one wire lights up exactly when a program solves a puzzle.</p>
-<p><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> ends with a stepper as one box. This chapter chains six of them into the machine, then puts four machines side by side to decide a problem. A stepper answers for one step; the decider answers a puzzle&#39;s whole question on one wire, the kind of checker Cook and Levin start from. Every drawing is still generated from the netlist of <code>src/circuit.c</code>, which records how each box is wired.</p>
+<p><a class="chapter-link" href="the-machine-as-a-circuit.html">“The machine as a circuit”</a> ends with a stepper as one box. This chapter chains six of them into the machine, then puts four machines side by side to decide a formal language. A stepper answers for one step; the decider answers a puzzle&#39;s whole question on one wire, the kind of checker Cook and Levin start from. Every drawing is still generated from the netlist of <code>src/circuit.c</code>, which records how each box is wired.</p>
 <h2 id="six-steppers-make-a-core">Six steppers make a core <a class="section-link" href="#six-steppers-make-a-core" aria-label="Link to this section">§</a></h2>
 <p>A <em>core</em> is the machine unrolled. Its input arrives as <code>AX</code>&#39;s two bits, both flags start at the constant 0, and the program&#39;s twelve bits split into six lines of two. Each stepper takes the four state wires the one before it left and its own line&#39;s two bits, and the sixth stepper&#39;s <code>accepted&#39;</code> is the core&#39;s answer.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One core: six steppers, 354 gates" width="325pt" height="621pt"
@@ -326,8 +326,8 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </g>
 </g>
 </svg><figcaption>One core: six steppers, 354 gates</figcaption></figure><p><code>tests/test_circuit.c</code> runs the core on all 16,384 runs, 4,096 programs by four inputs, holds every stepper&#39;s flags, step by step, to <code>sat_step</code>&#39;s, and holds the core&#39;s answer to the interpreter&#39;s.</p>
-<h2 id="four-cores-decide-a-problem">Four cores decide a problem <a class="section-link" href="#four-cores-decide-a-problem" aria-label="Link to this section">§</a></h2>
-<p>Whether a program decides a problem takes four cores, one per input. The <em>want</em> register holds four bits, one per input, saying which inputs the problem holds: {1, 2, 3} is <code>0111</code>, input 0&#39;s bit first. The program&#39;s twelve bits go to all four cores, and each core has its input wired in as constants. A comparator, <code>same</code>, checks each core&#39;s answer against its want bit, and an AND of the four lights &quot;decides&quot;.</p>
+<h2 id="four-cores-decide-a-formal-language">Four cores decide a formal language <a class="section-link" href="#four-cores-decide-a-formal-language" aria-label="Link to this section">§</a></h2>
+<p>Whether a program decides a formal language takes four cores, one per input. The <em>want</em> register holds four bits, one per input, saying which inputs the formal language holds: {1, 2, 3} is <code>0111</code>, input 0&#39;s bit first. The program&#39;s twelve bits go to all four cores, and each core has its input wired in as constants. A comparator, <code>same</code>, checks each core&#39;s answer against its want bit, and an AND of the four lights &quot;decides&quot;.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="The decider: four cores, 1,439 gates" width="482pt" height="373pt"
  viewBox="0.00 0.00 482.00 373.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
 <g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 369)">
@@ -654,7 +654,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <polygon fill="black" stroke="black" points="284.67,-87.87 274.07,-87.77 282.29,-94.45 284.67,-87.87"/>
 </g>
 </g>
-</svg><figcaption>The decider: four cores, 1,439 gates</figcaption></figure><p>A comparator is five gates: (<code>accepted</code> AND <code>want</code>) OR (NOT <code>accepted</code> AND NOT <code>want</code>). <code>tests/test_circuit.c</code> runs the decider on all 4,096 programs and all 16 want registers: it lights &quot;decides&quot; exactly where the program decides the problem the register holds, 4,096 times in all.</p>
+</svg><figcaption>The decider: four cores, 1,439 gates</figcaption></figure><p>A comparator is five gates: (<code>accepted</code> AND <code>want</code>) OR (NOT <code>accepted</code> AND NOT <code>want</code>). <code>tests/test_circuit.c</code> runs the decider on all 4,096 programs and all 16 want registers: it lights &quot;decides&quot; exactly where the program decides the formal language the register holds, 4,096 times in all.</p>
 <h2 id="a-program-through-it">A program through it <a class="section-link" href="#a-program-through-it" aria-label="Link to this section">§</a></h2>
 <p>Load the want register with <code>0111</code> and the program register with program 2916 (<code>decr, mod2, zero, decr, zero, nada</code>), the five-line answer to <code>is_not_tiny</code>, whose bits are <code>10 11 01 10 01 00</code>. The four cores settle like this:</p>
 <table>

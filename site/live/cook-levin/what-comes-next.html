@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -78,13 +78,13 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li><strong>SOLVABLE as the machine grows.</strong> For each fixed width it is in P; whether it stays in P as the width grows is open (<a class="chapter-link" href="nibble-sized.html">“Nibble, sized”</a>).</li>
 <li><strong>Nondeterminism.</strong> The machine is deterministic. The SAT encoding already treats the program as the unknown, which is the theorem&#39;s &quot;a certificate exists&quot;; a machine with choice instructions would make the riff closer to the theorem.</li>
 </ul>
-<p>You can use any mainstream programming language to study the toy languages. <code>js/cook_levin.js</code> is the machine, the search and the six-step composition in plain JavaScript, and it prints the same report and composition byte for byte under node, and also as an x86-64 program compiled by js-x86, a compiler we wrote ourselves, in Roc, in <a href="https://github.com/showell/roc-js-interpreter">roc-js-interpreter</a>.</p>
+<p>You can use any mainstream programming language to study the toy programming languages. <code>js/cook_levin.js</code> is the machine, the search and the six-step composition in plain JavaScript, and it prints the same report and composition byte for byte under node, and also as an x86-64 program compiled by js-x86, a compiler we wrote ourselves, in Roc, in <a href="https://github.com/showell/roc-js-interpreter">roc-js-interpreter</a>.</p>
 <h2 id="ways-we-could-make-the-solvers-work-lighter">Ways we could make the solver&#39;s work lighter <a class="section-link" href="#ways-we-could-make-the-solvers-work-lighter" aria-label="Link to this section">§</a></h2>
 <p>Each idea here holds for every puzzle alike, so the solver still finds each puzzle&#39;s answer itself, and each would help any solver of rocsat&#39;s kind.</p>
 <p><strong>Symmetry breaking.</strong> Many programs are twins: <code>nada</code> leaves the machine as it was, so moving a program&#39;s <code>nada</code> lines to its end keeps what it decides. Clauses that say &quot;a <code>nada</code> line is followed by <code>nada</code>&quot;, two for each pair of neighbouring lines, keep one twin of each family, and the solver searches fewer programs. <code>sat/walkthrough.shale</code> counts them over all 4,096:</p>
 <pre><code class="language-text">line 1 nada gives line 2 nada: (x1 OR x2 OR NOT x3), (x1 OR x2 OR NOT x4)
 the 10 clauses for lines 1 to 6 keep 1093 of the 4096 programs
-problems decided: 16 by all 4096, 16 by the 1093 kept
+formal languages decided: 16 by all 4096, 16 by the 1093 kept
 {0, 2, 3} keeps its one program, 1689
 </code></pre>
 <p>Each SATISFIABLE answer stays SATISFIABLE, and each UNSATISFIABLE one stays UNSATISFIABLE. The count of solutions changes, so the oracle&#39;s count of programs would keep the formula as it is.</p>

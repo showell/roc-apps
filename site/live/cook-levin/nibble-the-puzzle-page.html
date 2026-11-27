@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -71,10 +71,10 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <article>
 <p class="chapter-number">Chapter 3</p>
 <h1 id="nibble-the-puzzle-page">Nibble, the puzzle page</h1>
-<p><strong>Ordinary computation, in the browser. The machine in a new form, as a puzzle; it stands alone.</strong> This is where you play the machine yourself: sixteen puzzles, one for each problem, ramped so that a newcomer gets through all of them.</p>
-<p><a href="https://roc.lynrummy.com/nibble/">Nibble</a> is a puzzle page with one puzzle for each of the 16 problems: pick instructions until the program accepts exactly the puzzle&#39;s inputs and rejects the rest. The search of <a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a> says every puzzle has an answer, and how many programs are answers.</p>
+<p><strong>Ordinary computation, in the browser. The machine in a new form, as a puzzle; it stands alone.</strong> This is where you play the machine yourself: sixteen puzzles, one for each formal language, ramped from four one-opcode lessons to the one formal language only a six-line program decides.</p>
+<p><a href="https://roc.lynrummy.com/nibble/">Nibble</a> is a puzzle page with one puzzle for each of the 16 formal languages: pick instructions until the program accepts exactly the puzzle&#39;s inputs and rejects the rest. Every puzzle has an answer; <a class="chapter-link" href="programs-as-formal-languages.html">“Programs as formal languages”</a>, later in this part, proves it by running every program.</p>
 <h2 id="what-runs-in-the-page">What runs in the page <a class="section-link" href="#what-runs-in-the-page" aria-label="Link to this section">§</a></h2>
-<p>The page runs the Roc port&#39;s machine. <code>roc/NibbleWasm.roc</code> exports three functions built on <code>roc/Machine.roc</code>, compiled to an 8.3 KB wasm module by the pinned Roc with a small C host (<code>web/platform/host.c</code>), and the puzzle table is printed by the C&#39;s <code>web/puzzles.c</code>, which files every program under the problem it decides and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are Roc&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the Roc wasm to the C on all 4,096 programs and all four inputs, so every build of the page is also a cross-check of the two ports, then plays every puzzle in headless Chromium by clicks.</p>
+<p>The page runs the Roc port&#39;s machine. <code>roc/NibbleWasm.roc</code> exports three functions built on <code>roc/Machine.roc</code>, compiled to an 8.3 KB wasm module by the pinned Roc with a small C host (<code>web/platform/host.c</code>), and the puzzle table is printed by the C&#39;s <code>web/puzzles.c</code>, which files every program under the formal language it decides and finds each puzzle&#39;s shortest program (<code>README.md</code>, &quot;Playground&quot;). The JavaScript in the page draws; the machine&#39;s verdicts are Roc&#39;s. The page&#39;s check, <code>web/page_check.mjs</code>, holds the Roc wasm to the C on all 4,096 programs and all four inputs, so every build of the page is also a cross-check of the two ports, then plays every puzzle in headless Chromium by clicks.</p>
 <h2 id="playing-a-puzzle">Playing a puzzle <a class="section-link" href="#playing-a-puzzle" aria-label="Link to this section">§</a></h2>
 <p>Every pick runs the program at once on all four inputs, so the trace always shows the program as it stands. A trace shows each input&#39;s <code>AX</code> after every step, then how each run ended, what the puzzle wants, and a row marking each input correct or wrong. A wrong program&#39;s verdict names every way it is wrong, as in &quot;Your program falsely accepts 0. It falsely rejects 1 and 3.&quot; When the program is right, the page says so above the program, folds the instruction buttons away so the whole trace shows, and says how many of the 4,096 programs solve the puzzle. Beside the buttons, the program&#39;s machine code shows its twelve bits, two a line, and its number. Each opcode button&#39;s tip says what it does to each <code>AX</code>: <code>decr</code> is &quot;0-&gt;R, 1-&gt;0, 2-&gt;1, 3-&gt;2&quot;. A reload starts fresh at puzzle 1.</p>
 <h2 id="the-lessons">The lessons <a class="section-link" href="#the-lessons" aria-label="Link to this section">§</a></h2>
@@ -93,7 +93,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <tr>
 <th>#</th>
 <th>puzzle</th>
-<th>problem</th>
+<th>formal language</th>
 <th>shortest</th>
 <th>programs</th>
 </tr>
@@ -187,15 +187,15 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </table>
 <p>Each puzzle says how short its best program is, and the lines past that are locked to <code>nada</code>. Past the lessons, every puzzle&#39;s last open line is fixed as <code>zero</code>, by this theorem:</p>
 <p><strong>Theorem 1.</strong> Every shortest program of a line or more ends in <code>zero</code>.</p>
-<p><em>Proof.</em> An instruction after a program&#39;s last <code>zero</code> can only reject, as running off the end does, so a program whose last instruction is <code>decr</code> or <code>mod2</code> decides the same problem with that instruction cut, in fewer lines. A test checks it on all 4,096 programs: every shortest program of a line or more ends in <code>zero</code>, and longer programs that end otherwise exist.</p>
+<p><em>Proof.</em> An instruction after a program&#39;s last <code>zero</code> can only reject, as running off the end does, so a program whose last instruction is <code>decr</code> or <code>mod2</code> decides the same formal language with that instruction cut, in fewer lines. A test checks it on all 4,096 programs: every shortest program of a line or more ends in <code>zero</code>, and longer programs that end otherwise exist.</p>
 <figure class="listing"><figcaption>Run it</figcaption><pre><code class="language-text">$ out/tcc/test_theorems
 tests/test_theorems.c: 9 tests passed
 the test: every_shortest_program_ends_in_zero
 </code></pre></figure><p>The last puzzle, <code>is_not_tiny</code>, also gives its <code>mod2</code> on line 2, the line where the solution folds 2 onto 0; the player still picks the <code>decr</code> on line 1.</p>
 <h2 id="help-for-a-newcomer">Help for a newcomer <a class="section-link" href="#help-for-a-newcomer" aria-label="Link to this section">§</a></h2>
-<p>The page&#39;s intro, behind a Help link after puzzle 1, says what a formal language is here (the page&#39;s word for a problem), how the machine runs a program four times to find the language it recognizes, and works <code>decr, zero</code> through to {1}.</p>
+<p>The page&#39;s intro, behind a Help link after puzzle 1, says what a formal language is, how the machine runs a program four times to find the formal language it recognizes, and works <code>decr, zero</code> through to {1}.</p>
 <h2 id="the-sandbox">The sandbox <a class="section-link" href="#the-sandbox" aria-label="Link to this section">§</a></h2>
-<p>A second page, the <a href="https://roc.lynrummy.com/nibble/sandbox.html">sandbox</a>, drops the puzzles. All six lines are open, each starting as <code>nada</code>, and the page shows the trace on the four inputs and the problem the program decides, by its set and its name. A program can also be typed in by its number, from 0 to 4095. It runs on the same machine as the puzzles.</p>
+<p>A second page, the <a href="https://roc.lynrummy.com/nibble/sandbox.html">sandbox</a>, drops the puzzles. All six lines are open, each starting as <code>nada</code>, and the page shows the trace on the four inputs and the formal language the program decides, by its set and its name. A program can also be typed in by its number, from 0 to 4095. It runs on the same machine as the puzzles.</p>
 <figure class="listing"><figcaption>1689, here: the sandbox, with 1689 typed in</figcaption><pre><code class="language-text">01 10 10 01 10 01  (#1689) | is_not_one {0, 2, 3}
 accept | reject | accept | accept
 </code></pre></figure><p>Play a few puzzles before reading on; the rest of the book asks how hard they really are.</p>

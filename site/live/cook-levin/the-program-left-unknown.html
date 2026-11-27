@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -72,7 +72,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <p class="chapter-number">Chapter 29</p>
 <h1 id="the-program-left-unknown">The program left unknown</h1>
 <p><strong>Circuit design, then mathematics. The machine in a new form, as a formula of its program; it needs <a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> and <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>.</strong> We make the move of <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> again, on the polynomial road: leave the program&#39;s bits unknown, and the machine becomes a formula whose true points are exactly the programs that solve a puzzle. Then we compare the two roads: naming, Part III&#39;s, and expanding, this part&#39;s.</p>
-<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> ran the machine as four Boolean functions of six bits, composed over six steps, with the input and the program fixed. Cook and Levin&#39;s move is to stop fixing the program. Keep the same four functions and the same six steps, give the program&#39;s twelve bits names in place of values, v1 to v12, and what comes out of the sixth step is a formula where it was a bit. <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> made this move inside a circuit, for a solver; here the step functions take the unknowns themselves, which lets Part IV expand them into polynomials. This chapter does that and turns the formula into the question a puzzle asks.</p>
+<p><a class="chapter-link" href="the-boolean-view.html">“The Boolean view”</a> ran the machine as four Boolean functions of six bits, composed over six steps, with the input and the program fixed. Cook and Levin&#39;s move is to stop fixing the program. Keep the same four functions and the same six steps, give the program&#39;s twelve bits names in place of values, v1 to v12, and what comes out of the sixth step is a formula where it was a bit. <a class="chapter-link" href="the-cook-levin-machine.html">“The Cook-Levin machine”</a> made this move inside a circuit, for a solver; here the step functions take the unknowns themselves, which lets Part IV expand them into polynomials. This chapter leaves the program unknown and turns the formula into the question a puzzle asks.</p>
 <h2 id="each-input-fixed">Each input fixed <a class="section-link" href="#each-input-fixed" aria-label="Link to this section">§</a></h2>
 <p>Line k&#39;s opcode bits are v(2k − 1) and v(2k), so instruction k is 2·v(2k − 1) + v(2k), numbered as in <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a>. The input stays fixed, so <code>hb</code> and <code>lb</code> start as constants and both flags as 0. <code>python/steps.py</code> composes the six steps with the same Python functions, now given formulas: a constant folds away, and an equal subformula is built once. The final <code>accepted</code>, for each input, has this many gates:</p>
 <table>
@@ -146,7 +146,7 @@ OR (NOT ((v1 AND NOT v2) OR (v3 AND NOT v4) OR (v5 AND NOT v6) OR (v7 AND NOT v8
 <p>L(n) is the constant 1 or 0, so each of the four comparisons is <code>accepted(n, v)</code> or its complement. The true points of <code>decides_L</code> are exactly the programs that decide L.</p>
 <p><em>The frame switches here from circuit design to mathematics: the same gates, read as algebra.</em></p>
 <h2 id="the-payoff">The payoff <a class="section-link" href="#the-payoff" aria-label="Link to this section">§</a></h2>
-<p>Expanded and simplified, <code>decides_L</code> is a sum of products over v1 to v12. <code>src/boolean_main.c</code> computes one for every problem: it finds the programs that decide L by running all 4,096, takes the prime implicants of that set, and covers it greedily, the product holding the most programs left taken first. Each product is written as its twelve bits, two a line of the program: 1 for v, 0 for its complement, and - for a bit the product leaves free. For {0, 2, 3} the expression is one product, the conjunction of 12 literals that spells its one program, <code>zero, decr, decr, zero, decr, zero</code>:</p>
+<p>Expanded and simplified, <code>decides_L</code> is a sum of products over v1 to v12. <code>src/boolean_main.c</code> computes one for every formal language: it finds L&#39;s programs by running all 4,096, takes the prime implicants of that set, and covers it greedily, the product holding the most programs left taken first. Each product is written as its twelve bits, two a line of the program: 1 for v, 0 for its complement, and - for a bit the product leaves free. For {0, 2, 3} the expression is one product, the conjunction of 12 literals that spells its one program, <code>zero, decr, decr, zero, decr, zero</code>:</p>
 <figure class="listing"><figcaption>1689, here: the sum of products of {0, 2, 3}, one product</figcaption><pre><code class="language-text">01 10 10 01 10 01
 </code></pre></figure><p>For {0, 3}, 12 programs take 8 products. The first is <code>zero, decr, decr, decr, zero</code> with line 6 free:</p>
 <pre><code class="language-text">01 10 10 10 01 --
@@ -163,7 +163,7 @@ OR (NOT ((v1 AND NOT v2) OR (v3 AND NOT v4) OR (v5 AND NOT v6) OR (v7 AND NOT v8
 <thead>
 <tr>
 <th>code</th>
-<th>problem</th>
+<th>formal language</th>
 <th>programs</th>
 <th>products</th>
 </tr>
@@ -267,12 +267,12 @@ OR (NOT ((v1 AND NOT v2) OR (v3 AND NOT v4) OR (v5 AND NOT v6) OR (v7 AND NOT v8
 </tr>
 </tbody>
 </table>
-<p><code>tests/test_boolean.c</code> holds every problem&#39;s sum of products to <code>run_progam</code>, program by program.</p>
+<p><code>tests/test_boolean.c</code> holds each sum of products to <code>run_progam</code>, program by program.</p>
 <h2 id="two-ways-to-compose">Two ways to compose <a class="section-link" href="#two-ways-to-compose" aria-label="Link to this section">§</a></h2>
 <p>The composing above ran all 4,096 programs, which a toy allows. For a real checker there are two ways to compose the step&#39;s expressions.</p>
 <ul>
 <li><strong>Expand it.</strong> Substitute each step&#39;s expressions into the next and multiply them out, into one big expression of the fourteen bits. <a class="chapter-link" href="arithmetization.html">“Arithmetization”</a> does this with the logic written as arithmetic on integers, AND as a product and the complement of x as 1 − x, which makes each expression a polynomial; that move is called arithmetization. <a class="chapter-link" href="six-steps-composed.html">“Six steps composed”</a> expands all six, to 10,324 terms for <code>accepted</code>. The size grows with every step substituted.</li>
-<li><strong>Name it.</strong> Give each intermediate wire a fresh variable, and state only how it relates to its inputs. That is Tseitin&#39;s encoding and SAT, the road <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> took: 416 variables and 1,216 clauses for each problem, a count that grows linearly with the steps, one stepper&#39;s gates per step.</li>
+<li><strong>Name it.</strong> Give each intermediate wire a fresh variable, and state only how it relates to its inputs. That is Tseitin&#39;s encoding and SAT, the road <a class="chapter-link" href="cook-levin-as-sat.html">“Cook-Levin as SAT”</a> took: 416 variables and 1,216 clauses for each puzzle, a count that grows linearly with the steps, one stepper&#39;s gates per step.</li>
 </ul>
 <p>Naming is why Cook-Levin&#39;s formula stays polynomial in size: each step adds the same few clauses, whatever came before it. Expanding is the riff&#39;s own road, and the rest of this part follows it to see how far it goes.</p>
 

@@ -31,7 +31,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 <li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">11</span>P, NP and Cook-Levin</a></li>
 <li class="part">Part III: Cook-Levin on the toy</li>
 <li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">12</span>The Boolean view</a></li>
-<li><a href="the-problems-seen-from-outside.html"><span class="number">13</span>The problems, seen from outside</a></li>
+<li><a href="the-formal-languages-seen-from-outside.html"><span class="number">13</span>The formal languages, seen from outside</a></li>
 <li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
 <li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
 <li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
@@ -233,7 +233,7 @@ figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none
 </tbody>
 </table>
 <p>The final <code>hb</code> has degree 9 and its largest coefficient is 6; <code>lb</code> has degree 14 and 21; <code>halted</code> 14 and 20; <code>accepted</code> 14 and 63. Sixty-three is the largest coefficient of the four final polynomials, so int64 holds each with room to spare. In the Boolean ring <code>compose_main</code> composed all six in 44 to 50 ms (<code>gcc -O2</code>, three runs on 2026-11-27).</p>
-<p>The proper polynomial is still a big one, and intrinsically so. <code>accepted</code> is 10,324 terms and, as the C prints it, 510,387 characters: all 4,096 programs run on all four inputs, written as one sum, each term a coefficient times a product of up to 14 of the bits. Every term is the machine&#39;s own, and x² = x has already taken out every power. <a class="chapter-link" href="the-delightful-monstrosity.html">“The delightful monstrosity”</a>, a short chapter, prints it in full and evaluates it by hand at program 1689.</p>
+<p>Even in the Boolean ring, the composed polynomial is big, and the size is the machine&#39;s own. <code>accepted</code> is 10,324 terms and, as the C prints it, 510,387 characters: all 4,096 programs run on all four inputs, written as one sum, each term a coefficient times a product of up to 14 of the bits. Every term is the machine&#39;s own, and x² = x has already taken out every power. <a class="chapter-link" href="the-delightful-monstrosity.html">“The delightful monstrosity”</a>, a short chapter, prints it in full and evaluates it by hand at program 1689.</p>
 <h2 id="the-proof">The proof <a class="section-link" href="#the-proof" aria-label="Link to this section">§</a></h2>
 <p>Fourteen 0/1 variables make 2^14 = 16,384 points, and each point is one input with one program. This is the book&#39;s thesis, as a theorem:</p>
 <p><strong>Theorem 12.</strong> At every one of the 2^14 points, the composed polynomial <code>accepted</code> is 1 when the machine accepts that input with that program and 0 when it rejects it.</p>
