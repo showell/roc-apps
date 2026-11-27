@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roc is our lingua franca · A riff on Cook-Levin</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="book.css">
+<script src="copy.js" defer></script>
+<style>
+figure.scrolling { margin: 1rem 0; background: var(--shade); border-radius: 4px; }
+figure.scrolling figcaption { padding: 0.5rem 1rem 0; color: var(--quiet); font: 0.72rem/1.5 var(--mono); }
+figure.scrolling pre { margin: 0; padding: 0.3rem 1rem 0.75rem; background: none; max-height: 16rem; overflow-x: hidden; overflow-y: auto; white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-all; font-size: 0.72rem; }
+@media (max-width: 700px) { figure.scrolling { margin-inline: -0.5rem; } figure.scrolling figcaption, figure.scrolling pre { padding-inline: 0.6rem; } }
+</style></head>
+<body class="chapter">
+<nav class="book-nav" id="chapters" aria-label="Chapters">
+<a class="book-name" href="index.html">A riff on Cook-Levin</a>
+<ol>
+<li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
+<li class="part">Part I: the toy</li>
+<li class="category">The machine and its problems</li><li><a href="the-machine.html"><span class="number">2</span>The machine</a></li>
+<li class="here"><a href="roc-is-our-lingua-franca.html"><span class="number">3</span>Roc is our lingua franca</a></li>
+<li><a href="formal-languages-and-machines.html"><span class="number">4</span>Formal languages and machines</a></li>
+<li><a href="deciding-in-plain-python.html"><span class="number">5</span>Deciding in plain Python</a></li>
+<li><a href="programs-as-formal-languages.html"><span class="number">6</span>Programs as formal languages</a></li>
+<li><a href="which-instructions-are-needed.html"><span class="number">7</span>Which instructions are needed</a></li>
+<li><a href="nibble-the-puzzle-page.html"><span class="number">8</span>Nibble, the puzzle page</a></li>
+<li class="category">The machine as logic</li><li><a href="the-boolean-view.html"><span class="number">9</span>The Boolean view</a></li>
+<li><a href="the-problems-seen-from-outside.html"><span class="number">10</span>The problems, seen from outside</a></li>
+<li><a href="one-formula-for-the-whole-machine.html"><span class="number">11</span>One formula for the whole machine</a></li>
+<li><a href="the-sat-solver.html"><span class="number">12</span>The SAT solver</a></li>
+<li><a href="checking-a-claim.html"><span class="number">13</span>Checking a claim</a></li>
+<li class="category">The machine as hardware</li><li><a href="parts-for-a-small-computer.html"><span class="number">14</span>Parts for a small computer</a></li>
+<li><a href="the-machine-as-a-circuit.html"><span class="number">15</span>The machine as a circuit</a></li>
+<li><a href="the-circuit-in-full.html"><span class="number">16</span>The circuit, in full</a></li>
+<li><a href="the-circuit-as-equations.html"><span class="number">17</span>The circuit as equations</a></li>
+<li><a href="from-equations-to-cnf.html"><span class="number">18</span>From equations to CNF</a></li>
+<li><a href="the-steps-encodings.html"><span class="number">19</span>The step&#39;s encodings</a></li>
+<li class="part">Part II: Cook-Levin</li>
+<li class="category">The classes</li><li><a href="p-and-np.html"><span class="number">20</span>P and NP</a></li>
+<li><a href="nibble-sized.html"><span class="number">21</span>Nibble, sized</a></li>
+<li class="category">Nibble++, a bigger machine</li><li><a href="nibble.html"><span class="number">22</span>Nibble++</a></li>
+<li><a href="two-theorems-about-nibble.html"><span class="number">23</span>Two theorems about Nibble++</a></li>
+<li><a href="shortest-programs-with-mod2-and-half.html"><span class="number">24</span>Shortest programs with mod2 and half</a></li>
+<li><a href="nibble-meets-rocsat.html"><span class="number">25</span>Nibble++ meets rocsat</a></li>
+<li><a href="is-not-14-needs-28-lines.html"><span class="number">26</span>is_not_14 needs 28 lines</a></li>
+<li><a href="guided-search.html"><span class="number">27</span>Guided search</a></li>
+<li class="category">The theorem</li><li><a href="p-np-and-cook-levin.html"><span class="number">28</span>P, NP and Cook-Levin</a></li>
+<li><a href="six-expressions-composed.html"><span class="number">29</span>Six expressions, composed</a></li>
+<li class="category">Expanding: the polynomials</li><li><a href="arithmetization.html"><span class="number">30</span>Arithmetization</a></li>
+<li><a href="the-boolean-ring.html"><span class="number">31</span>The Boolean ring</a></li>
+<li><a href="six-steps-composed.html"><span class="number">32</span>Six steps composed</a></li>
+<li><a href="the-delightful-monstrosity.html"><span class="number">33</span>The Delightful Monstrosity</a></li>
+<li class="category">Naming: the tableau and SAT</li><li><a href="the-cook-levin-machine.html"><span class="number">34</span>The Cook-Levin machine</a></li>
+<li><a href="the-tableau-filled-in.html"><span class="number">35</span>The tableau, filled in</a></li>
+<li><a href="cook-levin-as-sat.html"><span class="number">36</span>Cook-Levin as SAT</a></li>
+<li><a href="solved-by-hand.html"><span class="number">37</span>Solved by hand</a></li>
+<li><a href="the-solvers-work-in-full.html"><span class="number">38</span>The solver&#39;s work, in full</a></li>
+<li class="part">Part III: the cross-checks, and the history</li><li><a href="the-oracles.html"><span class="number">39</span>The oracles</a></li>
+<li><a href="the-roc-port.html"><span class="number">40</span>The Roc port</a></li>
+<li><a href="how-it-got-here.html"><span class="number">41</span>How it got here</a></li>
+<li><a href="what-comes-next.html"><span class="number">42</span>What comes next</a></li>
+<li><a href="appendix-two-drat-proofs.html">Appendix: two DRAT proofs</a></li>
+</ol>
+</nav>
+<main>
+<p class="book-bar"><a href="index.html">A riff on Cook-Levin</a> <a href="#chapters">Chapters</a></p>
+<article>
+<p class="chapter-number">Chapter 3</p>
+<h1 id="roc-is-our-lingua-franca">Roc is our lingua franca</h1>
+<p><strong>Ordinary computation. The tools, in brief; it needs <a class="chapter-link" href="the-machine.html">“The machine”</a>.</strong> Here is which programming language does which job in this book, and why Roc does most of them.</p>
+<p>Roc is our lingua franca in this book. This is not a book about type systems, but Roc&#39;s clear type annotations help us express mathematical concepts. It&#39;s also simply a good working language. It has the horsepower for computation and versatility to live in the browser. The Roc port composes all six steps of the machine into four polynomials and checks them at every point (<a class="chapter-link" href="the-roc-port.html">“The Roc port”</a>), and the app that builds this book is Roc as well.</p>
+<p>Nibble and Nibble++ are Steve&#39;s toy languages. They are specifically designed to be small in scope. Nibble fits in your hand. Nibble++ pushes just past brute force. Both come to life in playgrounds that accompany the book, and the machine you click there is the same Roc code this book quotes, compiled to run in your browser. The pinned Roc builds each page&#39;s machine as a small wasm module, linked with a C host of 107 lines, <code>web/platform/host.c</code>, which holds the allocator. Try <a href="https://roc.lynrummy.com/nibble/">Nibble&#39;s puzzles</a> and the <a href="https://roc.lynrummy.com/nibble/plus.html">Nibble++ playground</a>.</p>
+<p>Python is the programming language that inspired the book. We use Python mostly as a historical relic, but it remains an oracle to Roc and occasionally shines as a mainstream programming language whose syntax most programmers understand. Steve&#39;s 2023 Python, <code>virtual_machine.py</code>, <code>poly.py</code> and <code>stepper.py</code>, is where the machine and its polynomials began, and its report is still the golden file that the C and the Roc print byte for byte.</p>
+<p>C is our utility infielder. We use it for its raw speed and easy linkability. And when rocsat says no program exists, it&#39;s a small C program that checks the proof, so the book never has to take Roc&#39;s word for Roc&#39;s answers. That program is <code>src/drat.c</code>, the book&#39;s own DRAT checker, which replays each of rocsat&#39;s proofs lemma by lemma (<a class="chapter-link" href="the-solvers-work-in-full.html">“The solver&#39;s work, in full”</a>).</p>
+<p>Finally, JS does what JS does best. JS runs the skin of our toys. It also serves as a final oracle: the same machine, written in plain JavaScript, gives the same answers in the book&#39;s last chapter, and runs there on a compiler we happen to have written ourselves (in Roc!). That program, <code>js/cook_levin.js</code>, prints the same report and composition byte for byte under node and as an x86-64 program from js-x86 (<a class="chapter-link" href="what-comes-next.html">“What comes next”</a>).</p>
+
+</article>
+<nav class="turn-page" aria-label="Previous and next chapter">
+<a rel="prev" href="the-machine.html"><small>Previous</small>The machine</a>
+<a rel="next" href="formal-languages-and-machines.html"><small>Next</small>Formal languages and machines</a>
+</nav>
+</main>
+</body>
+</html>
