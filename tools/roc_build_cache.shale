@@ -1,0 +1,118 @@
+-- tools/roc_build_cache.shale: how tools/roc_build.shale keeps its shared
+-- cache of builds, build:cache/roc-apps-builds/<name>/<key>/, safe for
+-- several checkouts and lanes at once. tools/roc_build.shale loads it, and
+-- tools/roc_build_cache_test.shale holds it to its rules on a scratch cache.
+-- roc-js-interpreter keeps the same file, on purpose, beside its copy of
+-- tools/roc_build.shale: the two write one cache, so they keep it one way.
+--
+-- **A build in use is never removed.** A caller asks tools/roc_build.shale
+-- for an executable and then runs it, for as long as its gate takes, with no
+-- further word to the cache. So every hit, and every build, writes the time
+-- into the build's `used` stamp, and the prune removes only a build whose
+-- stamp is older than CACHE_IN_USE_S, a day: far longer than any gate runs.
+-- Within each name, mode and flags it keeps the CACHE_KEEP newest by that
+-- stamp whatever their age; of the rest it removes those a day old, and
+-- holds the others, saying how many it held, so the cache stays bounded by a
+-- day's builds and never by deleting one a gate may still be running.
+--
+-- **The stamp and the prune take one lock**, a folder beside the name's
+-- (`<name>.lock`, made by `mkdir`, which only one taker can make), so a
+-- prune never reads a stamp as old while a hit writes it new and hands the
+-- executable out. Each holds the lock for a few file operations. A lock
+-- older than CACHE_LOCK_STALE_S when a run starts was left by a run that
+-- was stopped holding it, and is taken over.
+
+const CACHE_KEEP = 3
+const CACHE_IN_USE_S = 86400
+-- A half-made build older than this (seconds) is a stopped run's, and goes.
+const CACHE_STALE_PART_S = 3600
+const CACHE_LOCK_STALE_S = 60
+-- How many times a taker tries the lock, 100 ms apart, before it stops.
+const CACHE_LOCK_TRIES = 600
+
+function cache_lock_path(app_dir)
+  return app_dir .. ".lock"
+end
+
+function cache_remove_lock(lock)
+  remove_tree(lock)
+  return nil
+end
+
+-- The lock of `app_dir`'s builds taken, trying `tries` times; a stop, naming
+-- the lock, when another run holds it all that while.
+function cache_lock(app_dir, tries)
+  local lock = cache_lock_path(app_dir)
+  mkdir(dirname(lock))
+  local where = real(dirname(lock)) .. "/" .. basename(lock)
+  for i = 1, tries do
+    local r = run({"mkdir", where}, {timeout_ms = 10000, tail = 3})
+    if r.code == 0 then return nil end
+    if exists(lock) and stat(lock).modified < now() - CACHE_LOCK_STALE_S then
+      -- Another taker may remove it first; either way the next try decides.
+      attempt(cache_remove_lock, lock)
+    else
+      sleep(100)
+    end
+  end
+  fail("tools/roc_build_cache.shale: " .. lock .. " is held by another run and was not let go in " .. tries .. " tries; a lock older than " .. CACHE_LOCK_STALE_S .. " s when a run starts is taken over")
+end
+
+function cache_unlock(app_dir)
+  remove_tree(cache_lock_path(app_dir))
+  return nil
+end
+
+-- The time a finished build was last handed out, from its `used` stamp.
+function cache_stamp(dir)
+  return tonumber(trim(read(dir .. "/used")))
+end
+
+-- Whether `app_dir` holds a finished build of `key` with its executable
+-- `name`; when it does, its stamp is set to `now_s`, under the lock, so no
+-- prune removes it for a day.
+function cache_hit(app_dir, key, name, now_s)
+  if not exists(app_dir) then return false end
+  local dir = app_dir .. "/" .. key
+  cache_lock(app_dir, CACHE_LOCK_TRIES)
+  local found = exists(dir .. "/used") and exists(dir .. "/" .. name)
+  if found then replace(dir .. "/used", tostring(now_s) .. "\n") end
+  cache_unlock(app_dir)
+  return found
+end
+
+-- `app_dir`'s builds pruned at `now_s`, under the lock: each half-made one a
+-- stopped run left, and each finished one beyond the CACHE_KEEP newest of
+-- its mode and flags that no one has used for CACHE_IN_USE_S. Gives
+-- `{gone, held}`: how many it removed, and how many beyond CACHE_KEEP it
+-- kept because they were used within that time.
+function cache_prune(app_dir, now_s)
+  cache_lock(app_dir, CACHE_LOCK_TRIES)
+  local groups = {}
+  for n in ls(app_dir) do
+    local d = app_dir .. "/" .. n
+    if find(n, ".part.") ~= nil then
+      if stat(d).modified < now_s - CACHE_STALE_PART_S then remove_tree(d) end
+    elseif exists(d .. "/built_for") and exists(d .. "/used") then
+      push_at(groups, read(d .. "/built_for"), {dir = d, used = cache_stamp(d)})
+    elseif stat(d).modified < now_s - CACHE_STALE_PART_S then
+      remove_tree(d)
+    end
+  end
+  local gone = 0
+  local held = 0
+  for g in keys(groups) do
+    local builds = groups[g]
+    sort(builds, "used", "desc")
+    for i = CACHE_KEEP + 1, #builds do
+      if builds[i].used < now_s - CACHE_IN_USE_S then
+        remove_tree(builds[i].dir)
+        gone = gone + 1
+      else
+        held = held + 1
+      end
+    end
+  end
+  cache_unlock(app_dir)
+  return {gone = gone, held = held}
+end

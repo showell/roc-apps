@@ -36,18 +36,19 @@
 -- train's too. A build is made in a folder of its own and renamed into
 -- place, so a caller never runs a half-written one; two callers building one
 -- key at once each build, and the second rename finds the first's in place.
--- After a build, each name and mode keeps its KEEP newest (by when each was
--- last asked for); the rest are removed.
+-- Every hit and every build stamps the build as used, and after a build the
+-- name's old builds are pruned, never one used within the last day, since a
+-- caller may still be running it: tools/roc_build_cache.shale holds the
+-- rules, and tools/roc_build_cache_test.shale tests them.
 --
 -- budget: steps=20000000
+
+use("./roc_build_cache.shale")
 
 const WHO = "tools/roc_build.shale"
 const SELF = "tools/roc_build.shale"
 const CACHE = "build:cache/roc-apps-builds"
-const KEEP = 3
 const WANT_ROC = "roc-pin: roc-apps' pinned nightly, and the app it builds"
--- A half-made build older than this (seconds) is a stopped run's, and goes.
-const STALE_PART_S = 3600
 -- How this script runs `roc build` (its folder, its arguments' order): in
 -- the key, and moved by hand when that changes, since a change to the rest
 -- of this script (how it finds the inputs, how it prunes) makes the same
@@ -173,31 +174,6 @@ function built_for(flags)
   return "app " .. APP .. "\nmode " .. MODE .. "\nflags " .. join(flags, " ") .. "\n"
 end
 
--- Each finished build of `name` beyond the KEEP newest for its mode and
--- flags removed, and each half-made one a stopped run left.
-function prune(app_dir)
-  local groups = {}
-  for n in ls(app_dir) do
-    local d = app_dir .. "/" .. n
-    if find(n, ".part.") ~= nil then
-      if stat(d).modified < now() - STALE_PART_S then remove_tree(d) end
-    elseif exists(d .. "/built_for") and exists(d .. "/used") then
-      push_at(groups, read(d .. "/built_for"), {dir = d, used = stat(d .. "/used").modified})
-    elseif stat(d).modified < now() - STALE_PART_S then
-      remove_tree(d)
-    end
-  end
-  local gone = 0
-  for g in keys(groups) do
-    local builds = groups[g]
-    sort(builds, "used", "desc")
-    for i = KEEP + 1, #builds do
-      remove_tree(builds[i].dir)
-      gone = gone + 1
-    end
-  end
-  return gone
-end
 
 function main()
   if APP == "" or NAME == "" or MODE == "" then fail(WHO .. ": give app=<root .roc>, name=<the executable's name> and mode=dev|speed|boxy") end
@@ -216,8 +192,7 @@ function main()
   local app_dir = CACHE .. "/" .. NAME
   local dir = app_dir .. "/" .. key
   local exe = dir .. "/" .. NAME
-  if exists(dir .. "/used") and exists(exe) then
-    replace(dir .. "/used", tostring(now()) .. "\n")
+  if cache_hit(app_dir, key, NAME, now()) then
     print("reused " .. NAME .. " " .. MODE .. " (" .. key .. ")")
     print("exe\t" .. real(exe))
     return nil
@@ -238,13 +213,14 @@ function main()
   local moved = run({"mv", "-T", real(part), real(app_dir) .. "/" .. key}, {timeout_ms = 10000, tail = 5})
   -- Another run renamed the same key in first: its build is as good.
   if moved.code ~= 0 then
-    if not exists(exe) then fail(WHO .. ": could not move the build into " .. dir .. ": " .. trim(moved.out)) end
+    if not cache_hit(app_dir, key, NAME, now()) then fail(WHO .. ": could not move the build into " .. dir .. ": " .. trim(moved.out)) end
     remove_tree(part)
   end
-  local gone = prune(app_dir)
+  local pruned_now = cache_prune(app_dir, now())
   local tenths = r.ms // 100
   local pruned = ""
-  if gone > 0 then pruned = "; pruned " .. gone .. " older" end
+  if pruned_now.gone > 0 then pruned = "; pruned " .. pruned_now.gone .. " older" end
+  if pruned_now.held > 0 then pruned = pruned .. "; held " .. pruned_now.held .. " past the " .. CACHE_KEEP .. " newest, used within " .. (CACHE_IN_USE_S // 3600) .. " h" end
   print("built " .. NAME .. " " .. MODE .. " in " .. (tenths // 10) .. "." .. (tenths % 10) .. " s (" .. key .. pruned .. ")")
   print("exe\t" .. real(exe))
 end

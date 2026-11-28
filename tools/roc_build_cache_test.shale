@@ -1,0 +1,165 @@
+-- tools/roc_build_cache_test.shale: tools/roc_build_cache.shale's rules for
+-- the shared build cache, held on a scratch cache of planted builds (empty
+-- folders with a stamp, no compiler), so it runs in a second and never
+-- touches build:cache/roc-apps-builds, which other checkouts are using.
+-- roc-js-interpreter keeps the same file beside its copy of the library.
+--
+--   shale tools/roc_build_cache_test.shale
+--
+-- Its cases are two users of one cache: user A asked for a build and is
+-- still running it, an hour later, while user B's builds of the same name
+-- push A's out of the newest three and B's prune runs. A's build stays, and
+-- a build no one has used for longer than a day goes, so the cache stays
+-- bounded. It prints a line a case, then `roc_build_cache_test: N of N
+-- passed`, and stops when any fails.
+
+use("./roc_build_cache.shale")
+
+const HOUR = 3600
+const DAY = 86400
+
+const results = {passed = 0, failed = 0}
+
+function say(ok, what)
+  if ok then
+    results.passed = results.passed + 1
+    print("PASS " .. what)
+  else
+    results.failed = results.failed + 1
+    print("FAIL " .. what)
+  end
+  return nil
+end
+
+-- A finished build of `name` planted at `app_dir/key`, built for `group`,
+-- its stamp `used`.
+function plant(app_dir, key, name, group, used)
+  local d = app_dir .. "/" .. key
+  mkdir(d)
+  replace(d .. "/" .. name, "planted\n")
+  replace(d .. "/built_for", group)
+  replace(d .. "/used", tostring(used) .. "\n")
+  return d
+end
+
+function there(app_dir, keys_wanted)
+  for k in keys_wanted do
+    if not exists(app_dir .. "/" .. k) then return false end
+  end
+  return true
+end
+
+function none_there(app_dir, keys_gone)
+  for k in keys_gone do
+    if exists(app_dir .. "/" .. k) then return false end
+  end
+  return true
+end
+
+-- User A's build, an hour into its gate, behind three newer builds by user
+-- B; a build no one used for two days; another mode's builds, left alone.
+function two_users(scratch, t)
+  local app = scratch .. "/two-users"
+  local speed = "app x.roc\nmode speed\nflags --opt=speed\n"
+  local dev = "app x.roc\nmode dev\nflags --opt=dev\n"
+  plant(app, "a-running", "x", speed, t - HOUR)
+  plant(app, "b1", "x", speed, t - 10)
+  plant(app, "b2", "x", speed, t - 20)
+  plant(app, "b3", "x", speed, t - 30)
+  plant(app, "old", "x", speed, t - 2 * DAY)
+  plant(app, "dev-old1", "x", dev, t - 3 * DAY)
+  plant(app, "dev-old2", "x", dev, t - 4 * DAY)
+  local p = cache_prune(app, t)
+  say(there(app, {"a-running"}), "user A's build, used an hour ago and fourth newest, survives user B's prune")
+  say(there(app, {"b1", "b2", "b3"}), "the three newest builds stay")
+  say(none_there(app, {"old"}), "a build unused for two days, past the three newest, goes")
+  say(there(app, {"dev-old1", "dev-old2"}), "another mode's two builds, under its three, stay however old")
+  say(p.gone == 1 and p.held == 1, "the prune says it removed 1 and held 1 (it said " .. p.gone .. " and " .. p.held .. ")")
+  say(not exists(cache_lock_path(app)), "the prune let its lock go")
+  return nil
+end
+
+-- The day's edge, a second either side, with four newer builds ahead.
+function the_edge(scratch, t)
+  local app = scratch .. "/edge"
+  local g = "app y.roc\nmode speed\nflags --opt=speed\n"
+  for i = 1, CACHE_KEEP do plant(app, "new" .. i, "y", g, t - i) end
+  plant(app, "inside", "y", g, t - CACHE_IN_USE_S + 1)
+  plant(app, "at", "y", g, t - CACHE_IN_USE_S)
+  plant(app, "outside", "y", g, t - CACHE_IN_USE_S - 1)
+  local p = cache_prune(app, t)
+  say(there(app, {"inside", "at"}), "builds used a day ago and a second under it stay")
+  say(none_there(app, {"outside"}), "a build used a day and a second ago goes")
+  say(p.gone == 1 and p.held == 2, "the edge's prune removed 1 and held 2 (it said " .. p.gone .. " and " .. p.held .. ")")
+  return nil
+end
+
+-- A hit stamps the build, so a build two days idle that user A asks for
+-- again outlives B's prune.
+function a_hit_stamps(scratch, t)
+  local app = scratch .. "/hit"
+  local g = "app z.roc\nmode speed\nflags --opt=speed\n"
+  for i = 1, CACHE_KEEP do plant(app, "new" .. i, "z", g, t - i) end
+  plant(app, "idle", "z", g, t - 2 * DAY)
+  say(cache_hit(app, "idle", "z", t), "a hit finds a finished build")
+  say(cache_stamp(app .. "/idle") == t, "the hit stamps it with the time")
+  cache_prune(app, t)
+  say(there(app, {"idle"}), "the build user A just asked for survives the prune")
+  say(not cache_hit(app, "nothing", "z", t), "a key with no build is no hit")
+  say(not cache_hit(scratch .. "/no-such-name", "k", "z", t), "a name with no folder is no hit")
+  return nil
+end
+
+-- Half-made builds: a stopped run's goes after an hour, a running one stays.
+function half_made(scratch, t)
+  local app = scratch .. "/parts"
+  mkdir(app .. "/k.part.fresh")
+  mkdir(app .. "/k.part.stale")
+  local touched = run({"touch", "-d", "@" .. (t - 2 * HOUR), real(app .. "/k.part.stale")}, {timeout_ms = 10000, tail = 3})
+  say(touched.code == 0, "a half-made build's time set two hours back")
+  cache_prune(app, t)
+  say(there(app, {"k.part.fresh"}), "a half-made build still being made stays")
+  say(none_there(app, {"k.part.stale"}), "a half-made build two hours old goes")
+  return nil
+end
+
+function try_lock(app)
+  cache_lock(app, 3)
+  return nil
+end
+
+-- The lock: one holder at a time, and a stopped run's taken over.
+function the_lock(scratch, t)
+  local app = scratch .. "/lock"
+  mkdir(app)
+  cache_lock(app, 3)
+  local second = attempt(try_lock, app)
+  say(not second.ok, "a second taker can't take a held lock")
+  cache_unlock(app)
+  local third = attempt(try_lock, app)
+  say(third.ok, "the lock is taken once it is let go")
+  local touched = run({"touch", "-d", "@" .. (t - 2 * CACHE_LOCK_STALE_S), real(cache_lock_path(app))}, {timeout_ms = 10000, tail = 3})
+  say(touched.code == 0, "the held lock's time set back, as a stopped run leaves it")
+  local fourth = attempt(try_lock, app)
+  say(fourth.ok, "a lock older than " .. CACHE_LOCK_STALE_S .. " s is taken over")
+  cache_unlock(app)
+  return nil
+end
+
+function main()
+  mkdir("build:cache")
+  local scratch = fresh_dir("build:cache", "roc-build-cache-test")
+  local t = now()
+  two_users(scratch, t)
+  the_edge(scratch, t)
+  a_hit_stamps(scratch, t)
+  half_made(scratch, t)
+  the_lock(scratch, t)
+  remove_tree(scratch)
+  local all = results.passed + results.failed
+  if results.failed > 0 then fail("roc_build_cache_test: " .. results.failed .. " of " .. all .. " failed") end
+  print("roc_build_cache_test: " .. all .. " of " .. all .. " passed")
+  return nil
+end
+
+main()

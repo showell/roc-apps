@@ -41,7 +41,8 @@
 -- this one, with its rocco-engine submodule. It runs
 -- site/deploy_test.shale, the prod deploy's refusals before it reaches prod,
 -- which needs a shale with `run`'s `secret_args` and asks 1.1.1.1 for
--- roc.lynrummy.com.
+-- roc.lynrummy.com, and tools/roc_build_cache_test.shale, which holds the
+-- shared build cache's prune to never removing a build in use.
 --
 -- `shale check.shale basic=1` is the BASIC tier instead, kept out of the
 -- default run for its time (about a minute and a half, half of it the
@@ -194,6 +195,9 @@ function all()
   local deploy = run({"shale", "--root", ".", "site/deploy_test.shale"}, {timeout_ms = 300000, tail = 40})
   print(trim(deploy.out))
   if deploy.code ~= 0 then push(failed, "the deploy's refusals") end
+  local cache = run({"shale", "--root", ".", "tools/roc_build_cache_test.shale"}, {timeout_ms = 60000, tail = 40})
+  print(trim(cache.out))
+  if cache.code ~= 0 then push(failed, "the build cache's rules") end
   local roc = pinned_roc("check")
   local files = roc_files(false)
   local fmt = {roc, "fmt", "--check"}

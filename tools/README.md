@@ -39,13 +39,19 @@ The repository's own scripts, beside `check.shale` at its root.
   caller asking for the same build reuses it. The prelude's `built_roc`
   asks it; BASIC's controls and pathological runs and the copy shapes take
   their binaries from it. Its header says what the key holds.
+  `roc_build_cache.shale`, a library it loads, keeps the shared cache safe
+  for lanes building at once: a stamp on every hit, a lock, and a prune
+  that never removes a build used within the last day.
+  `roc_build_cache_test.shale` holds those rules on a scratch cache, in
+  `check.shale`'s default run.
 - `alloc_ladder.shale` runs an interpreter's or a program's controls at two
   sizes and holds what one more iteration allocates to an expected file,
   as a check file of roc-alloc-trace's (github.com/showell/roc-alloc-trace,
   a checkout beside this one, built by `alloc_trace.shale`), which counts
   `roc_alloc` calls with breakpoints. Its callers are `basic/controls.shale` and
   `copy_shapes/copy_shapes.shale`. roc-js-interpreter keeps a copy of it,
-  and of `alloc_trace.shale`, `roc_build.shale` and `chromium.mjs`, for its
+  and of `alloc_trace.shale`, `roc_build.shale` (with `roc_build_cache.shale`
+  and its test) and `chromium.mjs`, for its
   own controls and pages; each copy's header names its twin here.
 - `copy_oracle.shale` says where a Roc program copies, from the program
   itself: roc-alloc-trace's `where` breaks at roc_alloc and at each builtin's entry,
