@@ -1,15 +1,15 @@
-published 2026-11-27T21:48:24Z
-safari-walk b0a0563 (b0a056341ddc2d62fde741d93c2328a27d1b6594); the repo has no remote yet
-rocco-engine walk/outdoor-particles 565ec02 (565ec02477beeb105c9c57beb8fd2a4c97a8cdd0), on walk/outdoor-particles at https://github.com/showell/rocco-engine.git
-roc 0.1.0-rc1; web host built release from rocco-engine 565ec02, its stamp checked (scripts/build_web_host.shale, scripts/check_web_host.shale)
+published 2026-11-28T16:43:19Z
+safari-walk cc5da30 (cc5da30ad2090e603efe18c70b14ece1691b9d83); the repo has no remote yet
+rocco-engine walk/v0.17 3bcd2c5 (3bcd2c585ad965030cc705c5a27e2ab1fc7c01f8), on walk/v0.17 at https://github.com/showell/rocco-engine.git
+roc 0.1.0-rc1; web host built release from rocco-engine 3bcd2c5, its stamp checked (scripts/build_web_host.shale, scripts/check_web_host.shale)
 5539543 bytes  index.data
 2943263 bytes  index.data.gz
 2931 bytes  index.data.js
 1574974 bytes  index.data.zst
 55035 bytes  index.html
-329542 bytes  index.js
-3024857 bytes  index.wasm
+329923 bytes  index.js
+3021794 bytes  index.wasm
 4463 bytes  rocco.js
 index.data.zst and index.data.gz are index.data compressed (zstd -19, gzip -9)
 models: conifers, grass and zebra Quaternius CC0 1.0; towers made by safari-walk's make_towers.roc; ducks, the kangaroo and the tavern drawn from Rocco's primitive sphere, cube and cylinder (no CC0 duck, kangaroo or building model found); safari-walk's README lists each
-sha256 b3a816de3eedb017  index.wasm
+sha256 a1d095ec9a7ce3ec  index.wasm
