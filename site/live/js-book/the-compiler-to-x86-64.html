@@ -14,7 +14,7 @@
 <ol>
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
-<li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#the-compiled-programs-collector">The compiled programs&#39; collector</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27</a></li></ol></li>
+<li class="here"><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a><ol class="sections"><li><a href="the-compiler-to-x86-64.html#the-milestones">The milestones</a></li><li><a href="the-compiler-to-x86-64.html#the-pipeline">The pipeline</a></li><li><a href="the-compiler-to-x86-64.html#a-value-in-8-bytes">A value in 8 bytes</a></li><li><a href="the-compiler-to-x86-64.html#the-runtime">The runtime</a></li><li><a href="the-compiler-to-x86-64.html#the-compiled-programs-collector">The compiled programs&#39; collector</a></li><li><a href="the-compiler-to-x86-64.html#what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27</a></li></ol></li>
 <li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
 <li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
@@ -39,7 +39,50 @@
 <article>
 <p class="chapter-number">Chapter 3</p>
 <h1 id="the-compiler-to-x86-64">The compiler to x86-64</h1>
-<p><code>js-x86</code>, in <code>x86/</code>, turns a program into a static Linux x86-64 executable, and Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>). So any byte the processor runs traces back to the Roc module that wrote it.</p>
+<p><code>js-x86</code>, in <code>x86/</code>, turns a program into a static Linux x86-64 executable, and Roc writes every byte of that file. The instruction encoder (<code>X86.roc</code>), the assembler (<code>Assembly.roc</code>) and the ELF writer (<code>Elf.roc</code>) are Roc modules, and the executable talks to the kernel directly, by the <code>syscall</code> instruction. The product holds no assembler, linker, LLVM or libc, and the executable needs none of them to run (<code>x86/README.md</code>).</p>
+<h2 id="the-milestones">The milestones <a class="section-link" href="#the-milestones" aria-label="Link to this section">§</a></h2>
+<p><code>x86/README.md</code> plans the compiler as six milestones, and later chapters name them by number:</p>
+<table>
+<thead>
+<tr>
+<th>milestone</th>
+<th>what it adds</th>
+<th>state on 2026-11-28</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>hello, world: the instruction encoder, the ELF writer, and the <code>write</code> and exit system calls</td>
+<td>done</td>
+</tr>
+<tr>
+<td>2</td>
+<td>numbers and functions: doubles, calls, <code>if</code> and loops</td>
+<td>done</td>
+</tr>
+<tr>
+<td>3</td>
+<td>heap values with a bump allocator: objects, arrays, strings, closures, Maps and Sets, the timers, classes</td>
+<td>done</td>
+</tr>
+<tr>
+<td>4</td>
+<td>the runtime in the subset: <code>console.log</code>&#39;s formatting, Map and Set, and number printing, written in JavaScript and compiled by this compiler</td>
+<td>next</td>
+</tr>
+<tr>
+<td>5</td>
+<td>the collector, and the whole corpus held to node</td>
+<td>the collector done</td>
+</tr>
+<tr>
+<td>6</td>
+<td>type specialization for long numeric loops</td>
+<td>begun</td>
+</tr>
+</tbody>
+</table>
 <h2 id="the-pipeline">The pipeline <a class="section-link" href="#the-pipeline" aria-label="Link to this section">§</a></h2>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="From the text to the executable" width="134pt" height="380pt"
  viewBox="0.00 0.00 134.00 380.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -101,7 +144,7 @@
 </tr>
 <tr>
 <td><code>Lowering.roc</code></td>
-<td>turns each function&#39;s bytecode into <code>Assembly</code> statements, one instruction&#39;s machine code after another; <code>OperatorLowering</code>, <code>BuiltinLowering</code>, <code>CallLowering</code> and <code>IndexLowering</code> each take a family of instructions, and <code>Inlining</code> and four later passes are in <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a></td>
+<td>turns each function&#39;s bytecode into <code>Assembly</code> statements, one instruction&#39;s machine code after another; <code>OperatorLowering</code>, <code>BuiltinLowering</code>, <code>CallLowering</code> and <code>IndexLowering</code> each take a family of instructions, and <code>Inlining</code> and five later passes are in <a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a></td>
 </tr>
 <tr>
 <td><code>Assembly.roc</code></td>
@@ -166,17 +209,21 @@
 </tbody>
 </table>
 <p>The two NaNs the processor makes lie below every tag, so a value is a number exactly when its bits are below the first tag shifted into place: one unsigned compare.</p>
-<p><strong>A known kind stays untagged.</strong> The lowering walks each function&#39;s instructions keeping the kind of each slot and each place on the bytecode&#39;s stack: a number, an <code>Integer</code>, a boolean, a string, an array and so on, or <code>Value</code>, a value whose kind only the run decides. Where two known numbers meet <code>+</code>, the code is one <code>addsd</code>. A <code>Value</code>&#39;s tag is tested in line for <code>+</code> and the comparisons, and the runtime does the rest (<code>runtime_add</code>, <code>runtime_compare</code> and their kin). Since a value&#39;s bits are the same whatever the compiler knows of it, a place that widens to <code>Value</code> where two ways meet costs zero instructions. A function&#39;s parameters and its result take their kinds from the whole program: the lowering runs pass after pass until every call&#39;s argument kinds and every return&#39;s kind settle (<code>Lowering</code>&#39;s <code>items_with_numbers</code>).</p>
+<p>A value whose kind the compiler knows skips the test of its tag. The lowering walks each function&#39;s instructions keeping the kind of each slot and each place on the bytecode&#39;s stack: a number, an <code>Integer</code>, a boolean, a string, an array and so on, or <code>Value</code>, a value whose kind only the run decides. Where two known numbers meet <code>+</code>, the code is one <code>addsd</code>. A <code>Value</code>&#39;s tag is tested in line for <code>+</code> and the comparisons, and the runtime does the rest (<code>runtime_add</code>, <code>runtime_compare</code> and their kin). Since a value&#39;s bits are the same whatever the compiler knows of it, a place that widens to <code>Value</code> where two ways meet costs zero instructions. A function&#39;s parameters and its result take their kinds from the whole program: the lowering runs pass after pass until every call&#39;s argument kinds and every return&#39;s kind settle (<code>Lowering</code>&#39;s <code>items_with_numbers</code>).</p>
 <h2 id="the-runtime">The runtime <a class="section-link" href="#the-runtime" aria-label="Link to this section">§</a></h2>
-<p>Every executable carries the runtime, about 24 KB of machine code: the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>. Here is the allocator, from <code>Heap.roc</code>:</p>
+<p>Every executable carries the runtime, about 28 KB of machine code and its tables: the start, the allocator, buffered output, <code>console.log</code>&#39;s writing of values as node writes them, the array methods, the Maps and Sets, and the timers. It is written in Roc too, as lists of <code>Assembly</code> statements, one instruction a line through the short builders of <code>Emit.roc</code>.</p>
+<p>At its start the runtime maps 3 GiB of memory: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is cut into pages of 64 KiB, each holding blocks of one size, its size class, and every block starts with a header word that names its kind and size (<code>x86/COLLECTOR.md</code>). To allocate, the runtime takes a block from its class&#39;s free list, a chain of dead blocks, or else the next block of the class&#39;s current page; past a threshold it collects first. Here is that allocator, from <code>Heap.roc</code>:</p>
 <figure class="listing"><figcaption>x86/roc/Heap.roc, the function allocate_items</figcaption><pre><code class="language-roc"><span class="syn-comment">## The allocator: `rdi` rounded up to 8, the header that and the kind in</span>
 <span class="syn-comment">## `rax` make, and the class whose block holds them both (the highest bit</span>
 <span class="syn-comment">## of `rdi + 7`, at least 3). The block&#39;s bytes are counted as taken, and</span>
 <span class="syn-comment">## past the threshold the heap is collected first. The class&#39;s free list&#39;s</span>
-<span class="syn-comment">## first block is taken, else its next block, unless that lies at a page&#39;s</span>
-<span class="syn-comment">## start, which says its page is full or it has none: then a page is taken</span>
-<span class="syn-comment">## first. A block past the most a page of blocks holds takes pages of its</span>
-<span class="syn-comment">## own. It keeps every register but `rax` and `rdi`.</span>
+<span class="syn-comment">## first block is taken; with none, the class&#39;s next page not swept yet is</span>
+<span class="syn-comment">## swept onto the list (unless its sweep&#39;s cursor says none is left); else</span>
+<span class="syn-comment">## its next block, unless that lies at a page&#39;s start, which says its page</span>
+<span class="syn-comment">## is full or it has none: then a page is taken first, and each of its</span>
+<span class="syn-comment">## blocks&#39; headers cleared. A block past the most a page of blocks holds</span>
+<span class="syn-comment">## takes pages of its own. The header is written and the bytes asked zeroed.</span>
+<span class="syn-comment">## It keeps every register but `rax` and `rdi`.</span>
 <span class="syn-name">allocate_items</span> : <span class="syn-type">List</span>(<span class="syn-type">Assembly.Statement</span>)
 <span class="syn-name">allocate_items</span> = [
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_kind&quot;</span>),
@@ -210,12 +257,20 @@
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_small&quot;</span>),
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">16</span> })),
 	<span class="syn-type">Emit</span>.test(<span class="syn-type">Rax</span>, <span class="syn-type">Rax</span>),
-	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_bump&quot;</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_sweep&quot;</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_pop&quot;</span>),
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>)),
 	<span class="syn-type">Emit</span>.store(class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">16</span> }), <span class="syn-type">Rdx</span>),
-	<span class="syn-type">Emit</span>.zero(<span class="syn-type">Rdx</span>),
-	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>), <span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_header&quot;</span>),
+	<span class="syn-comment"># The free list is empty: the class&#39;s next page not swept yet, if it</span>
+	<span class="syn-comment"># has one, is swept for it.</span>
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_sweep&quot;</span>),
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">24</span> })),
+	<span class="syn-type">Emit</span>.cmp_imm(<span class="syn-type">Rdx</span>, swept_all),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_bump&quot;</span>),
+	<span class="syn-type">Emit</span>.call(lazy_sweep),
+	<span class="syn-type">Emit</span>.test(<span class="syn-type">Rax</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">Ne</span>, <span class="syn-string">&quot;runtime_allocate_pop&quot;</span>),
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_bump&quot;</span>),
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rax</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">0</span> })),
 	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rax</span>),
@@ -225,8 +280,27 @@
 	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">8</span> })),
 	<span class="syn-type">Emit</span>.plus(<span class="syn-type">Rdx</span>, <span class="syn-type">Rax</span>),
 	<span class="syn-type">Emit</span>.store(class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">0</span> }), <span class="syn-type">Rdx</span>),
+	<span class="syn-comment"># The header written, then the bytes asked zeroed, last first: a block</span>
+	<span class="syn-comment"># swept lazily still holds what it held when it died.</span>
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_header&quot;</span>),
 	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rdx</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rdx</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">E</span>, <span class="syn-string">&quot;runtime_allocate_zeroed&quot;</span>),
+	<span class="syn-type">Emit</span>.zero(<span class="syn-type">Rcx</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_zero&quot;</span>),
+	<span class="syn-type">Emit</span>.store(
+		<span class="syn-type">Emit</span>.mem_index({
+			base: <span class="syn-type">Rax</span>,
+			index: <span class="syn-type">Rdx</span>,
+			displacement: <span class="syn-number">0</span>,
+		}),
+		<span class="syn-type">Rcx</span>,
+	),
+	<span class="syn-type">Emit</span>.minus_imm(<span class="syn-type">Rdx</span>, <span class="syn-number">8</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">Ne</span>, <span class="syn-string">&quot;runtime_allocate_zero&quot;</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_zeroed&quot;</span>),
 	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">8</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
@@ -247,6 +321,19 @@
 	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rdx</span>, class_shift),
 	<span class="syn-type">Emit</span>.byte_store(table_entry(<span class="syn-type">Rsi</span>), <span class="syn-type">Dl</span>),
+	<span class="syn-comment"># A page taken may hold what it held before it was freed, so the header</span>
+	<span class="syn-comment"># of each of its blocks, at the class&#39;s stride, is cleared, last first:</span>
+	<span class="syn-comment"># a block not taken yet must read as none to `Heap.block_start`.</span>
+	<span class="syn-type">Emit</span>.load(<span class="syn-type">Rdx</span>, class_place({ offset: <span class="syn-type">Rcx</span>, past: <span class="syn-number">8</span> })),
+	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rsi</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rax</span>, page_size)),
+	<span class="syn-type">Emit</span>.save(<span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.zero(<span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_page_clear&quot;</span>),
+	<span class="syn-type">Emit</span>.minus(<span class="syn-type">Rsi</span>, <span class="syn-type">Rdx</span>),
+	<span class="syn-type">Emit</span>.store(<span class="syn-type">Emit</span>.mem(<span class="syn-type">Rsi</span>, <span class="syn-number">0</span>), <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.cmp(<span class="syn-type">Rsi</span>, <span class="syn-type">Rax</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">Ne</span>, <span class="syn-string">&quot;runtime_allocate_page_clear&quot;</span>),
+	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rdi</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rsi</span>),
 	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_block&quot;</span>),
 	<span class="syn-comment"># A large block: the pages its header and its bytes fill, counted as</span>
@@ -286,14 +373,32 @@
 	<span class="syn-type">Emit</span>.plus_imm(<span class="syn-type">Rax</span>, <span class="syn-number">1</span>),
 	<span class="syn-type">Emit</span>.byte_store(table_entry(<span class="syn-type">Rax</span>), <span class="syn-type">Dl</span>),
 	<span class="syn-type">Emit</span>.jmp(<span class="syn-string">&quot;runtime_allocate_large_page&quot;</span>),
+	<span class="syn-comment"># Its bytes asked zeroed, last first: its pages may hold what they held</span>
+	<span class="syn-comment"># before they were freed.</span>
 	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large_done&quot;</span>),
+	<span class="syn-type">Emit</span>.mov(<span class="syn-type">Rdx</span>, <span class="syn-type">Rdi</span>),
+	<span class="syn-type">Emit</span>.shl(<span class="syn-type">Rdx</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.shr(<span class="syn-type">Rdx</span>, <span class="syn-number">16</span>),
+	<span class="syn-type">Emit</span>.zero(<span class="syn-type">Rcx</span>),
+	<span class="syn-type">Emit</span>.mark(<span class="syn-string">&quot;runtime_allocate_large_zero&quot;</span>),
+	<span class="syn-type">Emit</span>.store(
+		<span class="syn-type">Emit</span>.mem_index({
+			base: <span class="syn-type">Rsi</span>,
+			index: <span class="syn-type">Rdx</span>,
+			displacement: <span class="syn-number">0</span>,
+		}),
+		<span class="syn-type">Rcx</span>,
+	),
+	<span class="syn-type">Emit</span>.minus_imm(<span class="syn-type">Rdx</span>, <span class="syn-number">8</span>),
+	<span class="syn-type">Emit</span>.jcc(<span class="syn-type">Ne</span>, <span class="syn-string">&quot;runtime_allocate_large_zero&quot;</span>),
 	<span class="syn-type">Emit</span>.lea(<span class="syn-type">Rax</span>, <span class="syn-type">Emit</span>.mem(<span class="syn-type">Rsi</span>, <span class="syn-number">8</span>)),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rsi</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rdx</span>),
 	<span class="syn-type">Emit</span>.restore(<span class="syn-type">Rcx</span>),
 	<span class="syn-type">Emit</span>.ret,
 ]
-</code></pre></figure><p>Four registers belong to the runtime for the whole run:</p>
+</code></pre></figure><p>Two cheaper paths sit beside it (<code>276d088</code>; <code>x86/COLLECTOR.md</code>, &quot;Cheaper allocation&quot;). A block whose size the runtime knows when it is built, such as a new object or a small array, is allocated by code in line, where every other block takes a call. And the 256 strings of one byte are made once, in the read-only segment, so taking one character of a string hands out one of those.</p>
+<p>Four registers belong to the runtime for the whole run:</p>
 <table>
 <thead>
 <tr>
@@ -320,7 +425,6 @@
 </tr>
 </tbody>
 </table>
-<p>They live in a mapping of 3 GiB: a heap of 2 GiB, then the collector&#39;s mark stack. The heap is 64 KiB pages of one block size each, every block behind a header word of its kind and size (<code>x86/COLLECTOR.md</code>). The allocator pops its size&#39;s free list or bumps through a page, and past a threshold it collects first.</p>
 <p>The runtime dominates a small program&#39;s size:</p>
 <table>
 <thead>
@@ -331,15 +435,15 @@
 </thead>
 <tbody>
 <tr>
-<td><code>let x = 1;</code>, 2026-11-27</td>
-<td>24,407 bytes (<code>x86/README.md</code>)</td>
+<td><code>let x = 1;</code></td>
+<td>28,441 bytes (<code>x86/README.md</code>)</td>
 </tr>
 <tr>
-<td><code>x86/fib.js</code>, the same day</td>
-<td>24,837 bytes</td>
+<td><code>x86/fib.js</code></td>
+<td>28,779 bytes, measured for this chapter with js-x86&#39;s dev build at <code>a47987a</code></td>
 </tr>
 <tr>
-<td>fib(22) at milestone 2 of <code>x86/README.md</code>, before the runtime</td>
+<td>fib(22) at milestone 2, before the runtime</td>
 <td>1,010 bytes (<code>0c5ea7e</code>)</td>
 </tr>
 </tbody>
@@ -372,9 +476,10 @@
 </tr>
 </tbody>
 </table>
-<p>A root may be a number that only looks like an address, so the collector leaves every block where it was allocated, and such a root costs at most some garbage kept alive. The headers and pages came first (<code>a328636</code>), then the mark, the sweep and a torture tier that collects at every allocation (<code>460b606</code>). A floor of 8 MiB held big daddy at 8.8 MB, about a twelfth of node&#39;s peak on the same run; floors from 2 to 64 MiB kept its CPU time within 8% (<code>x86/COLLECTOR.md</code>, &quot;Lane 3&quot;).</p>
+<p>A root may be a number that only looks like an address, so the collector leaves every block where it was allocated, and such a root costs at most some garbage kept alive. The headers and pages came first (<code>a328636</code>), then the mark, the sweep and a torture tier, a run of the tests that collects at every allocation (<code>460b606</code>).</p>
+<p>Its test of endurance is big daddy, the broadest race of <a class="chapter-link" href="the-fib-race.html">“The fib race”</a>: a fork of program 54 that lives one day of its small city a round. A floor of 8 MiB on the trigger held big daddy at 8.8 MB, about a twelfth of node&#39;s peak on the same run; floors from 2 to 64 MiB kept its CPU time within 8% (<code>x86/COLLECTOR.md</code>, its section on the trigger). At big daddy&#39;s full size, 15,000 rounds, the run made 735,302,387 allocations and 7,499 collections, and the heap stayed within 135 pages, 8.8 MB (<code>x86/bigdaddy/README.md</code>, &quot;At full size&quot;).</p>
 <h2 id="what-it-compiles-as-of-2026-11-27">What it compiles, as of 2026-11-27 <a class="section-link" href="#what-it-compiles-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
-<p><code>x86/programs.shale</code> compiles each of the 63 corpus programs in <code>js/tests/</code> and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 51 of 63 (<code>x86/README.md</code>, &quot;The corpus&quot;). It also holds the 68 programs of <code>x86/tests/</code> to node and the 48 of <code>x86/tests/refused/</code> to their refusals. The 12 left stop at these, by the first reason each meets:</p>
+<p><code>x86/programs.shale</code> compiles each of the 63 corpus programs in <code>js/tests/</code> and holds those whose executables print exactly what node prints to <code>x86/corpus.txt</code>: 51 of 63 (<code>x86/README.md</code>, &quot;The corpus&quot;). It also holds the 80 programs of <code>x86/tests/</code> to node and the 50 of <code>x86/tests/refused/</code> to their refusals (counted on 2026-11-28). The 12 left stop at these, by the first reason each meets:</p>
 <table>
 <thead>
 <tr>
@@ -389,7 +494,7 @@
 </tr>
 <tr>
 <td>4</td>
-<td>a number <code>console.log</code> can write only once number printing is written: three fractions, and an integer past 2^53</td>
+<td>a number <code>console.log</code> can write only once milestone 4&#39;s number printing is written: three fractions, and an integer past 2^53</td>
 </tr>
 <tr>
 <td>5</td>

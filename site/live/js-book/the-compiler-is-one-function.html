@@ -15,7 +15,7 @@
 <li><a href="introduction.html"><span class="number">1</span>Introduction</a></li>
 <li class="part">Part I: The compiler</li><li><a href="the-front-end.html"><span class="number">2</span>The front end</a></li>
 <li><a href="the-compiler-to-x86-64.html"><span class="number">3</span>The compiler to x86-64</a></li>
-<li class="here"><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a><ol class="sections"><li><a href="the-compiler-is-one-function.html#executable-of">executable_of</a></li><li><a href="the-compiler-is-one-function.html#the-processor-performs-the-effects">The processor performs the effects</a></li><li><a href="the-compiler-is-one-function.html#a-pure-function-is-plain-to-test">A pure function is plain to test</a></li></ol></li>
+<li class="here"><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a><ol class="sections"><li><a href="the-compiler-is-one-function.html#executable-of">executable_of</a></li><li><a href="the-compiler-is-one-function.html#the-processor-performs-the-effects">The processor performs the effects</a></li><li><a href="the-compiler-is-one-function.html#a-pure-function-is-plain-to-test">A pure function is plain to test</a></li><li><a href="the-compiler-is-one-function.html#a-roc-aside-the-code-list-written-in-place">A Roc aside: the code list written in place</a></li></ol></li>
 <li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
 <li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
 <li><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a></li>
@@ -39,16 +39,17 @@
 <article>
 <p class="chapter-number">Chapter 4</p>
 <h1 id="the-compiler-is-one-function">The compiler is one function</h1>
-<p>In one respect the compiler is the easier of the two programs for Roc. A compiler reads a text and gives back bytes, one transformation from start to end, and the program&#39;s effects wait for the executable to run. The interpreter performs them while it runs, inside the Roc call, so its effects and its whole state travel through every step of its loop.</p>
+<p>A JavaScript program prints, sets timers and waits on them. The interpreter performs those effects while it runs, inside the Roc call, so its effects and its whole state travel through every step of its loop. The compiler only writes them down as instructions, and they wait for the executable to run.</p>
 <h2 id="executable-of"><code>executable_of</code> <a class="section-link" href="#executable-of" aria-label="Link to this section">§</a></h2>
+<p>Roc marks effects in a function&#39;s type. A pure function&#39;s type has a thin arrow, <code>-&gt;</code>, and a function with effects has a fat arrow, <code>=&gt;</code>, and a name that ends in <code>!</code>. A Roc program&#39;s effects are performed by its host, the code in another language that starts the Roc program and carries out each effect the Roc asks for, such as a write to stdout. <code>Try(ok, err)</code> is Roc&#39;s result type, a success or an error, and a <code>?</code> after a call hands an error straight back to the caller.</p>
 <p>The compiler&#39;s whole work is <code>executable_of</code>, from the program&#39;s text to the executable&#39;s bytes, or the reason it refuses:</p>
 <figure class="listing"><figcaption>x86/roc/JsToX86.roc, the function executable_of</figcaption><pre><code class="language-roc"><span class="syn-comment">## The executable a program compiles to, or why it doesn&#39;t.</span>
 <span class="syn-name">executable_of</span> : <span class="syn-type">Str</span> -&gt; <span class="syn-type">Try</span>(<span class="syn-type">List</span>(<span class="syn-type">U8</span>), <span class="syn-type">Str</span>)
 <span class="syn-name">executable_of</span> = |src| {
-	lowered = lowering_of(src)?
+	lowered = lowering_of(src, { flip: <span class="syn-type">False</span> })?
 	<span class="syn-type">Ok</span>(<span class="syn-type">Elf</span>.executable(code_of(lowered.statements)?))
 }
-</code></pre></figure><p>Its type, <code>Str -&gt; Try(List(U8), Str)</code>, has Roc&#39;s thin arrow: a pure function. Each stage it calls, through <code>lowering_of</code>, is pure too: <code>Parser.program_of</code>, <code>Compile.program</code>, <code>Lowering.program_lowering</code>, <code>Assembly.assemble</code> and <code>Elf.executable</code>. Across the 25,708 lines of <code>x86/roc/</code>, seven definitions carry the <code>!</code> of an effect (counted for this chapter on 2026-11-27):</p>
+</code></pre></figure><p>Its type, <code>Str -&gt; Try(List(U8), Str)</code>, has the thin arrow: a pure function. Each stage it calls, through <code>lowering_of</code>, is pure too: <code>Parser.program_of</code>, <code>Compile.program</code>, <code>Lowering.program_lowering</code>, <code>Assembly.assemble</code> and <code>Elf.executable</code>. Across the 32,104 lines of <code>x86/roc/</code>, eleven definitions carry the <code>!</code> of an effect (counted for this chapter on 2026-11-28):</p>
 <table>
 <thead>
 <tr>
@@ -60,13 +61,23 @@
 <tbody>
 <tr>
 <td><code>main!</code> and <code>write_program!</code></td>
-<td>each of the two drivers, <code>JsToX86.roc</code> and <code>Hello.roc</code></td>
+<td>each of the two drivers, <code>JsToX86.roc</code> and milestone 1&#39;s <code>Hello.roc</code>, which writes an executable that prints a given text</td>
 <td>the bytes</td>
 </tr>
 <tr>
 <td><code>write_inlined!</code></td>
 <td><code>JsToX86.roc</code></td>
 <td>the count of inlined calls</td>
+</tr>
+<tr>
+<td><code>write_versioned!</code></td>
+<td><code>JsToX86.roc</code></td>
+<td>the count of loops the compiler placed twice, a fast copy and a general one (<a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>)</td>
+</tr>
+<tr>
+<td><code>write_posts!</code></td>
+<td><code>JsToX86.roc</code></td>
+<td>how the passes over the runtime ran</td>
 </tr>
 <tr>
 <td><code>write_stopped!</code></td>
@@ -77,6 +88,11 @@
 <td><code>write_labels!</code></td>
 <td><code>JsToX86.roc</code></td>
 <td>each label&#39;s offset, for reading the code back</td>
+</tr>
+<tr>
+<td><code>write_counted!</code> and <code>write_count_map!</code></td>
+<td><code>JsToX86.roc</code></td>
+<td>an executable that counts the instructions it runs, and its map (<a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>)</td>
 </tr>
 </tbody>
 </table>
@@ -165,8 +181,29 @@
 <p>The program&#39;s effects still happen, later, and the processor does them. <code>console.log</code> ends in the runtime&#39;s <code>runtime_write</code>, which fills the output buffer, and the buffer goes out by a <code>syscall</code> instruction for <code>write</code>. The timers become <code>runtime_run_timers</code>, a loop in the executable over a virtual clock. The compiler writes each effect down as instructions, and the processor and the kernel perform them when the executable runs.</p>
 <p>Many compilers hand their last step to a C compiler or to LLVM. This one hands it to the metal: the bytes Roc writes are the bytes the processor runs.</p>
 <h2 id="a-pure-function-is-plain-to-test">A pure function is plain to test <a class="section-link" href="#a-pure-function-is-plain-to-test" aria-label="Link to this section">§</a></h2>
-<p>Each of the encoder&#39;s 119 <code>expect</code>s holds one instruction&#39;s bytes, <code>rsp</code> and <code>r12</code> as a base and the displacements at the edges of 8 and 32 bits among them, and each was read back through <code>objdump</code> during development (<code>x86/README.md</code>). An <code>expect</code> of a pure function needs a value in and a value out, and the host stays out of it.</p>
-<p>The work moved, and some of it moved into the runtime. A routine that the interpreter writes as a Roc function, such as <code>console.log</code>&#39;s layout of an array in columns, is in the compiler a list of x86-64 instructions, written one a line in Roc (<code>x86/roc/Inspect.roc</code>, 1,185 lines).</p>
+<p>Each of the encoder&#39;s 122 <code>expect</code>s holds one instruction&#39;s bytes, <code>rsp</code> and <code>r12</code> as a base and the displacements at the edges of 8 and 32 bits among them (<code>X86.roc</code>, counted on 2026-11-28). <code>x86/README.md</code> records 119 of them read back through <code>objdump</code> during development, the last on 2026-11-27. An <code>expect</code> of a pure function needs a value in and a value out, and the host stays out of it.</p>
+<p>Compiling moves some of the work into the runtime. A routine that the interpreter writes as a Roc function, such as <code>console.log</code>&#39;s layout of an array in columns, is in the compiler a list of x86-64 instructions, written one a line in Roc (<code>x86/roc/Inspect.roc</code>, 1,185 lines).</p>
+<h2 id="a-roc-aside-the-code-list-written-in-place">A Roc aside: the code list written in place <a class="section-link" href="#a-roc-aside-the-code-list-written-in-place" aria-label="Link to this section">§</a></h2>
+<p>Roc writes a list in place while it has one owner, and copies it whole when a second owner holds it (<a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> gives the rule and its shapes). The compiler meets that rule once, mildly. The lowering&#39;s state is the kinds of one function&#39;s slots, made afresh for each function on each pass, and the passes are a plain loop over values that ends when the kinds settle. The one large value that grows is the code itself. <code>Assembly.roc</code> builds the bytes by appending to one list, then patches each jump&#39;s placeholder with <code>set</code>:</p>
+<figure class="listing"><figcaption>x86/roc/Assembly.roc, the function patched_rel32</figcaption><pre><code class="language-roc"><span class="syn-comment">## `bytes` with the rel32 that ends at `end` set to `distance`. A program</span>
+<span class="syn-comment">## is far below the 2 GiB a rel32 reaches, so a distance past it is a bug.</span>
+<span class="syn-name">patched_rel32</span> : <span class="syn-type">List</span>(<span class="syn-type">U8</span>), { end : <span class="syn-type">U64</span>, distance : <span class="syn-type">I64</span> } -&gt; <span class="syn-type">List</span>(<span class="syn-type">U8</span>)
+<span class="syn-name">patched_rel32</span> = |bytes, { end, distance }| {
+	<span class="syn-keyword">if</span> distance &lt; <span class="syn-number">-2147483648</span> <span class="syn-keyword">or</span> distance &gt; <span class="syn-number">2147483647</span> {
+		<span class="syn-keyword">crash</span> <span class="syn-string">&quot;Assembly.patched_rel32: a jump past the reach of a rel32&quot;</span>
+	}
+	field = <span class="syn-type">X86</span>.append_little_endian([], { value: distance, size: <span class="syn-number">4</span> })
+	<span class="syn-keyword">var</span> $out = bytes
+	<span class="syn-keyword">for</span> i <span class="syn-keyword">in</span> <span class="syn-number">0</span>..&lt;<span class="syn-number">4</span> {
+		byte = field.get(i) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Assembly.patched_rel32: a rel32 has four bytes&quot;</span>
+		$out = $out.set(
+			end - <span class="syn-number">4</span> + i,
+			byte,
+		) ?? <span class="syn-keyword">crash</span> <span class="syn-string">&quot;Assembly.patched_rel32: the rel32 lies inside the code&quot;</span>
+	}
+	$out
+}
+</code></pre></figure><p><code>$out</code> is the list&#39;s one owner, so each <code>set</code> writes in place (the module&#39;s own comment; unchecked by an allocation count). In the interpreter the same rule governs the whole heap at nearly every instruction.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

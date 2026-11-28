@@ -39,7 +39,7 @@
 <article>
 <p class="chapter-number">Chapter 12</p>
 <h1 id="the-garbage-collector">The garbage collector</h1>
-<p>The interpreter&#39;s collector visits every cell of the heap in one pass, so it is where a second owner of the cells would cost the most, and its design follows from that. The compiled programs carry a collector of their own, over raw memory (<a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>), and this chapter is the interpreter&#39;s alone.</p>
+<p>The interpreter&#39;s collector visits every cell of the heap in one pass, so it is where a second owner of the cells would cost the most, and its design follows from that. The compiled programs carry a collector of their own, over raw memory (<a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>).</p>
 <h2 id="what-it-does">What it does <a class="section-link" href="#what-it-does" aria-label="Link to this section">§</a></h2>
 <p><code>Collector.roc</code> is the VM&#39;s garbage collector, a precise mark and sweep, the technique of McCarthy&#39;s Lisp (1960). The VM names its roots, <code>marked</code> follows every reference from them through the cells, and <code>swept</code> turns each unmarked cell into a <code>Freed</code> cell on the free list. A live cell keeps its index, so every reference stays valid across a collection.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One collection" width="671pt" height="44pt"
@@ -168,7 +168,7 @@
 </code></pre></figure><ul>
 <li>The waiting stack reuses its places. A visited cell&#39;s place is written over by the next one pushed, so the stack grows only to the mark&#39;s deepest point.</li>
 </ul>
-<p>A collection comes about once in a thousand passes of 08-garbage-in-a-call (<code>js/controls/expected-dev.txt</code>), so a copy of the heap at each would fall inside the allocation counts&#39; tolerance (<code>tools/alloc_ladder.shale</code>), and the heap programs&#39; peaks of about 4 MB (<code>62110109</code>) are the nearest measure of these three.</p>
+<p>The controls see these three shapes poorly. A collection comes about once in a thousand passes of 08-garbage-in-a-call (<code>js/controls/expected-dev.txt</code>), so a copy of the heap at each would add about a thousandth of an allocation a pass, inside the 0.05 a pass either way that <code>tools/alloc_ladder.shale</code> allows a count. The nearest measure of the three is the heap programs&#39; peaks of about 4 MB (<code>62110109</code>).</p>
 <h2 id="its-roots-and-when-it-runs">Its roots, and when it runs <a class="section-link" href="#its-roots-and-when-it-runs" aria-label="Link to this section">§</a></h2>
 <p>The roots are the machine&#39;s data:</p>
 <figure class="listing"><figcaption>js/roc/Machine.roc, the function roots</figcaption><pre><code class="language-roc"><span class="syn-comment"># Every cell the machine names: the live stack&#39;s (each frame&#39;s slots, its</span>

@@ -26,7 +26,7 @@
 <li><a href="the-garbage-collector.html"><span class="number">12</span>The garbage collector</a></li>
 <li><a href="handing-the-machine-on.html"><span class="number">13</span>Handing the machine on</a></li>
 <li><a href="a-canvas-in-the-browser.html"><span class="number">14</span>A canvas in the browser</a></li>
-<li class="part">Part III: What Roc taught</li><li class="here"><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a><ol class="sections"><li><a href="rocs-two-builds.html#a-dev-timing-says-little">A dev timing says little</a></li><li><a href="rocs-two-builds.html#some-copies-happen-only-in-dev">Some copies happen only in dev</a></li><li><a href="rocs-two-builds.html#count-on-dev-time-on-release">Count on dev, time on release</a></li><li><a href="rocs-two-builds.html#the-interpreters-release-build">The interpreter&#39;s release build</a></li><li><a href="rocs-two-builds.html#js-x86-building-a-program-preliminary-as-of-2026-11-27">js-x86 building a program, preliminary, as of 2026-11-27</a></li></ol></li>
+<li class="part">Part III: What Roc taught</li><li class="here"><a href="rocs-two-builds.html"><span class="number">15</span>Roc&#39;s two builds</a><ol class="sections"><li><a href="rocs-two-builds.html#a-dev-timing-says-little">A dev timing says little</a></li><li><a href="rocs-two-builds.html#some-copies-happen-only-in-dev">Some copies happen only in dev</a></li><li><a href="rocs-two-builds.html#count-on-dev-time-on-release">Count on dev, time on release</a></li><li><a href="rocs-two-builds.html#the-interpreters-release-build">The interpreter&#39;s release build</a></li><li><a href="rocs-two-builds.html#js-x86-building-a-program-as-of-2026-11-27">js-x86 building a program, as of 2026-11-27</a></li></ol></li>
 <li><a href="how-it-is-tested.html"><span class="number">16</span>How it is tested</a></li>
 <li><a href="limitations.html"><span class="number">17</span>Limitations</a></li>
 <li><a href="appendix-a-the-playgrounds-samples.html">Appendix A: The playground&#39;s samples</a></li>
@@ -43,7 +43,7 @@
 <h2 id="a-dev-timing-says-little">A dev timing says little <a class="section-link" href="#a-dev-timing-says-little" aria-label="Link to this section">§</a></h2>
 <p>Dev timings fail to predict release timings, even in direction. On 2026-11-23 a branch of the walker, <code>js-run</code>, the project&#39;s first interpreter, which walked the program&#39;s tree and has since been deleted, ran fib(22) in 642 ms on the dev build against master&#39;s 676, and in 169 ms on the release build against master&#39;s 121: faster than master on dev, and 40% slower in release (<code>3b4f9bd1</code>).</p>
 <h2 id="some-copies-happen-only-in-dev">Some copies happen only in dev <a class="section-link" href="#some-copies-happen-only-in-dev" aria-label="Link to this section">§</a></h2>
-<p>At a helper&#39;s boundary the dev build keeps a call that owns its arguments, where the release build specializes the helper first, so the dev build makes copies the release build skips (<a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> lists three such shapes). The project met one in its own code. When <code>ValueRules</code> was split out, its first version took the engine&#39;s whole machine as an open record, and the dev build copied the cells on every write through it: 05-array-push&#39;s dev count rose from 3 to 12.73 allocations a pass (<code>d8d6b7fe</code>). The rules now take a small machine of the cells, which the VM lends them (<a class="chapter-link" href="javascripts-rules-for-values.html">“JavaScript&#39;s rules for values”</a>). A dev-only copy is often a shape that will copy in release once the code around it changes, so the dev counts are held too.</p>
+<p>The dev build makes some copies the release build skips, at a helper&#39;s boundary (<a class="chapter-link" href="rocs-copy-rule.html">“Roc&#39;s copy rule”</a> lists three such shapes). The project met one in its own code. When <code>ValueRules</code> was split out, its first version took the engine&#39;s whole machine as an open record, and the dev build copied the cells on every write through it: 05-array-push&#39;s dev count rose from 3 to 12.73 allocations a pass (<code>d8d6b7fe</code>). The rules now take a small machine of the cells, which the VM lends them (<a class="chapter-link" href="javascripts-rules-for-values.html">“JavaScript&#39;s rules for values”</a>). Such a shape tends to copy in release too once the code around it changes, so the dev counts are held as exactly as the release counts.</p>
 <h2 id="count-on-dev-time-on-release">Count on dev, time on release <a class="section-link" href="#count-on-dev-time-on-release" aria-label="Link to this section">§</a></h2>
 <p><code>js/controls/</code> holds nine small programs, each a loop that does one kind of write. <code>js/controls.shale</code> runs each at 1,000 and 10,000 passes and holds what one more pass allocates, exactly, in both builds: <code>expected.txt</code> for release and <code>expected-dev.txt</code> for dev, where each line explains its allocation. Counts are deterministic, so a change that moves one shows in the dev build&#39;s counts within seconds, and most trials end there. Times are taken on the release build, once a change&#39;s counts hold, from one shared build (<code>tools/roc_build.shale</code> keys each build by its inputs), as roc-apps&#39; <code>CLAUDE.md</code> (section 9) and <code>js/README.md</code> say.</p>
 <figure class="diagram"><svg class="diagram diagram-wide" role="img" aria-label="One round of a change" width="641pt" height="44pt"
@@ -159,8 +159,8 @@
 </tbody>
 </table>
 <p>He put the three together at about 12 times faster for this repository&#39;s code specifically (Zulip, #off topic &gt; LLVM). They are expected to merge after Roc 0.10, so every build time above is RC1&#39;s own.</p>
-<h2 id="js-x86-building-a-program-preliminary-as-of-2026-11-27">js-x86 building a program, preliminary, as of 2026-11-27 <a class="section-link" href="#js-x86-building-a-program-preliminary-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
-<p>The compiler turns the question around: how long from a program&#39;s source to an executable on the disk? <code>x86/buildrace.shale</code> times js-x86 against <code>roc build</code> of the same race written in Roc, at <code>--opt=dev</code> and at <code>--opt=speed</code>, the build that makes the fast executable the races run (<code>x86/buildrace/README.md</code>). These numbers are preliminary: the machine was shared with other work, and a run on a quiet machine will replace them. The headline, from warm runs at a load of 1.0 to 1.3 (<code>x86/buildrace/PROFILE.md</code>, &quot;The build race, before and after&quot;; <code>x86/RC2.md</code> for the executables):</p>
+<h2 id="js-x86-building-a-program-as-of-2026-11-27">js-x86 building a program, as of 2026-11-27 <a class="section-link" href="#js-x86-building-a-program-as-of-2026-11-27" aria-label="Link to this section">§</a></h2>
+<p>The compiler turns the question around: how long from a program&#39;s source to an executable on the disk? <code>x86/buildrace.shale</code> times js-x86 against <code>roc build</code> of the same race written in Roc, at <code>--opt=dev</code> and at <code>--opt=speed</code>, the build whose executables the races run (<code>x86/buildrace/README.md</code>). The latest verdict, warm builds on a quiet box on 2026-11-27, the medians of three (<code>x86/RACES.md</code>; for the executables, <code>x86/RC2.md</code>, a trial of Roc&#39;s next release candidate beside the pinned RC1):</p>
 <table>
 <thead>
 <tr>
@@ -172,8 +172,8 @@
 <tbody>
 <tr>
 <td>js-x86</td>
-<td>44 to 94 ms</td>
-<td>fast</td>
+<td>30 to 600 ms, big daddy the longest</td>
+<td>30 to 45 KB stripped for fib, bank and fourteen (<code>x86/RACES.md</code>); across the races, 0.63 to 1.95 times node&#39;s time (<a class="chapter-link" href="the-fib-race.html">“The fib race”</a>)</td>
 </tr>
 <tr>
 <td><code>roc build --opt=dev</code>, warm</td>
@@ -182,12 +182,12 @@
 </tr>
 <tr>
 <td><code>roc build --opt=speed</code>, warm</td>
-<td>0.72 to 3.8 s</td>
-<td>32 to 180 KB, fast</td>
+<td>1.05 to 3.50 s</td>
+<td>32 to 180 KB, the races&#39; Roc contestants</td>
 </tr>
 </tbody>
 </table>
-<p>So js-x86 builds 15 to 50 times faster than the Roc build that makes a fast executable; Roc&#39;s dev build is faster still, and makes a slow one.</p>
+<p>Only js-x86 builds big daddy. On the three races ported to Roc, js-x86 builds 15 to 50 times faster than <code>--opt=speed</code> (<code>x86/buildrace/PROFILE.md</code>, &quot;The build race, before and after&quot;). Roc&#39;s dev build is faster still, and its executables run 10 to 25 times slower than <code>--opt=speed</code>&#39;s.</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

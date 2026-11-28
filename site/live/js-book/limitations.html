@@ -39,13 +39,13 @@
 <article>
 <p class="chapter-number">Chapter 17</p>
 <h1 id="limitations">Limitations</h1>
-<p>The subset covers a part of JavaScript on purpose, and it will never cover every corner of the language. A program that steps outside it is refused with a message naming what it used; it never gets a wrong answer.</p>
-<p>This chapter is the list a reader starts from before extending either program. The limits fall in four groups, in the book&#39;s order: the compiler, which runs less of the subset; the runtime, small on purpose; the language, fairly complete; and a few that come from the tools.</p>
+<p>The subset covers a part of JavaScript on purpose, and it will never cover every corner of the language. A program that steps outside it is refused with a message naming what it used. Inside it, each program of the corpus prints what node prints, and the differences from node that the record knows of are listed below, beside the refusals.</p>
+<p>The limits fall in four groups, in the book&#39;s order: the compiler, which runs less of the subset; the runtime, small on purpose; the language, with a few known differences from node; and a few that come from the tools.</p>
 <h2 id="the-compiler">The compiler <a class="section-link" href="#the-compiler" aria-label="Link to this section">§</a></h2>
 <p>The compiler runs less of the subset than the interpreter does, and says where. A program it has yet to compile is refused by name before a byte is written; what only a value can decide stops the executable with a line <code>x86: ... is not compiled yet</code> and exit 1 (<code>x86/README.md</code>). As of 2026-11-27:</p>
 <ul>
 <li>It matches node on 51 of the 63 corpus programs; <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a> gives the first reason each of the other 12 meets.</li>
-<li><code>console.log</code> writes a number only when it is an integer of at most 2^53, <code>NaN</code>, an infinity or -0. Fractions wait on milestone 4&#39;s shortest round-trip printing; four corpus programs stop there, three on a fraction and one on an integer past 2^53.</li>
+<li><code>console.log</code> writes a number only when it is an integer of at most 2^53, <code>NaN</code>, an infinity or -0. Fractions wait on milestone 4&#39;s shortest round-trip printing, where some of those 12 programs stop.</li>
 <li><code>Math.sin</code>, <code>cos</code>, <code>tan</code> and <code>atan</code> are refused, since node&#39;s last digits are those of V8&#39;s port of fdlibm; so are <code>Number</code>, <code>JSON</code>, <code>new Date()</code> and the array methods <code>at</code>, <code>fill</code> and <code>flat</code>.</li>
 <li>A string must be ASCII: a length here counts bytes, where JavaScript counts UTF-16 units.</li>
 <li>An uncaught error stops the executable with exit 1, where node also prints its report of the source line; <code>console.log</code> of an error, or of an array or object of more than 100 items, stops it too.</li>
@@ -62,7 +62,7 @@
 <li>On the page, a program is held to step budgets, 3,000,000 before the first frame and 300,000 a frame (<a class="chapter-link" href="a-canvas-in-the-browser.html">“A canvas in the browser”</a>).</li>
 </ul>
 <h2 id="language">Language <a class="section-link" href="#language" aria-label="Link to this section">§</a></h2>
-<p>The language itself is fairly complete: numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps, Sets and classes (<a class="chapter-link" href="introduction.html">“Introduction”</a>). These are its known differences from node:</p>
+<p>The language covers numbers, strings, arrays, objects, closures, <code>let</code> and <code>const</code>, <code>try</code> and <code>finally</code>, <code>switch</code>, destructuring, optional chains, spread, Maps, Sets and classes (<a class="chapter-link" href="introduction.html">“Introduction”</a>). These are its known differences from node:</p>
 <ul>
 <li>Printing or listing a class instance, or printing a class, is refused: node prints an instance by its class&#39;s name first (<code>js/README.md</code>, &quot;Classes are syntax sugar&quot;).</li>
 <li>An instance&#39;s property named <code>&quot;þsuper m&quot;</code> reads its class&#39;s parent&#39;s method <code>m</code>, which is the key <code>super.m</code> is written as, where node&#39;s is <code>undefined</code> (the same section). The key starts with þ, outside ASCII, so only a program that spells that letter can reach it.</li>

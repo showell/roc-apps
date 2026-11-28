@@ -39,7 +39,7 @@
 <article>
 <p class="chapter-number">Chapter 10</p>
 <h1 id="memory-strategy">Memory strategy</h1>
-<p>Everything a JavaScript program shares lives in one Roc list, and every operation is shaped so that Roc writes that list in place. A change that gives the list a second owner turns each write into a copy of the heap. This chapter lays out the types, the cost of each operation and its check, and one line of JavaScript traced through the machine.</p>
+<p>Everything a JavaScript program shares lives in one Roc list, and every operation is shaped so that Roc writes that list in place. A change that gives the list a second owner turns each write into a copy of the heap. The heap&#39;s types, the cost of each operation and one line of JavaScript traced through the machine show how the list keeps its one owner.</p>
 <h2 id="a-reference-is-an-index">A reference is an index <a class="section-link" href="#a-reference-is-an-index" aria-label="Link to this section">§</a></h2>
 <p>A JavaScript value is one of these, and a <code>Reference</code> is the index of a cell in the machine&#39;s <code>cells : List(Heap.Cell)</code>:</p>
 <figure class="listing"><figcaption>js/roc/Heap.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-type">Value</span> : [
@@ -91,7 +91,7 @@
 		<span class="syn-comment"># A cell the collector freed, and the free cell after it, which the</span>
 		<span class="syn-comment"># next allocation after this cell&#39;s takes.</span>
 		<span class="syn-type">Freed</span>(<span class="syn-type">Heap.Free</span>),
-</code></pre></figure><p>An <code>Instance</code> is an object marked with the names of its class and of each class it extends, which <code>x instanceof C</code> reads, and holding its class&#39;s table of methods, where a property outside the instance&#39;s own fields is read. Two variables that hold one array hold one index, so each sees the other&#39;s writes.</p>
+</code></pre></figure><p>An <code>Instance</code> is the object a class makes (<a class="chapter-link" href="the-front-end.html">“The front end”</a>), with its class&#39;s marks, which <code>x instanceof C</code> reads, and its class&#39;s table of methods. Two variables that hold one array hold one index, so each sees the other&#39;s writes.</p>
 <h2 id="the-free-list">The free list <a class="section-link" href="#the-free-list" aria-label="Link to this section">§</a></h2>
 <p>A freed cell stays in its place as <code>Freed(next)</code>, a link to the next free cell, and the machine&#39;s <code>free</code> names the first, <code>FreeAt(id)</code> or <code>NoneFree</code>. An allocation reads the link out of the first free cell and writes the new cell into its place with one <code>set</code>; only an empty free list appends:</p>
 <figure class="listing"><figcaption>js/roc/Heap.roc, an excerpt</figcaption><pre><code class="language-roc">	<span class="syn-name">allocated</span> : <span class="syn-type">List</span>(<span class="syn-type">Heap.Cell</span>), <span class="syn-type">Heap.Free</span>, <span class="syn-type">Heap.Cell</span> -&gt; <span class="syn-type">Heap.Allocated</span>
@@ -220,7 +220,7 @@
 	}
 </code></pre></figure><p>A variable a closure may capture lives in a box, a <code>Variable</code> cell the frame and its closures share; the parser marks each scope that holds a function literal (<code>Ast.Capture</code>), and only those box their variables. A closure&#39;s <code>Fun</code> cell names an <code>Environment</code> cell, its code&#39;s number and the boxes it captures.</p>
 <h2 id="what-each-operation-costs">What each operation costs <a class="section-link" href="#what-each-operation-costs" aria-label="Link to this section">§</a></h2>
-<p>A control is a small program of <code>js/controls/</code>, a loop of one kind of write, and its count is what one more pass allocates, run at 1,000 and 10,000 passes (<a class="chapter-link" href="rocs-two-builds.html">“Roc&#39;s two builds”</a>). A write that copies its list allocates once a pass, so a flat count rules the copy out. A probe times a write at three sizes on the dev build (<code>js/README.md</code>, &quot;What the probes say&quot;, 2026-11-24).</p>
+<p>A control is one of the small programs of <code>js/controls/</code>, each a loop of one kind of write, held to what one more pass allocates (<a class="chapter-link" href="rocs-two-builds.html">“Roc&#39;s two builds”</a> says how). A write that copies its list allocates once a pass, so a flat count rules the copy out. A probe times a write at three sizes on the dev build (<code>js/README.md</code>, &quot;What the probes say&quot;, 2026-11-24).</p>
 <table>
 <thead>
 <tr>
@@ -248,7 +248,7 @@
 <tr>
 <td>write a property</td>
 <td>O(p)</td>
-<td>04-property-write: 0 release, 1 dev; probe 14, 12, 12 µs beside 2,000 to 8,000 objects</td>
+<td>04-property-write: 0 release, 1 dev; the probe&#39;s write took 14, 12 and 12 µs beside 2,000, 4,000 and 8,000 objects</td>
 </tr>
 <tr>
 <td>read an item</td>
@@ -476,12 +476,12 @@
 </svg><figcaption>What the line&#39;s instructions touch</figcaption></figure><p>Each instruction is O(1) but the two property lookups, O(p). The reads copy one <code>Value</code> onto the stack and leave the cells alone. The store hands <code>Heap.with_property</code> the list straight from the record it updates, <code>{ ..machine, cells: Heap.with_property(machine.cells, ...) }</code>, and <code>List.update</code> hands its function cell 0 as its sole owner, so the property is written in place. The stack is written in place too, by <code>set</code> at <code>top</code>.</p>
 <p>That holds while the cells have one owner. <code>js/README.md</code>, &quot;Why the heap is one value&quot;, lists the shapes that keep it so, each with a comment where it is used:</p>
 <ul>
-<li>a writer gets the list straight from the record it updates;</li>
-<li>a result is taken apart where it is answered, so its machine lives on alone;</li>
-<li>a writer asks what a cell is, and leaves the cell in the heap;</li>
-<li>a stack place given up is cleared to <code>Null</code>;</li>
-<li>a loop over the machine is a <code>var $st</code> loop, so the machine stays out of every closure;</li>
-<li>the host travels as an argument of its own.</li>
+<li>a writer gets the list straight from the record it updates, so only one of the two holds it at a time;</li>
+<li>a result is taken apart where it is answered, so its machine lives on alone, where a result kept whole for its value would keep a second machine;</li>
+<li>a writer asks what a cell is (<code>ValueRules.kind_of</code>) and leaves the cell in the heap, since a cell matched out of the heap is a second reference to its items while the match&#39;s arm runs;</li>
+<li>a stack place given up is cleared to <code>Null</code>, so a value given up lets go of its strings and lists at once;</li>
+<li>a loop over the machine is a <code>var $st</code> loop, so the machine stays out of every closure, where a closure would hold it a second time;</li>
+<li>the host travels as an argument of its own, since a record holding both the host and the machine would be a second reference to the heap.</li>
 </ul>
 
 </article>

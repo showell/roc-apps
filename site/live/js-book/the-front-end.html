@@ -39,7 +39,7 @@
 <article>
 <p class="chapter-number">Chapter 2</p>
 <h1 id="the-front-end">The front end</h1>
-<p>Both programs start from one front end: four stages, each a module in <code>js/roc/</code>, that turn a program&#39;s text into bytecode. A new piece of the language lands here first, and both programs see it at once. This chapter follows a program through the four stages, to the point where the two programs part.</p>
+<p>Both programs start from one front end: four stages, each a module in <code>js/roc/</code>, that turn a program&#39;s text into bytecode. A new piece of the language lands here first, and both programs see it at once.</p>
 <h2 id="four-stages-two-back-ends">Four stages, two back ends <a class="section-link" href="#four-stages-two-back-ends" aria-label="Link to this section">§</a></h2>
 <figure class="diagram"><svg class="diagram" role="img" aria-label="One front end, two back ends" width="254pt" height="380pt"
  viewBox="0.00 0.00 253.50 380.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
@@ -132,7 +132,7 @@
 </ul>
 <p>A method is one function for the whole class, made once, and its first parameter is the receiver. An instance holds only its fields; any other property is read from its class&#39;s table. So the stages after the parser see functions and objects, and two instructions, <code>NewInstance</code> and <code>InstanceOf</code>, which make a marked instance and test its mark.</p>
 <h2 id="the-frame">The frame <a class="section-link" href="#the-frame" aria-label="Link to this section">§</a></h2>
-<p><code>Compile.roc</code> lays out each function&#39;s frame as a run of slots: its parameters, the variables its blocks declare, the hidden places of its <code>for ... of</code> loops, then the boxes it captures. An instruction names a slot by its place in the frame, and both back ends keep that layout. The compiler gives each slot an address of its own below <code>rbp</code> (<a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>); the VM&#39;s frame is a run of its operand stack (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>, which also follows one line of JavaScript through its instructions).</p>
+<p><code>Compile.roc</code> lays out each function&#39;s frame as a run of slots: its parameters, the variables its blocks declare, the hidden places of its <code>for ... of</code> loops, then its boxes. A box holds a variable that a closure captures, so the frame and the closure share one place for it. An instruction names a slot by its place in the frame, and both back ends keep that layout. The compiler gives each slot an address of its own below <code>rbp</code> (<a class="chapter-link" href="what-the-compiler-leaves-to-an-optimizer.html">“What the compiler leaves to an optimizer”</a>); the VM&#39;s frame is a run of its operand stack (<a class="chapter-link" href="memory-strategy.html">“Memory strategy”</a>, which also follows one line of JavaScript through its instructions).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">

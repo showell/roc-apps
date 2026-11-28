@@ -18,7 +18,7 @@
 <li><a href="the-compiler-is-one-function.html"><span class="number">4</span>The compiler is one function</a></li>
 <li><a href="the-compiler-against-node.html"><span class="number">5</span>The compiler against node</a></li>
 <li><a href="the-fib-race.html"><span class="number">6</span>The fib race</a></li>
-<li class="here"><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a><ol class="sections"><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-makes-code-cheaper">What makes code cheaper</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#the-plain-parts">The plain parts</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#where-an-optimizer-would-pay">Where an optimizer would pay</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-comes-next">What comes next</a></li></ol></li>
+<li class="here"><a href="what-the-compiler-leaves-to-an-optimizer.html"><span class="number">7</span>What the compiler leaves to an optimizer</a><ol class="sections"><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-makes-code-cheaper">What makes code cheaper</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#the-plain-parts">The plain parts</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#where-an-optimizer-would-pay">Where an optimizer would pay</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#counting-in-place-of-timing">Counting in place of timing</a></li><li><a href="what-the-compiler-leaves-to-an-optimizer.html#what-comes-next">What comes next</a></li></ol></li>
 <li class="part">Part II: The interpreter</li><li><a href="rocs-copy-rule.html"><span class="number">8</span>Roc&#39;s copy rule</a></li>
 <li><a href="the-interpreter.html"><span class="number">9</span>The interpreter</a></li>
 <li><a href="memory-strategy.html"><span class="number">10</span>Memory strategy</a></li>
@@ -39,7 +39,7 @@
 <article>
 <p class="chapter-number">Chapter 7</p>
 <h1 id="what-the-compiler-leaves-to-an-optimizer">What the compiler leaves to an optimizer</h1>
-<p>The compiler&#39;s code is plain, and <a class="chapter-link" href="the-compiler-against-node.html">“The compiler against node”</a> measures what that costs against V8. This chapter is the map for anyone making the code faster: what the compiler already does to make code cheaper, what it leaves undone, and what comes next.</p>
+<p>The compiler&#39;s code is plain, and <a class="chapter-link" href="the-compiler-against-node.html">“The compiler against node”</a> measures what that costs against V8. A few standard optimizations make it cheaper, and the rest is made the plainest way.</p>
 <h2 id="what-makes-code-cheaper">What makes code cheaper <a class="section-link" href="#what-makes-code-cheaper" aria-label="Link to this section">§</a></h2>
 <p>Each optimization the compiler makes is a standard technique (<code>x86/roc/Lowering.roc</code>&#39;s header, <code>x86/README.md</code>):</p>
 <table>
@@ -82,9 +82,19 @@
 <td>inlining, a textbook optimization</td>
 </tr>
 <tr>
+<td>a loop that reads, as numbers, values whose kind only the run decides is placed twice: a guard at its head tests that each such value is a whole number of 32 bits and that each array it reads holds items of one kind; the fast copy after it treats them so, and a failed test runs the general copy</td>
+<td><code>Versioning.roc</code>; <code>x86/SPECIALIZATION.md</code></td>
+<td>loop versioning</td>
+</tr>
+<tr>
 <td>after the lowering, a looping function&#39;s four busiest frame places live in registers</td>
 <td><code>Registers.roc</code></td>
 <td>register allocation by usage counts (Freiburghouse, 1974), the plainest kind, short of graph coloring (Chaitin, 1982)</td>
+</tr>
+<tr>
+<td>a load of a frame place that a register already holds becomes a move from that register, and a dead store, one that every later path stores over or leaves unread, is dropped</td>
+<td><code>FrameValues.roc</code>; <code>x86/COST.md</code></td>
+<td>value numbering (Cocke and Schwartz, 1970) and dead-store elimination by backward liveness</td>
 </tr>
 <tr>
 <td>three passes take out loads of what a register already holds, dead register moves, and jumps to jumps</td>
@@ -94,38 +104,15 @@
 </tbody>
 </table>
 <h2 id="the-plain-parts">The plain parts <a class="section-link" href="#the-plain-parts" aria-label="Link to this section">§</a></h2>
-<p>Everything else is done the plainest way. Each function&#39;s frame is fixed: every slot, and every place on the bytecode&#39;s stack, has its own address below <code>rbp</code>, and an instruction loads its operands from there into <code>rax</code> or <code>xmm0</code>, works, and stores the result back, or uses the register Registers gave the place. Each bytecode instruction becomes its own machine code, in order, and a call stays a call but for the inlined leaves. Registers renames at most four places a function, chosen by how often plain moves name them; a search of <code>x86/roc/</code> on 2026-11-27 finds zero mentions of constant folding.</p>
+<p>Everything else is done the plainest way. Each function&#39;s frame is fixed: every slot, and every place on the bytecode&#39;s stack, has its own address below <code>rbp</code>, and an instruction loads its operands from there into <code>rax</code> or <code>xmm0</code>, works, and stores the result back, or uses the register Registers gave the place; FrameValues then thins that traffic, as its row above says, though it leaves alone any program that holds a <code>try</code>. Each bytecode instruction becomes its own machine code, in order, and a call stays a call but for the inlined leaves. Registers renames at most four places a function, chosen by how often plain moves name them; a search of <code>x86/roc/</code> on 2026-11-28 finds zero mentions of constant folding.</p>
 <h2 id="where-an-optimizer-would-pay">Where an optimizer would pay <a class="section-link" href="#where-an-optimizer-would-pay" aria-label="Link to this section">§</a></h2>
 <p>An optimizer would pay most on loops. The loops program has the widest gap, 6 to 8 times. <code>x86/BENCH.md</code> offers an unmeasured guess: a tight loop over a local array is where V8&#39;s registers and small integers help most, and where the executable&#39;s trips through memory cost most. A second guess, also unmeasured, is that loops and collatz both use <code>%</code>, which the executable lowers to <code>idiv</code>, one of the processor&#39;s slower instructions. The README&#39;s milestone 6, type specialization for long numeric loops, is aimed at the first. In the fib race the cost was measured, by reading the machine code: eleven calls into the runtime for each limb, since an array&#39;s items are of unknown kind, which the in-line paths cut (<code>x86/race/README.md</code>).</p>
+<h2 id="counting-in-place-of-timing">Counting in place of timing <a class="section-link" href="#counting-in-place-of-timing" aria-label="Link to this section">§</a></h2>
+<p>The races run on the development box, a shared two-core virtual machine in the cloud, where every timing moves with the load, and the cloud&#39;s hypervisor hides the processor&#39;s own counters from <code>perf</code> (<code>x86/COST.md</code>, &quot;What the box has&quot;). So the executable counts for itself. js-x86&#39;s <code>counted</code> mode (<code>x86/roc/Counter.roc</code>, <code>87d3a96</code>) writes a second executable with one <code>inc</code> of a counter at the start of every block of the code, the runtime&#39;s included, and <code>shale x86/cost.shale counted=1</code> multiplies each block&#39;s count by its instructions (<code>b4bb941</code>). The answer is the exact number of instructions the run executed, by place and by function, and it reads the same on a busy box as on a quiet one: run twice, each race&#39;s counts matched byte for byte (<code>x86/COST.md</code>, &quot;The counter&quot;). A count is blind to cache misses, so it compares two builds of one race, and the stopwatch still gives the verdict.</p>
+<p>Big daddy at 300 rounds shows how a count is read. It ran 6,917,983,458 instructions, 90% of them in the runtime: 31.6% of the run in a Map&#39;s or a Set&#39;s search for a key, a walk of the entries in order, and 15.3% in comparing strings a byte at a time, most of it for that search (<code>x86/bigdaddy/README.md</code>, &quot;Where we&#39;re weak against node&quot;). So the next change was a hashed index (<code>8fc3ab7</code>), which finds a key past 8 entries by its hash, as an object&#39;s table already did, and compares strings 8 bytes a step. The run fell to 4,085,933,251 instructions, 40.9% fewer, and the two shares to 3.9% and 2.0%.</p>
+<p>The same index took the SAT race&#39;s count down by 33.1%, and FrameValues, the change before it, by 21% (<code>x86/bigdaddy/README.md</code>; <code>x86/COST.md</code>). Both came between the SAT race&#39;s two timings of <a class="chapter-link" href="the-fib-race.html">“The fib race”</a>, whose ratio to node fell from 2.29 to 1.95 (<code>x86/RACES.md</code>).</p>
 <h2 id="what-comes-next">What comes next <a class="section-link" href="#what-comes-next" aria-label="Link to this section">§</a></h2>
-<p>The compiler&#39;s own milestones say what follows (<code>x86/README.md</code>):</p>
-<table>
-<thead>
-<tr>
-<th>work</th>
-<th>state</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>classes</td>
-<td>compiled since <code>6ec8068</code>; the parser already writes each class as plain functions, so the work was the <code>NewInstance</code> and <code>InstanceOf</code> instructions of the bytecode</td>
-</tr>
-<tr>
-<td>milestone 4, the runtime in the subset: <code>console.log</code>&#39;s formatting, Map and Set, and number printing, written in the JavaScript subset and compiled by this compiler</td>
-<td>next; four corpus programs wait on its number printing (02, 30, 58 and 54)</td>
-</tr>
-<tr>
-<td>milestone 5, the collector of <code>x86/COLLECTOR.md</code> (<a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>)</td>
-<td>in (<code>a328636</code>, <code>460b606</code>)</td>
-</tr>
-<tr>
-<td>milestone 6, the type specialization the loops above ask for</td>
-<td>after milestone 4</td>
-</tr>
-</tbody>
-</table>
-<p>Since 2026-11-26 an instance holds its class&#39;s table of methods, and a method takes its receiver as its first parameter, passed in <code>rdx</code> by every call through a value.</p>
+<p>Of the milestones listed in <a class="chapter-link" href="the-compiler-to-x86-64.html">“The compiler to x86-64”</a>, milestone 4 comes next: the runtime written in the subset, whose number printing the corpus programs that print fractions wait on. Milestone 6, the type specialization the loops above ask for, is begun: the integer kind, each array&#39;s element kind in its header, and the versioned loops (<code>x86/README.md</code>; <code>x86/SPECIALIZATION.md</code>).</p>
 
 </article>
 <nav class="turn-page" aria-label="Previous and next chapter">
