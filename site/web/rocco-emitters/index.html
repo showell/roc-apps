@@ -65,7 +65,7 @@ build things out, and wears the "movie director" hat more than the "quality assu
 shows a typical module that exploits a key feature of Rocco, the Emitter paradigm.</p>
 <p class="lede">The module is <code>game/DustDevil.roc</code>. As the ride goes on, a whirl of dust rises on the verge,
 wanders across the road in the low sun, flinging bits of grass round in it, and falls apart behind the jeep. Every
-snippet below is quoted from safari-walk at commit ba237da, or from Rocco at commit
+snippet below is quoted from safari-walk at commit b0a0563, or from Rocco at commit
 565ec02, the engine that commit builds on, with a link to its lines.</p>
 
 <h2>The Emitter paradigm</h2>
@@ -218,7 +218,7 @@ whole flow, from the walk to the host:</p>
 is seen from it, and <code>state</code> turns it into a <code>State</code>: where the foot is, how fast it travels, how
 strong it is, the colour the sun and the haze give its dust, and the clock its particles run on. This is plain game
 code. Of Rocco it uses only the vector and colour types, and it knows nothing about particles:</p>
-<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L36-L60"><code>game/DustDevil.roc</code></a>, lines 36-60</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/b0a056341ddc2d62fde741d93c2328a27d1b6594/game/DustDevil.roc#L36-L60"><code>game/DustDevil.roc</code></a>, lines 36-60</p>
 <pre class="roc"><code><span class="syn-comment">## The walk as the devil is seen from it: `walked` metres down the road,</span>
 <span class="syn-comment">## `walking` or paused, the walker&#39;s `eye`, and the light of `moment`.</span>
 <span class="syn-type">Watcher</span> : {
@@ -250,7 +250,7 @@ Emitter.</p>
 <p><strong>The half that crosses to Rocco</strong> is three builders, <code>column</code>, <code>skirt</code> and
 <code>flecks</code>. Each takes the <code>State</code> and returns one Emitter. They are the only code in the module
 that builds Emitters, and the module's whole output is a match on the state:</p>
-<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L82-L92"><code>game/DustDevil.roc</code></a>, lines 82-92</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/b0a056341ddc2d62fde741d93c2328a27d1b6594/game/DustDevil.roc#L82-L92"><code>game/DustDevil.roc</code></a>, lines 82-92</p>
 <pre class="roc"><code><span class="syn-comment">## The particle sources while the devil is up: its state, handed to</span>
 <span class="syn-comment">## Rocco as three Emitters.</span>
 <span class="syn-name">emitters</span> : <span class="syn-type">Watcher</span> -&gt; <span class="syn-type">List</span>(<span class="syn-type">Vocabulary.Emitter</span>)
@@ -266,7 +266,7 @@ that builds Emitters, and the module's whole output is a match on the state:</p>
 <h2>One builder, whole</h2>
 <p>The column is the main body of the devil: dust rising from a disc round the foot, spinning, lifting and flaring
 into a funnel as it climbs.</p>
-<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L236-L261"><code>game/DustDevil.roc</code></a>, lines 236-261</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/b0a056341ddc2d62fde741d93c2328a27d1b6594/game/DustDevil.roc#L236-L261"><code>game/DustDevil.roc</code></a>, lines 236-261</p>
 <pre class="roc"><code><span class="syn-name">column_id</span> : <span class="syn-type">U64</span>
 <span class="syn-name">column_id</span> = <span class="syn-number">1</span>
 
@@ -333,7 +333,7 @@ keep apart.</li>
 over a wide disc and slowed by <code>drag</code>; the flecks are small dark bits of grass flung up fast and falling
 back under a negative <code>acceleration</code>. <code>tint</code>, <code>spread</code> and <code>upward</code> are
 three small helpers in the module, so each colour and vector in a builder reads in one line:</p>
-<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/DustDevil.roc#L205-L229"><code>game/DustDevil.roc</code></a>, lines 205-229</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/b0a056341ddc2d62fde741d93c2328a27d1b6594/game/DustDevil.roc#L205-L229"><code>game/DustDevil.roc</code></a>, lines 205-229</p>
 <pre class="roc"><code><span class="syn-comment">## The dust&#39;s colour `lit`, each channel darkened by `shade` (1 leaves it</span>
 <span class="syn-comment">## as lit), at opacity `alpha`.</span>
 <span class="syn-name">tint</span> : <span class="syn-type">Vocabulary.Rgb</span>, { shade : <span class="syn-type">F32</span>, alpha : <span class="syn-type">F32</span> } -&gt; <span class="syn-type">Vocabulary.Rgba</span>
@@ -363,26 +363,33 @@ three small helpers in the module, so each colour and vector in a builder reads 
 <h2>How the Scene picks them up</h2>
 <p>The game's <code>view</code> in <code>main.roc</code> builds the Scene, and its <code>emitters</code> field joins
 every module's sources into one list. The devil's line hands it the walk as a <code>Watcher</code>. Its
-<code>walking</code> is false while the ride is paused or held, which is what sets the devil's clock to 0:</p>
-<p class="file"><a href="https://github.com/showell/safari-walk/blob/ba237da4aa35043bbbdc99f1c5428d2859c43175/game/main.roc#L153-L204"><code>game/main.roc</code></a>, lines 153-204, trimmed</p>
+<code>walking</code> is true only while the walk's clock runs and the ride isn't held, so a pause or a hold is what
+sets the devil's clock to 0:</p>
+<p class="file"><a href="https://github.com/showell/safari-walk/blob/b0a056341ddc2d62fde741d93c2328a27d1b6594/game/main.roc#L200-L258"><code>game/main.roc</code></a>, lines 200-258, trimmed</p>
 <pre class="roc"><code><span class="syn-name">view</span> : <span class="syn-type">Model</span> -&gt; <span class="syn-type">Vocabulary.Scene</span>
 <span class="syn-name">view</span> = |model| {
 		...
 		<span class="syn-comment"># The dust devil&#39;s dust runs on the walk&#39;s clock: still while paused or</span>
-		<span class="syn-comment"># held. The Roost&#39;s smoke runs while held too, so a start inside (or</span>
+		<span class="syn-comment"># held. The campfire&#39;s fire and the Roost&#39;s smoke run while held too, so a start inside (or</span>
 		<span class="syn-comment"># the loading screen&#39;s hold) shows it already risen; it starts as the</span>
 		<span class="syn-comment"># jeep turns into the lot, so it has risen by the doors.</span>
 		emitters: <span class="syn-keyword">if</span> (!model.switches.particles) []
+		<span class="syn-keyword">else</span> <span class="syn-keyword">if</span> (model.fresh) cleared_sources
 		<span class="syn-keyword">else</span> <span class="syn-type">List</span>.join([
-			<span class="syn-keyword">if</span> (outside) <span class="syn-type">DustDevil</span>.emitters({ walked: along, walking: model.walking == <span class="syn-type">Walking</span> <span class="syn-keyword">and</span> !model.held, eye: camera.eye, moment }) <span class="syn-keyword">else</span> [],
+			<span class="syn-keyword">if</span> (outside) <span class="syn-type">DustDevil</span>.emitters({ walked: along, walking: model.clock &gt; <span class="syn-number">0.0</span> <span class="syn-keyword">and</span> !model.held, eye: camera.eye, moment }) <span class="syn-keyword">else</span> [],
+			<span class="syn-keyword">if</span> (outside <span class="syn-keyword">and</span> model.switches.campfire) <span class="syn-type">Campfire</span>.emitters({ seconds: model.seconds, clock: smoke_clock, eye: camera.eye, puff: model.ids.puff }) <span class="syn-keyword">else</span> [],
 			<span class="syn-keyword">if</span> (interior <span class="syn-keyword">and</span> hall_shown <span class="syn-keyword">and</span> since_cut &gt; smoke_lead) <span class="syn-type">Roost</span>.emitters({ smoke: model.ids.smoke, puff: model.ids.puff, clock: smoke_clock, seconds: model.seconds }) <span class="syn-keyword">else</span> [],
 			<span class="syn-keyword">if</span> (interior <span class="syn-keyword">and</span> since_cut &gt; smoke_lead) <span class="syn-type">BackRoom</span>.emitters({ smoke: model.ids.smoke, puff: model.ids.puff, clock: smoke_clock, seconds: model.seconds, since_cut, eye: camera.eye }) <span class="syn-keyword">else</span> [],
-			<span class="syn-keyword">if</span> (<span class="syn-type">Warm</span>.warming(model.seconds, model.held)) [<span class="syn-type">DustDevil</span>.warm(camera.eye)] <span class="syn-keyword">else</span> [],</code></pre>
+			<span class="syn-keyword">if</span> (<span class="syn-type">Warm</span>.warming(model.seconds, model.held)) [<span class="syn-type">DustDevil</span>.warm(camera.eye), <span class="syn-type">Campfire</span>.warm(camera.eye)] <span class="syn-keyword">else</span> [],</code></pre>
 <p>Each module that has particles adds one line here, and an empty list when it has nothing to show. The devil is only
-asked for its sources while the view is outside; the tavern's smoke has its own lines.</p>
+asked for its sources while the view is outside; the campfire and the tavern's smoke have their own lines. On the step
+after a jump to a chapter, <code>model.fresh</code> is set and the list is <code>cleared_sources</code> instead: a
+source for every id the walk uses, each emitting nothing and with a lifetime shorter than the step, so every particle
+left from where the walk was dies at once, and the real sources rise anew on the next step.</p>
 
 <h2>A source of your own</h2>
-<p>A campfire, a fountain or a chimney follows the same steps as the devil. Taking a campfire:</p>
+<p>A campfire, a fountain or a chimney follows the same steps as the devil. The walk's own campfire, in
+<code>game/Campfire.roc</code>, is built that way, in the same two halves. Taking a campfire:</p>
 <ol>
 <li><strong>Write the state first.</strong> Decide what your game knows that the fire depends on, and put it in a
 record of your own: where the fire stands, how high it burns, and the clock its particles run on. A function from

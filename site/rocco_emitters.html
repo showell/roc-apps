@@ -148,13 +148,18 @@ three small helpers in the module, so each colour and vector in a builder reads 
 <h2>How the Scene picks them up</h2>
 <p>The game's <code>view</code> in <code>main.roc</code> builds the Scene, and its <code>emitters</code> field joins
 every module's sources into one list. The devil's line hands it the walk as a <code>Watcher</code>. Its
-<code>walking</code> is false while the ride is paused or held, which is what sets the devil's clock to 0:</p>
+<code>walking</code> is true only while the walk's clock runs and the ride isn't held, so a pause or a hold is what
+sets the devil's clock to 0:</p>
 <!-- snippet scene -->
 <p>Each module that has particles adds one line here, and an empty list when it has nothing to show. The devil is only
-asked for its sources while the view is outside; the tavern's smoke has its own lines.</p>
+asked for its sources while the view is outside; the campfire and the tavern's smoke have their own lines. On the step
+after a jump to a chapter, <code>model.fresh</code> is set and the list is <code>cleared_sources</code> instead: a
+source for every id the walk uses, each emitting nothing and with a lifetime shorter than the step, so every particle
+left from where the walk was dies at once, and the real sources rise anew on the next step.</p>
 
 <h2>A source of your own</h2>
-<p>A campfire, a fountain or a chimney follows the same steps as the devil. Taking a campfire:</p>
+<p>A campfire, a fountain or a chimney follows the same steps as the devil. The walk's own campfire, in
+<code>game/Campfire.roc</code>, is built that way, in the same two halves. Taking a campfire:</p>
 <ol>
 <li><strong>Write the state first.</strong> Decide what your game knows that the fire depends on, and put it in a
 record of your own: where the fire stands, how high it burns, and the clock its particles run on. A function from
